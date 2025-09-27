@@ -4,11 +4,10 @@ import type { Timestamp } from "firebase/firestore";
 export type Question = CurateTriviaQuestionsOutput["questions"][0];
 
 export interface Player {
-  id: string;
+  id: string; // Firebase Auth UID
   name: string;
   teamName: string;
   currentQuestionIndex: number;
-  // idNumber?: string; // As per user request, but let's add it later if needed.
 }
 
 export interface Team {
@@ -21,7 +20,7 @@ export interface Team {
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
 
 export interface Game {
-    id: string;
+    id: string; // The game PIN
     status: GameStatus;
     teams: Team[];
     questions: Question[];

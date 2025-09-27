@@ -13,10 +13,13 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-const QUESTIONS_PER_PLAYER = 2;
+// This constant defines how many questions each player in a team will answer.
+// The total questions generated will be (total players) * (QUESTIONS_PER_PLAYER)
+// This value is a placeholder and should be made configurable by the admin in a future update.
+const QUESTIONS_PER_PLAYER = 1;
 
 export default function GamePage({ params }: { params: { gameId: string } }) {
-  const GAME_ID = params.gameId;
+  const GAME_ID = params.gameId.toUpperCase();
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -28,9 +31,13 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setAuthUser(user);
-        const adminId = (await getDoc(doc(db, "settings", "admin"))).data()?.uid;
-        setIsAdmin(user.uid === adminId);
+        // Check if the current user is the admin.
+        const adminSettingsDoc = await getDoc(doc(db, "settings", "admin"));
+        if (adminSettingsDoc.exists() && adminSettingsDoc.data().uid === user.uid) {
+            setIsAdmin(true);
+        }
       } else {
+        // If no user, sign them in anonymously to get a stable UID.
         signInAnonymously(auth).catch((error) => {
           console.error("Anonymous sign-in error", error);
           toast({ title: "Authentication Error", description: "Could not sign in.", variant: "destructive" });
@@ -38,19 +45,22 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
       }
     });
 
+    // Subscribe to real-time updates for the game document.
     const gameRef = doc(db, "games", GAME_ID);
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        setGame(gameData);
+        setGame({ id: docSnap.id, ...gameData });
+        
+        // If we have an authenticated user, check if they are already a player in this game.
         if (authUser) {
-          const player = gameData.teams.flatMap(t => t.players).find(p => p.id === authUser.uid);
+          const player = gameData.teams?.flatMap(t => t.players).find(p => p.id === authUser.uid);
           setCurrentPlayer(player || null);
         }
       } else {
-        // Game doc doesn't exist for a player, this is an error. Redirect or show message.
+        // Game doc doesn't exist for a player, this is an error.
         toast({ title: "Game not found", description: "This game session does not exist.", variant: "destructive" });
-        // In a real app, you'd redirect. For now, just stop loading.
+        setGame(null); // Explicitly set game to null
       }
       setLoading(false);
     });
@@ -59,29 +69,33 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
       unsubAuth();
       unsubGame();
     };
-  }, [GAME_ID, authUser, toast]);
+  }, [GAME_ID, authUser?.uid, toast]); // Depend on authUser.uid for re-evaluation
 
  const handleJoinTeam = async (playerName: string, teamName: string) => {
     if (!playerName.trim()) {
-      toast({
-        title: "Invalid Name",
-        description: "Please enter your name.",
-        variant: "destructive",
-      });
+      toast({ title: "Invalid Name", description: "Please enter your name.", variant: "destructive" });
       return;
     }
     
     if (!game || !authUser) return;
 
-    const team = game.teams.find((t) => t.name === teamName);
-    // Assuming team capacity is stored in the team object, e.g., team.capacity
-    // For now, let's keep the hardcoded limit
-    if (team && team.players.length >= 10) {
-      toast({
-        title: "Team Full",
-        description: `Sorry, ${teamName} already has the maximum number of players.`,
-        variant: "destructive",
-      });
+    const gameRef = doc(db, "games", GAME_ID);
+    const currentGame = (await getDoc(gameRef)).data() as Game; // Get latest state to avoid race conditions
+
+    // Check if player is already in a team
+    const isAlreadyInTeam = currentGame.teams.some(t => t.players.some(p => p.id === authUser.uid));
+    if(isAlreadyInTeam) {
+        toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" });
+        return;
+    }
+    
+    const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
+    if(teamIndex === -1) return;
+
+    const team = currentGame.teams[teamIndex];
+
+    if (team.players.length >= team.capacity) {
+      toast({ title: "Team Full", description: `Sorry, ${teamName} is full.`, variant: "destructive" });
       return;
     }
 
@@ -92,14 +106,11 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
       currentQuestionIndex: 0,
     };
     
-    const updatedTeams = game.teams.map(t => 
-        t.name === teamName 
-            ? { ...t, players: [...t.players, newPlayer] } 
-            : t
-    );
+    const updatedTeams = [...currentGame.teams];
+    updatedTeams[teamIndex].players.push(newPlayer);
 
-    await updateDoc(doc(db, "games", GAME_ID), { teams: updatedTeams });
-    setCurrentPlayer(newPlayer);
+    await updateDoc(gameRef, { teams: updatedTeams });
+    // Don't need to call setCurrentPlayer here, the onSnapshot listener will handle it.
   };
 
   const handleStartGame = async () => {
@@ -110,80 +121,105 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
         return;
     }
     
-    await updateDoc(doc(db, "games", GAME_ID), { status: "starting" });
+    const gameRef = doc(db, "games", GAME_ID);
+    await updateDoc(gameRef, { status: "starting" });
 
     try {
-      const neededQuestions = totalPlayers * QUESTIONS_PER_PLAYER;
-      const result = await generateQuestionsAction({
-        topic: game.topic || "General Knowledge",
-        difficulty: game.difficulty || "medium",
-        numberOfQuestions: neededQuestions,
-      });
+      let questionsToUse: Question[] = [];
 
-      if (result.questions) {
-         const gameRef = doc(db, "games", GAME_ID);
-         await updateDoc(gameRef, {
-            questions: result.questions,
-            status: 'playing',
-            gameStartedAt: serverTimestamp(),
-            teams: game.teams.map(team => ({
-              ...team,
-              players: team.players.map(p => ({ ...p, currentQuestionIndex: 0 }))
-            }))
-         });
+      // If there are custom questions, use them.
+      if (game.questions && game.questions.length > 0) {
+        questionsToUse = game.questions;
       } else {
-        throw new Error("Failed to generate questions.");
+        // Otherwise, generate questions with AI.
+        const neededQuestions = totalPlayers * QUESTIONS_PER_PLAYER;
+        const result = await generateQuestionsAction({
+            topic: game.topic || "General Knowledge",
+            difficulty: game.difficulty || "medium",
+            numberOfQuestions: neededQuestions,
+        });
+        if (result.questions) {
+            questionsToUse = result.questions;
+        } else {
+            throw new Error("AI failed to generate questions.");
+        }
       }
+
+       await updateDoc(gameRef, {
+          questions: questionsToUse,
+          status: 'playing',
+          gameStartedAt: serverTimestamp(),
+          // Reset player question index on start
+          teams: game.teams.map(team => ({
+            ...team,
+            players: team.players.map(p => ({ ...p, currentQuestionIndex: 0 }))
+          }))
+       });
     } catch (error) {
       console.error(error);
       toast({
         title: "Error Starting Game",
-        description: "Could not generate trivia questions. Please try again.",
+        description: "Could not prepare trivia questions. Please check session settings and try again.",
         variant: "destructive",
       });
-      await updateDoc(doc(db, "games", GAME_ID), { status: "lobby" });
+      await updateDoc(gameRef, { status: "lobby" }); // Revert status
     }
   };
 
   const handleAnswer = async (question: Question, answer: string) => {
     if (!game || !currentPlayer) return;
+
+    // Use a transaction or a fresh read to prevent race conditions. For simplicity, we'll assume onSnapshot is fast enough.
     const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
     
-    const teamIndex = game.teams.findIndex(t => t.name === currentPlayer.teamName);
+    const gameRef = doc(db, "games", GAME_ID);
+    const currentGame = (await getDoc(gameRef)).data() as Game;
+
+    const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
     if (teamIndex === -1) return;
 
-    const playerIndex = game.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
+    const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
     if (playerIndex === -1) return;
     
-    const updatedTeams = [...game.teams];
-    const updatedScore = isCorrect ? updatedTeams[teamIndex].score + 10 : updatedTeams[teamIndex].score;
-    updatedTeams[teamIndex] = {
-      ...updatedTeams[teamIndex],
-      score: updatedScore,
-      players: updatedTeams[teamIndex].players.map((p, idx) => 
-        idx === playerIndex ? { ...p, currentQuestionIndex: p.currentQuestionIndex + 1 } : p
-      )
-    };
+    const updatedTeams = [...currentGame.teams];
+    const teamToUpdate = updatedTeams[teamIndex];
+    const playerToUpdate = teamToUpdate.players[playerIndex];
+
+    // Only update score and index if the player hasn't already answered this question
+    // (This check helps prevent multiple submissions for the same question)
+    const questionToAnswerIndex = playerToUpdate.currentQuestionIndex;
+    const totalQuestionsForPlayer = game.questions.length > 0 ? QUESTIONS_PER_PLAYER : 0;
+
+    if (questionToAnswerIndex < totalQuestionsForPlayer) {
+      const updatedScore = isCorrect ? teamToUpdate.score + 10 : teamToUpdate.score;
+      teamToUpdate.score = updatedScore;
+      playerToUpdate.currentQuestionIndex = questionToAnswerIndex + 1;
+    }
     
-    await updateDoc(doc(db, "games", GAME_ID), { teams: updatedTeams });
+    await updateDoc(gameRef, { teams: updatedTeams });
   };
   
-  const handleNextQuestion = useCallback(async () => {
+  // This function checks if all players have completed their questions and ends the game.
+  const checkGameCompletion = useCallback(async () => {
     if (!game || game.status !== 'playing') return;
 
+    const totalPlayers = game.teams.flatMap(t => t.players).length;
+    if (totalPlayers === 0) return; // Don't end game if no one is playing.
+
     const allPlayersFinished = game.teams.flatMap(t => t.players).every(p => p.currentQuestionIndex >= QUESTIONS_PER_PLAYER);
-    if (allPlayersFinished && game.teams.flatMap(t => t.players).length > 0) {
+    
+    if (allPlayersFinished) {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
     }
   }, [game, GAME_ID]);
 
   useEffect(() => {
-    if (game?.status === 'playing') {
-      handleNextQuestion();
-    }
-  }, [game, handleNextQuestion]);
+    // Run the completion check whenever the game state (specifically player progress) changes.
+    checkGameCompletion();
+  }, [game?.teams, checkGameCompletion]);
 
   const handleTimeout = async () => {
+    // Only trigger timeout if the game is currently 'playing'
     if(game?.status === 'playing') {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
       toast({
@@ -193,33 +229,36 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
     }
   };
 
+  // Resets the game to the lobby state, clearing scores and players.
   const handlePlayAgain = async () => {
+    if (!game) return;
     await updateDoc(doc(db, "games", GAME_ID), {
       status: "lobby",
-      teams: game?.teams.map(t => ({ ...t, score: 0, players: [] })) || [],
+      teams: game.teams.map(t => ({ // Keep team structure, but clear players and score
+          name: t.name,
+          capacity: t.capacity,
+          score: 0, 
+          players: [] 
+      })),
       questions: [],
       gameStartedAt: null,
     });
-    setCurrentPlayer(null); 
+    // Don't need to setCurrentPlayer(null), onSnapshot will do it.
   };
 
   const renderContent = () => {
-    if (loading || !authUser) {
+    if (loading || !game) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">Loading Game...</h1>
+            <h1 className="text-4xl font-bold mt-4 font-display">
+                {loading ? 'Finding Session...' : 'Session Not Found'}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+                {loading ? 'Verifying your session PIN...' : 'The session PIN you entered is invalid. Please check the PIN and try again.'}
+            </p>
         </div>
       )
-    }
-
-    if (!game) {
-        return (
-             <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold font-display text-destructive">Session Not Found</h1>
-               <p className="text-muted-foreground mt-2">The session PIN you entered is invalid. Please go back and try again.</p>
-             </div>
-        )
     }
 
     switch (game.status) {
@@ -242,22 +281,34 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
           </div>
         );
       case "playing":
-        if (!currentPlayer) return (
-             <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
-               <p className="text-muted-foreground mt-2">A game is currently being played. Please wait for the next round.</p>
-             </div>
-        );
+        if (!currentPlayer) {
+            return (
+                <div className="flex flex-col items-center justify-center flex-1 text-center">
+                    <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
+                    <p className="text-muted-foreground mt-2">A game is currently being played. You can join the next round once this one is finished.</p>
+                </div>
+            );
+        }
+        
         const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
-        if (!playerTeam) return <p>Error: Player's team not found.</p>;
+        if (!playerTeam) return <p>Error: Your team could not be found.</p>;
+        
         const playerState = playerTeam.players.find(p => p.id === currentPlayer.id);
-        if (!playerState) return <p>Error: Player state not found.</p>;
+        if (!playerState) return <p>Error: Could not find your player state.</p>;
         
+        // This logic determines which question the player should see.
+        // It's crucial for multiplayer turn-based gameplay.
+        // It finds the player's team index and their index within the team to calculate
+        // a unique question index from the global questions array.
         const teamIndex = game.teams.findIndex(t => t.name === playerTeam.name);
-        const questionsPerTeam = game.questions.length / game.teams.length;
-        const questionIndex = playerState.currentQuestionIndex + (teamIndex * questionsPerTeam);
-        const currentQuestion = game.questions[questionIndex];
+        const playerIndexInTeam = playerTeam.players.findIndex(p => p.id === currentPlayer.id);
+        const questionsPerTeam = Math.floor(game.questions.length / game.teams.length);
+        const baseQuestionIndex = teamIndex * questionsPerTeam;
+        const playerQuestionOffset = playerIndexInTeam * QUESTIONS_PER_PLAYER;
         
+        const currentQuestionIndex = baseQuestionIndex + playerQuestionOffset + playerState.currentQuestionIndex;
+
+        const currentQuestion = game.questions[currentQuestionIndex];
         const gameDuration = game.timer || 300;
 
         if (playerState.currentQuestionIndex >= QUESTIONS_PER_PLAYER) {
@@ -268,6 +319,15 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
              </div>
            );
         }
+        
+        if (!currentQuestion) {
+             return (
+             <div className="flex flex-col items-center justify-center flex-1 text-center">
+               <h1 className="text-4xl font-bold font-display">Waiting...</h1>
+               <p className="text-muted-foreground mt-2">There may not be enough questions for all players. Waiting for admin to resolve.</p>
+             </div>
+           );
+        }
 
         return (
           <GameScreen
@@ -275,7 +335,7 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
             currentPlayer={currentPlayer}
             question={currentQuestion}
             onAnswer={handleAnswer}
-            onNextQuestion={() => {}} // Next question is handled by answer
+            onNextQuestion={() => {}} // Next question is auto-handled by `onAnswer`
             duration={gameDuration}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
@@ -284,7 +344,8 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
       case "finished":
         return <ResultsScreen teams={game.teams} onPlayAgain={handlePlayAgain} isAdmin={isAdmin} />;
       default:
-        return null;
+        // This is a fallback for any unexpected game status
+        return <div className="text-center">Unknown game state.</div>;
     }
   };
 

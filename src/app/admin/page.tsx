@@ -35,6 +35,9 @@ export default function AdminDashboard() {
         });
         setSessions(sessionsData);
         setIsLoadingSessions(false);
+      }, (error) => {
+          console.error("Error fetching sessions: ", error);
+          setIsLoadingSessions(false);
       });
       return () => unsubscribe();
     }
@@ -44,8 +47,8 @@ export default function AdminDashboard() {
     const newPin = generatePin();
     const gameRef = doc(db, "games", newPin);
     
-    const newGame: Game = {
-        id: newPin,
+    // Default structure for a new game
+    const newGame: Omit<Game, 'id'> = {
         status: "lobby",
         teams: [
           { name: "Team Alpha", score: 0, players: [], capacity: 10 },
@@ -64,8 +67,14 @@ export default function AdminDashboard() {
   };
 
   const deleteSession = async (gameId: string) => {
-    if (window.confirm("Are you sure you want to delete this session?")) {
-        await deleteDoc(doc(db, "games", gameId));
+    if (window.confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
+        try {
+            await deleteDoc(doc(db, "games", gameId));
+            // The onSnapshot listener will automatically update the UI.
+        } catch (err) {
+            console.error("Failed to delete session:", err);
+            alert("Failed to delete session.");
+        }
     }
   }
 
@@ -81,7 +90,7 @@ export default function AdminDashboard() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold font-display">Admin Dashboard</h1>
-        <Button onClick={() => auth.signOut()}>Sign Out</Button>
+        <Button onClick={() => auth.signOut().then(() => router.push('/'))}>Sign Out</Button>
       </div>
 
       <Card>
@@ -111,11 +120,11 @@ export default function AdminDashboard() {
                                 <span className="text-sm px-2 py-1 rounded-md bg-secondary text-secondary-foreground">{session.status}</span>
                             </CardTitle>
                             <CardDescription>
-                                {session.teams.length} teams, {session.teams.reduce((acc, t) => acc + t.players.length, 0)} players
+                                {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + t.players.length, 0) || 0} players
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            <Button className="w-full" variant="outline" onClick={() => router.push(`/admin/display/${session.id}`)}>
+                            <Button className="w-full" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                 <Eye className="mr-2"/>
                                 Open Big Screen
                             </Button>

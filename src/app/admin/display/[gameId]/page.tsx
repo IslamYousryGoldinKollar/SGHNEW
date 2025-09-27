@@ -1,14 +1,11 @@
 "use client";
 
-// This is a placeholder for the "Big Screen" view.
-// We will build this out in a future step.
-
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Game } from "@/lib/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Play, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DisplayPage() {
@@ -19,7 +16,7 @@ export default function DisplayPage() {
 
     useEffect(() => {
         if (!gameId) return;
-        const gameRef = doc(db, "games", gameId);
+        const gameRef = doc(db, "games", gameId.toUpperCase());
         const unsubscribe = onSnapshot(gameRef, (doc) => {
             if (doc.exists()) {
                 setGame({ id: doc.id, ...doc.data() } as Game);
@@ -33,15 +30,15 @@ export default function DisplayPage() {
 
     const handleStartGame = async () => {
         if (!gameId) return;
-        const gameRef = doc(db, "games", gameId);
-        // For now, just change the status. Full logic is in game page.
-        // This is just a remote control.
-        await updateDoc(gameRef, { status: "playing", gameStartedAt: new Date() });
+        const gameRef = doc(db, "games", gameId.toUpperCase());
+        // The full game start logic (like generating questions) is handled on the player/admin side.
+        // This is just a remote control to change the status.
+        await updateDoc(gameRef, { status: "playing", gameStartedAt: serverTimestamp() });
     };
 
     const handleEndGame = async () => {
         if (!gameId) return;
-        const gameRef = doc(db, "games", gameId);
+        const gameRef = doc(db, "games", gameId.toUpperCase());
         await updateDoc(gameRef, { status: "finished" });
     };
     
@@ -53,18 +50,29 @@ export default function DisplayPage() {
             return <h1 className="text-4xl text-destructive">Session Not Found</h1>;
         }
 
-        const sortedTeams = [...game.teams].sort((a, b) => b.score - a.score);
+        const sortedTeams = game.teams ? [...game.teams].sort((a, b) => b.score - a.score) : [];
+
+        const renderStatus = () => {
+            switch(game.status) {
+                case 'lobby': return 'Waiting for players...';
+                case 'starting': return 'Getting ready...';
+                case 'playing': return 'Game in Progress!';
+                case 'finished': return 'Game Over!';
+                default: return game.status;
+            }
+        }
 
         return (
-            <div className="w-full">
-                <div className="text-center mb-8">
-                    <h1 className="text-6xl font-bold font-display uppercase tracking-widest text-primary">{game.id}</h1>
-                    <h2 className="text-4xl text-muted-foreground">{game.status.toUpperCase()}</h2>
+            <div className="w-full max-w-6xl mx-auto">
+                <div className="text-center mb-12 p-6 bg-primary/10 border-2 border-primary rounded-xl">
+                    <p className="text-2xl text-muted-foreground">Session PIN</p>
+                    <h1 className="text-8xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
+                    <h2 className="text-5xl font-display text-accent mt-4">{renderStatus()}</h2>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
                     {sortedTeams.map(team => (
-                        <div key={team.name} className="p-8 border-4 border-primary rounded-lg bg-card/50 text-center">
+                        <div key={team.name} className="p-8 border-4 border-secondary rounded-lg bg-card/50 text-center transition-all duration-500">
                             <h3 className="text-4xl font-display text-accent">{team.name}</h3>
                             <p className="text-8xl font-bold font-mono my-4">{team.score}</p>
                             <p className="text-muted-foreground">{team.players.length} players</p>
@@ -72,12 +80,18 @@ export default function DisplayPage() {
                     ))}
                 </div>
 
-                {game.status === 'lobby' && (
-                    <Button size="lg" onClick={handleStartGame}>Start Game</Button>
-                )}
-                 {game.status === 'playing' && (
-                    <Button size="lg" variant="destructive" onClick={handleEndGame}>End Game</Button>
-                )}
+                <div className="text-center mt-12 space-x-4">
+                    {game.status === 'lobby' && (
+                        <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl">
+                            <Play className="mr-4"/> Start Game
+                        </Button>
+                    )}
+                     {game.status === 'playing' && (
+                        <Button size="lg" variant="destructive" onClick={handleEndGame} className="min-w-[200px] h-14 text-2xl">
+                            <Square className="mr-4"/> End Game
+                        </Button>
+                    )}
+                </div>
             </div>
         )
 
