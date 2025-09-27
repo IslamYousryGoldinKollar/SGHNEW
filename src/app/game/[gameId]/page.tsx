@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import type { Player, Question, Game } from "@/lib/types";
 import { generateQuestionsAction }from "@/lib/actions";
@@ -42,6 +43,11 @@ export default function GamePage() {
       }
     });
 
+    return () => unsubAuth();
+  }, [toast]);
+
+  useEffect(() => {
+    if (!GAME_ID) return;
     const gameRef = doc(db, "games", GAME_ID);
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -60,10 +66,9 @@ export default function GamePage() {
     });
 
     return () => {
-      unsubAuth();
       unsubGame();
     };
-  }, [GAME_ID, authUser?.uid, toast]);
+  }, [GAME_ID, authUser, toast]);
 
  const handleJoinTeam = async (playerName: string, teamName: string) => {
     if (!playerName.trim()) {
@@ -163,17 +168,18 @@ export default function GamePage() {
     if (availableQuestions.length === 0) {
       return null; // No more questions available
     }
-
+    
+    // Return a random question from the available pool
     const randomIndex = Math.floor(Math.random() * availableQuestions.length);
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
-  // Set initial question when game starts
+  // Set initial question when game starts or player joins
   useEffect(() => {
-    if (game?.status === 'playing' && !currentQuestion) {
+    if (game?.status === 'playing' && currentPlayer && !currentQuestion) {
       setCurrentQuestion(getNextQuestion());
     }
-  }, [game?.status, currentQuestion, getNextQuestion]);
+  }, [game?.status, currentPlayer, currentQuestion, getNextQuestion]);
 
 
   const handleAnswer = async (question: Question, answer: string) => {
@@ -182,6 +188,9 @@ export default function GamePage() {
     const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
     
     const gameRef = doc(db, "games", GAME_ID);
+    
+    // We need to read the doc inside a transaction to prevent race conditions
+    // but for now, a fresh read is better than using stale state.
     const currentGame = (await getDoc(gameRef)).data() as Game;
 
     const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
@@ -194,16 +203,16 @@ export default function GamePage() {
     const teamToUpdate = updatedTeams[teamIndex];
     const playerToUpdate = teamToUpdate.players[playerIndex];
 
-    const updatedScore = isCorrect ? teamToUpdate.score + 10 : teamToUpdate.score;
-    teamToUpdate.score = updatedScore;
+    if (isCorrect) {
+        teamToUpdate.score += 10;
+    }
 
     playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
     
     await updateDoc(gameRef, { teams: updatedTeams });
 
-    // After submitting, immediately get the next question
-    const nextQ = getNextQuestion();
-    setCurrentQuestion(nextQ);
+    // After submitting, immediately get the next question for this player
+    setCurrentQuestion(getNextQuestion());
   };
   
   const handleTimeout = async () => {
@@ -229,6 +238,8 @@ export default function GamePage() {
       questions: [],
       gameStartedAt: null,
     });
+    // Reset local state for the next round
+    setCurrentQuestion(null);
   };
 
   const renderContent = () => {
@@ -248,22 +259,15 @@ export default function GamePage() {
 
     switch (game.status) {
       case "lobby":
+      case "starting":
         return (
           <Lobby
-            teams={game.teams}
+            game={game}
             onJoinTeam={handleJoinTeam}
             onStartGame={handleStartGame}
             currentPlayer={currentPlayer}
             isAdmin={isAdmin}
           />
-        );
-      case "starting":
-        return (
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
-            <p className="text-muted-foreground mt-2">Get ready for battle!</p>
-          </div>
         );
       case "playing":
         if (!currentPlayer) {
@@ -281,8 +285,8 @@ export default function GamePage() {
         if (!currentQuestion) {
              return (
              <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold font-display">You've answered all the questions!</h1>
-               <p className="text-muted-foreground mt-2">Waiting for the game to end...</p>
+               <h1 className="text-4xl font-bold font-display">You've answered all available questions!</h1>
+               <p className="text-muted-foreground mt-2">Great job! Waiting for the game to end...</p>
              </div>
            );
         }

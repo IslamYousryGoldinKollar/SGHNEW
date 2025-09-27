@@ -1,26 +1,26 @@
+
 "use client";
 
 import { useState } from "react";
-import type { Team, Player } from "@/lib/types";
+import type { Team, Player, Game, GameStatus } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Swords } from "lucide-react";
+import { Users, Swords, Loader2 } from "lucide-react";
 
 type LobbyProps = {
-  teams: Team[];
+  game: Game;
   onJoinTeam: (playerName: string, teamName: string) => void;
   onStartGame: () => void;
   currentPlayer: Player | null;
   isAdmin: boolean;
 };
 
-export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
+export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
   const [playerName, setPlayerName] = useState("");
-  // The new fields required by the user
   const [surname, setSurname] = useState("");
   const [idNumber, setIdNumber] = useState("");
-
+  const { teams, status } = game;
 
   const handleJoin = (teamName: string) => {
     if (!playerName.trim() || !surname.trim() || !idNumber.trim()) {
@@ -56,6 +56,16 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, i
       </CardContent>
     </Card>
   );
+
+  if (status === 'starting') {
+     return (
+        <div className="flex flex-col items-center justify-center flex-1 text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
+            <p className="text-muted-foreground mt-2">Get ready for battle!</p>
+        </div>
+    );
+  }
 
   if (currentPlayer) {
     return (

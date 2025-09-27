@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,7 +6,7 @@ import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Game } from "@/lib/types";
-import { Loader2, Play, Square } from "lucide-react";
+import { Loader2, Play, Square, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function DisplayPage() {
@@ -31,7 +32,7 @@ export default function DisplayPage() {
     const handleStartGame = async () => {
         if (!gameId) return;
         const gameRef = doc(db, "games", gameId.toUpperCase());
-        // The full game start logic (like generating questions) is handled on the player/admin side.
+        // The full game start logic is handled on the player/admin side.
         // This is just a remote control to change the status.
         await updateDoc(gameRef, { status: "playing", gameStartedAt: serverTimestamp() });
     };
@@ -40,6 +41,21 @@ export default function DisplayPage() {
         if (!gameId) return;
         const gameRef = doc(db, "games", gameId.toUpperCase());
         await updateDoc(gameRef, { status: "finished" });
+    };
+
+    const handlePlayAgain = async () => {
+        if (!game) return;
+        const gameRef = doc(db, "games", gameId.toUpperCase());
+        await updateDoc(gameRef, {
+            status: "lobby",
+            teams: game.teams.map(t => ({
+                ...t,
+                score: 0,
+                players: []
+            })),
+            questions: [], // Questions will be regenerated
+            gameStartedAt: null,
+        });
     };
     
     const renderContent = () => {
@@ -89,6 +105,11 @@ export default function DisplayPage() {
                      {game.status === 'playing' && (
                         <Button size="lg" variant="destructive" onClick={handleEndGame} className="min-w-[200px] h-14 text-2xl">
                             <Square className="mr-4"/> End Game
+                        </Button>
+                    )}
+                    {game.status === 'finished' && (
+                         <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl">
+                            <RotateCw className="mr-4"/> Play Again
                         </Button>
                     )}
                 </div>
