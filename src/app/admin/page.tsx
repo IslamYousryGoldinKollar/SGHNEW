@@ -66,6 +66,9 @@ export default function AdminDashboard() {
   const deleteSession = async (gameId: string) => {
     if (window.confirm("Are you sure you want to delete this session?")) {
         await deleteDoc(doc(db, "games", gameId));
+        // The onSnapshot listener should automatically update the UI,
+        // but we can also filter it out manually for a faster perceived response.
+        setSessions(prevSessions => prevSessions.filter(s => s.id !== gameId));
     }
   }
 
