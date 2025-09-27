@@ -34,7 +34,6 @@ export default function DisplayPage() {
             if (doc.exists()) {
                 const gameData = { id: doc.id, ...doc.data() } as Game;
                 
-                // Recalculate scores based on grid
                 const scores = new Map<string, number>();
                 gameData.teams.forEach(team => scores.set(team.name, 0));
                 
@@ -145,21 +144,28 @@ export default function DisplayPage() {
         )
     }
 
-    const GameGrid = () => {
-        if (!game || !game.grid) return null; // Added check for game.grid
+    const GameGrid = ({ isBackground = false }: { isBackground?: boolean }) => {
+        if (!game || !game.grid) return null;
         const { grid, teams } = game;
         
-        const getTeamColor = (teamName: string) => {
+        const getTeamColor = (teamName: string | null) => {
+             if (!teamName) return 'hsl(var(--card))';
             return teams.find(t => t.name === teamName)?.color || '#333';
         }
 
         return (
-            <div className="grid grid-cols-10 gap-2 aspect-square max-w-[60vh] mx-auto">
+            <div className={cn(
+                "grid grid-cols-10 gap-2",
+                isBackground ? "w-full h-full" : "aspect-square max-w-[60vh] mx-auto"
+            )}>
                 {grid.map(square => (
                     <div 
                         key={square.id}
-                        className="w-full aspect-square rounded-md border-2 border-border transition-colors duration-500"
-                        style={{ backgroundColor: square.coloredBy ? getTeamColor(square.coloredBy) : 'var(--card)'}}
+                        className={cn(
+                            "transition-colors duration-500",
+                            isBackground ? "" : "rounded-md border-2 border-border"
+                        )}
+                        style={{ backgroundColor: getTeamColor(square.coloredBy)}}
                     />
                 ))}
             </div>
@@ -167,7 +173,7 @@ export default function DisplayPage() {
     }
     
     const TeamScoreBar = ({ team }: { team: Team }) => (
-        <div className="p-6 rounded-lg bg-card/50 text-center transition-all duration-500 border-4" style={{ borderColor: team.color }}>
+        <div className="p-6 rounded-lg bg-card/80 backdrop-blur-sm text-center transition-all duration-500 border-4" style={{ borderColor: team.color }}>
             <h3 className="text-3xl font-display" style={{ color: team.color }}>{team.name}</h3>
             <p className="text-6xl font-bold font-mono my-2">{team.score}</p>
              <div className="flex items-center justify-center text-muted-foreground text-xl">
@@ -184,21 +190,16 @@ export default function DisplayPage() {
          const teamRight = game.teams.length > 0 ? game.teams[0] : null;
 
         return (
-             <div className="flex-1 w-full max-w-full flex items-center justify-around gap-8">
-                {/* Left Team */}
-                <div className="w-1/4 flex justify-center">
-                    {teamLeft && <TeamScoreBar team={teamLeft} />}
+             <div className="flex-1 w-full relative">
+                <div className="absolute inset-0">
+                    <GameGrid isBackground={true} />
                 </div>
-
-                {/* Center Content */}
-                <div className="w-1/2 flex flex-col items-center justify-center text-center">
-                    <h2 className="text-5xl font-display text-accent mb-6">Color War</h2>
-                    <GameGrid />
-                </div>
-
-                {/* Right Team */}
-                 <div className="w-1/4 flex justify-center">
-                    {teamRight && <TeamScoreBar team={teamRight} />}
+                <div className="absolute inset-0 flex flex-col items-center justify-start p-8">
+                     <h2 className="text-5xl font-display text-accent mb-6 bg-background/50 px-4 py-2 rounded-lg">Color War</h2>
+                    <div className="w-full flex justify-between items-start">
+                        {teamLeft && <TeamScoreBar team={teamLeft} />}
+                        {teamRight && <TeamScoreBar team={teamRight} />}
+                    </div>
                 </div>
              </div>
         )
@@ -215,9 +216,9 @@ export default function DisplayPage() {
         const renderStatus = () => {
             switch(game.status) {
                 case 'lobby': return renderLobby();
-                case 'starting': return <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">Getting ready...</h2>;
+                case 'starting': return <div className="flex-1 flex items-center justify-center"><h2 className="text-5xl font-display text-accent">Getting ready...</h2></div>;
                 case 'playing': return renderGameInProgress();
-                case 'finished': return renderGameInProgress(); // Show final grid state
+                case 'finished': return renderGameInProgress();
                 default: return <p>{game.status}</p>;
             }
         }
@@ -230,10 +231,10 @@ export default function DisplayPage() {
             const isTie = sortedTeams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
 
             return (
-                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 animate-in fade-in">
+                <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 animate-in fade-in">
                     <h1 className="text-7xl font-display text-yellow-400">Game Over</h1>
-                    <h2 className="text-4xl font-display mt-4">{isTie ? "It's a Tie!" : `${winner.name} Wins!`}</h2>
-                     <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-12">
+                    <h2 className="text-4xl font-display mt-4 mb-12">{isTie ? "It's a Tie!" : `${winner.name} Wins!`}</h2>
+                     <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl">
                         <RotateCw className="mr-4"/> Play Again
                     </Button>
                 </div>
@@ -241,12 +242,12 @@ export default function DisplayPage() {
         }
 
         return (
-            <div className="w-full h-full flex flex-col p-8 relative">
-                 <GameOverOverlay />
-                <div className="flex-1 flex flex-col justify-start pt-[5%] min-h-0">
+            <div className="w-full h-full flex flex-col relative">
+                <GameOverOverlay />
+                <div className="flex-1 flex flex-col justify-start min-h-0 pt-[2%] pb-4 px-8">
                     {renderStatus()}
                 </div>
-                <div className="text-center py-4 flex-shrink-0">
+                <div className="text-center pb-4 flex-shrink-0">
                     {game.status === 'lobby' && (
                         <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl">
                             <Play className="mr-4"/> Start Game
@@ -255,11 +256,6 @@ export default function DisplayPage() {
                      {game.status === 'playing' && (
                         <Button size="lg" variant="destructive" onClick={handleEndGame} className="min-w-[200px] h-14 text-2xl">
                             <Square className="mr-4"/> End Game
-                        </Button>
-                    )}
-                    {game.status === 'finished' && (
-                         <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl">
-                            <RotateCw className="mr-4"/> Play Again
                         </Button>
                     )}
                 </div>
