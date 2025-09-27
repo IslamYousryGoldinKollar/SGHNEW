@@ -1,299 +1,109 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import type { Team, Player, Question, GameStatus, Game } from "@/lib/types";
-import { generateQuestionsAction }from "@/lib/actions";
-import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, setDoc } from "firebase/firestore";
-import { signInAnonymously, onAuthStateChanged, type User } from "firebase/auth";
-
-import Lobby from "@/components/game/Lobby";
-import GameScreen from "@/components/game/GameScreen";
-import ResultsScreen from "@/components/game/ResultsScreen";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { KeyRound, Shield, LogIn } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 
-const GAME_ID = "main_game"; 
-const GAME_DURATION = 5 * 60; // 5 minutes
-const QUESTIONS_PER_PLAYER = 2;
-const ADMIN_USER_ID = "GLdvOzQWorMcsmOpcwvqqZcpCIN2";
-
-
-export default function Home() {
-  const [game, setGame] = useState<Game | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [authUser, setAuthUser] = useState<User | null>(null);
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+export default function LandingPage() {
+  const [pin, setPin] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setAuthUser(user);
+  const handleJoinSession = async () => {
+    if (!pin.trim()) {
+      toast({
+        title: "PIN Required",
+        description: "Please enter a session PIN.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const gameRef = doc(db, "games", pin.trim().toUpperCase());
+      const gameDoc = await getDoc(gameRef);
+
+      if (gameDoc.exists()) {
+        router.push(`/game/${pin.trim().toUpperCase()}`);
       } else {
-        signInAnonymously(auth).catch((error) => {
-          console.error("Anonymous sign-in error", error);
-          toast({ title: "Authentication Error", description: "Could not sign in.", variant: "destructive" });
+        toast({
+          title: "Session Not Found",
+          description: "The PIN you entered does not match an active session.",
+          variant: "destructive",
         });
       }
-    });
-
-    const gameRef = doc(db, "games", GAME_ID);
-    const unsubGame = onSnapshot(gameRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const gameData = docSnap.data() as Game;
-        setGame(gameData);
-        // Sync current player state
-        if (authUser) {
-          const player = gameData.teams.flatMap(t => t.players).find(p => p.id === authUser.uid);
-          setCurrentPlayer(player || null);
-        }
-      } else {
-        // Game doc doesn't exist, create it
-        const newGame: Game = {
-            id: GAME_ID,
-            status: "lobby",
-            teams: [
-              { name: "Team Alpha", score: 0, players: [] },
-              { name: "Team Bravo", score: 0, players: [] },
-            ],
-            questions: [],
-            createdAt: serverTimestamp() as any,
-            gameStartedAt: null,
-        };
-        setDoc(gameRef, newGame).then(() => setGame(newGame));
-      }
-      setLoading(false);
-    });
-
-    return () => {
-      unsubAuth();
-      unsubGame();
-    };
-  }, [authUser, toast]);
-
-  const handleJoinTeam = async (playerName: string, teamName: string) => {
-    if (!playerName.trim()) {
-      toast({
-        title: "Invalid Name",
-        description: "Please enter your name.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!game || !authUser) return;
-
-    const team = game.teams.find((t) => t.name === teamName);
-    if (team && team.players.length >= 10) {
-      toast({
-        title: "Team Full",
-        description: `Sorry, ${teamName} already has 10 players.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newPlayer: Player = {
-      id: authUser.uid,
-      name: playerName,
-      teamName: teamName,
-      currentQuestionIndex: 0,
-    };
-    
-    const updatedTeams = game.teams.map(t => 
-        t.name === teamName 
-            ? { ...t, players: [...t.players, newPlayer] } 
-            : t
-    );
-
-    await updateDoc(doc(db, "games", GAME_ID), { teams: updatedTeams });
-    setCurrentPlayer(newPlayer);
-  };
-
-  const handleStartGame = async () => {
-    if (!game) return;
-    const totalPlayers = game.teams.reduce((sum, t) => sum + t.players.length, 0);
-    if (totalPlayers === 0) {
-        toast({ title: "No players!", description: "At least one player must join to start.", variant: "destructive" });
-        return;
-    }
-    
-    await updateDoc(doc(db, "games", GAME_ID), { status: "starting" });
-
-    try {
-      const neededQuestions = totalPlayers * QUESTIONS_PER_PLAYER;
-      const result = await generateQuestionsAction({
-        topic: "General Knowledge",
-        difficulty: "medium",
-        numberOfQuestions: neededQuestions,
-      });
-
-      if (result.questions) {
-         const gameRef = doc(db, "games", GAME_ID);
-         await updateDoc(gameRef, {
-            questions: result.questions,
-            status: 'playing',
-            gameStartedAt: serverTimestamp(),
-            teams: game.teams.map(team => ({
-              ...team,
-              players: team.players.map(p => ({ ...p, currentQuestionIndex: 0 }))
-            }))
-         });
-      } else {
-        throw new Error("Failed to generate questions.");
-      }
     } catch (error) {
-      console.error(error);
+      console.error("Error joining session:", error);
       toast({
-        title: "Error Starting Game",
-        description: "Could not generate trivia questions. Please try again.",
+        title: "Error",
+        description: "Could not verify session PIN. Please try again.",
         variant: "destructive",
       });
-      await updateDoc(doc(db, "games", GAME_ID), { status: "lobby" });
-    }
-  };
-
-  const handleAnswer = async (question: Question, answer: string) => {
-    if (!game || !currentPlayer) return;
-    const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
-    
-    const teamIndex = game.teams.findIndex(t => t.name === currentPlayer.teamName);
-    if (teamIndex === -1) return;
-
-    const playerIndex = game.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
-    if (playerIndex === -1) return;
-    
-    const updatedTeams = [...game.teams];
-    const updatedScore = isCorrect ? updatedTeams[teamIndex].score + 10 : updatedTeams[teamIndex].score;
-    updatedTeams[teamIndex] = {
-      ...updatedTeams[teamIndex],
-      score: updatedScore,
-      players: updatedTeams[teamIndex].players.map((p, idx) => 
-        idx === playerIndex ? { ...p, currentQuestionIndex: p.currentQuestionIndex + 1 } : p
-      )
-    };
-    
-    await updateDoc(doc(db, "games", GAME_ID), { teams: updatedTeams });
-  };
-  
-  const handleNextQuestion = useCallback(async () => {
-    if (!game || game.status !== 'playing') return;
-
-    const allPlayersFinished = game.teams.flatMap(t => t.players).every(p => p.currentQuestionIndex >= QUESTIONS_PER_PLAYER);
-    if (allPlayersFinished && game.teams.flatMap(t => t.players).length > 0) {
-      await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
-    }
-  }, [game]);
-
-  useEffect(() => {
-    if (game?.status === 'playing') {
-      handleNextQuestion();
-    }
-  }, [game, handleNextQuestion]);
-
-  const handleTimeout = async () => {
-    if(game?.status === 'playing') {
-      await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
-      toast({
-        title: "Time's Up!",
-        description: `The ${GAME_DURATION/60}-minute timer has expired.`,
-      });
-    }
-  };
-
-  const handlePlayAgain = async () => {
-    // Note: This does not clear authenticated users. For a full reset,
-    // you might want to handle re-authentication or player state clearing differently.
-    await updateDoc(doc(db, "games", GAME_ID), {
-      status: "lobby",
-      teams: [
-        { name: "Team Alpha", score: 0, players: [] },
-        { name: "Team Bravo", score: 0, players: [] },
-      ],
-      questions: [],
-      gameStartedAt: null,
-    });
-    setCurrentPlayer(null); 
-  };
-
-  const renderContent = () => {
-    if (loading || !game || !authUser) {
-      return (
-        <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">Loading Game...</h1>
-        </div>
-      )
-    }
-
-    switch (game.status) {
-      case "lobby":
-        return (
-          <Lobby
-            teams={game.teams}
-            onJoinTeam={handleJoinTeam}
-            onStartGame={handleStartGame}
-            currentPlayer={currentPlayer}
-            isAdmin={authUser.uid === ADMIN_USER_ID}
-          />
-        );
-      case "starting":
-        return (
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
-            <p className="text-muted-foreground mt-2">Get ready for battle!</p>
-          </div>
-        );
-      case "playing":
-        if (!currentPlayer) return (
-             <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
-               <p className="text-muted-foreground mt-2">Join the game to play!</p>
-             </div>
-        );
-        const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
-        if (!playerTeam) return <p>Error: Player's team not found.</p>;
-        const playerState = playerTeam.players.find(p => p.id === currentPlayer.id);
-        if (!playerState) return <p>Error: Player state not found.</p>;
-        
-        const teamIndex = game.teams.findIndex(t => t.name === playerTeam.name);
-        const questionsPerTeam = game.questions.length / game.teams.length;
-        const questionIndex = playerState.currentQuestionIndex + (teamIndex * questionsPerTeam);
-        const currentQuestion = game.questions[questionIndex];
-        
-        if (playerState.currentQuestionIndex >= QUESTIONS_PER_PLAYER) {
-           return (
-             <div className="flex flex-col items-center justify-center flex-1 text-center">
-               <h1 className="text-4xl font-bold font-display">You've finished your questions!</h1>
-               <p className="text-muted-foreground mt-2">Waiting for other players to finish...</p>
-             </div>
-           );
-        }
-
-        return (
-          <GameScreen
-            teams={game.teams}
-            currentPlayer={currentPlayer}
-            question={currentQuestion}
-            onAnswer={handleAnswer}
-            onNextQuestion={() => {}} // Next question is handled by answer
-            duration={GAME_DURATION}
-            onTimeout={handleTimeout}
-            gameStartedAt={game.gameStartedAt}
-          />
-        );
-      case "finished":
-        return <ResultsScreen teams={game.teams} onPlayAgain={handlePlayAgain} isAdmin={authUser.uid === ADMIN_USER_ID} />;
-      default:
-        return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 flex-1 flex flex-col">
-      {renderContent()}
+    <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center">
+      <div className="text-center mb-12">
+        <h1 className="text-5xl font-bold font-display text-primary">Trivia Titans</h1>
+        <p className="text-muted-foreground mt-2 text-xl">The ultimate team trivia challenge</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+        <Card className="bg-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <KeyRound className="text-accent" />
+              Join a Session
+            </CardTitle>
+            <CardDescription>Enter the PIN from the big screen to join the game.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Input
+              placeholder="Session PIN"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              className="text-2xl h-14 text-center tracking-widest font-mono"
+              maxLength={6}
+            />
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" onClick={handleJoinSession} disabled={isLoading}>
+              <LogIn className="mr-2" />
+              {isLoading ? "Joining..." : "Join Game"}
+            </Button>
+          </CardFooter>
+        </Card>
+
+        <Card className="bg-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="text-accent" />
+              Admin Access
+            </CardTitle>
+            <CardDescription>Create and manage trivia sessions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Admins can create new sessions, manage questions, and control the game from the admin dashboard.
+            </p>
+          </CardContent>
+          <CardFooter>
+            <Button className="w-full" variant="secondary" onClick={() => router.push('/admin/login')}>
+              Admin Login
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }

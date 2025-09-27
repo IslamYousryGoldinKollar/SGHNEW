@@ -8,12 +8,14 @@ export interface Player {
   name: string;
   teamName: string;
   currentQuestionIndex: number;
+  // idNumber?: string; // As per user request, but let's add it later if needed.
 }
 
 export interface Team {
   name:string;
   score: number;
   players: Player[];
+  capacity: number;
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
@@ -25,4 +27,7 @@ export interface Game {
     questions: Question[];
     createdAt: Timestamp;
     gameStartedAt?: Timestamp | null;
+    timer?: number;
+    topic?: string;
+    difficulty?: "easy" | "medium" | "hard";
 }

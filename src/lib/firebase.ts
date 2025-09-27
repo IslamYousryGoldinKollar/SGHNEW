@@ -2,7 +2,7 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
-import { getAuth } from "firebase/auth";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 const firebaseConfig = {
   projectId: "studio-7831135066-b7ebf",
@@ -17,5 +17,13 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const rtdb = getDatabase(app);
 const auth = getAuth(app);
+
+// To enable admin auth, you need to create a user in the Firebase Console 
+// with the email 'admin@trivia.com' and any password.
+if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+  // Point to the emulators running on localhost.
+  // connectAuthEmulator(auth, "http://localhost:9099");
+}
+
 
 export { app, db, rtdb, auth };
