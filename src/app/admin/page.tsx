@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { Loader2, Plus, Eye } from "lucide-react";
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { Loader2, Plus, Eye, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import type { Game } from "@/lib/types";
 
 // A simple random PIN generator
@@ -60,10 +60,14 @@ export default function AdminDashboard() {
     };
 
     await setDoc(gameRef, newGame);
-    // For now, let's just log it. We'll build the session config page next.
-    console.log("Created new session with PIN:", newPin);
-    // router.push(`/admin/session/${newPin}`);
+    router.push(`/admin/session/${newPin}`);
   };
+
+  const deleteSession = async (gameId: string) => {
+    if (window.confirm("Are you sure you want to delete this session?")) {
+        await deleteDoc(doc(db, "games", gameId));
+    }
+  }
 
   if (loading || !user) {
     return (
@@ -100,7 +104,7 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => (
-                    <Card key={session.id} className="bg-card/50">
+                    <Card key={session.id} className="bg-card/50 flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-center">
                                 <span>Session: {session.id}</span>
@@ -110,12 +114,22 @@ export default function AdminDashboard() {
                                 {session.teams.length} teams, {session.teams.reduce((acc, t) => acc + t.players.length, 0)} players
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="flex-1">
                             <Button className="w-full" variant="outline" onClick={() => router.push(`/admin/display/${session.id}`)}>
                                 <Eye className="mr-2"/>
                                 Open Big Screen
                             </Button>
                         </CardContent>
+                         <CardFooter className="flex gap-2">
+                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)}>
+                                 <Edit className="mr-2"/>
+                                 Edit
+                             </Button>
+                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)}>
+                                 <Trash2 className="mr-2"/>
+                                 Delete
+                             </Button>
+                        </CardFooter>
                     </Card>
                 ))}
             </div>

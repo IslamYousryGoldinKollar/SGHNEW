@@ -27,7 +27,7 @@ export interface Game {
     questions: Question[];
     createdAt: Timestamp;
     gameStartedAt?: Timestamp | null;
-    timer?: number;
-    topic?: string;
-    difficulty?: "easy" | "medium" | "hard";
+    timer: number;
+    topic: string;
+    difficulty: "easy" | "medium" | "hard";
 }
