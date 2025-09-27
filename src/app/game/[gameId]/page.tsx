@@ -206,16 +206,18 @@ export default function GamePage() {
   }, [game, currentPlayer]);
 
   useEffect(() => {
-    if (game?.status === 'playing' && currentPlayer && !currentQuestion) {
-      setCurrentQuestion(getNextQuestion());
-      setView('question');
+    if (game?.status !== 'playing' || !currentPlayer) {
+      return;
     }
-     if (game?.status === 'playing' && currentPlayer) {
-        if(currentPlayer.coloringCredits > 0) {
-            setView('grid');
-        } else {
-            setView('question');
-        }
+  
+    // Logic for view switching and fetching new questions
+    if (currentPlayer.coloringCredits > 0) {
+      setView('grid');
+    } else {
+      if (!currentQuestion) {
+        setCurrentQuestion(getNextQuestion());
+      }
+      setView('question');
     }
   }, [game?.status, currentPlayer, currentQuestion, getNextQuestion]);
 
@@ -241,18 +243,19 @@ export default function GamePage() {
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
 
+        playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
+
         if (isCorrect) {
             playerToUpdate.coloringCredits += 1;
         }
-
-        playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
         
         transaction.update(gameRef, { teams: updatedTeams });
     });
 
-    if (isCorrect) {
-        setView('grid');
-    } else {
+    // We don't need to manually set the view here. The useEffect hook will react
+    // to the `currentPlayer` state update from Firestore and switch the view.
+    if (!isCorrect) {
+       // If wrong, immediately fetch the next question to show after feedback animation
         setCurrentQuestion(getNextQuestion());
     }
   };
@@ -298,8 +301,8 @@ export default function GamePage() {
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
       });
 
+      // After coloring, fetch next question and the useEffect will switch the view
       setCurrentQuestion(getNextQuestion());
-      setView('question');
 
     } catch (error: any) {
         console.error("Failed to color square: ", error);
@@ -384,7 +387,7 @@ export default function GamePage() {
         const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
         if (!playerTeam) return <p>Error: Your team could not be found.</p>;
         
-        if (view === 'grid' && currentPlayer.coloringCredits > 0) {
+        if (view === 'grid') {
              return (
                 <ColorGridScreen 
                     grid={game.grid}
@@ -430,3 +433,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
