@@ -49,7 +49,7 @@ export default function GameScreen({
           </div>
         )}
       </div>
-      <aside className="lg:col-span-1 order-1 lg:order-2 space-y-8">
+      <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-row lg:flex-col gap-4 items-stretch">
         <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
         <Scoreboard team={playerTeam} />
       </aside>

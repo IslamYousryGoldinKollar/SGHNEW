@@ -47,15 +47,15 @@ export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps
   const timeColor = timeLeft <= 10 ? "text-red-500" : timeLeft <= 30 ? "text-yellow-400" : "text-primary";
 
   return (
-    <Card className="text-center bg-card/50 backdrop-blur-sm shadow-lg">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-center gap-2 font-display">
+    <Card className="text-center bg-card/50 backdrop-blur-sm shadow-lg flex-1">
+      <CardHeader className="p-3 md:p-6">
+        <CardTitle className="flex items-center justify-center gap-2 font-display text-sm md:text-base">
           <Clock className="h-5 w-5" />
-          Time Remaining
+          Time
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <p className={`text-5xl font-bold font-mono transition-colors duration-500 ${timeColor}`}>
+      <CardContent className="p-2 md:p-6 pt-0">
+        <p className={`text-4xl lg:text-5xl font-bold font-mono transition-colors duration-500 ${timeColor}`}>
           {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
         </p>
       </CardContent>
