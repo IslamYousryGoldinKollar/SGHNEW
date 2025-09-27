@@ -5,10 +5,11 @@ import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { Game } from "@/lib/types";
-import { Loader2, Play, Square, RotateCw } from "lucide-react";
+import type { Game, Team } from "@/lib/types";
+import { Loader2, Play, Square, RotateCw, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function DisplayPage() {
     const params = useParams();
@@ -40,8 +41,6 @@ export default function DisplayPage() {
     const handleStartGame = async () => {
         if (!gameId) return;
         const gameRef = doc(db, "games", gameId.toUpperCase());
-        // The full game start logic is handled on the player/admin side.
-        // This is just a remote control to change the status.
         await updateDoc(gameRef, { status: "playing", gameStartedAt: serverTimestamp() });
     };
 
@@ -64,6 +63,76 @@ export default function DisplayPage() {
             gameStartedAt: null,
         });
     };
+
+    const TeamDisplayCard = ({ team }: { team: Team }) => (
+        <Card className="w-full h-full bg-card/50" style={{ borderColor: team.color }}>
+            <CardHeader className="text-center">
+                <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                 <div className="flex items-center justify-center text-muted-foreground mb-4">
+                    <Users className="mr-2 h-5 w-5" /> 
+                    <span className="text-2xl">{team.players.length} / {team.capacity}</span>
+                </div>
+                <ul className="space-y-2 text-lg text-center">
+                    {team.players.map(p => (
+                        <li key={p.id} className="truncate bg-secondary/30 p-2 rounded-md">{p.name}</li>
+                    ))}
+                </ul>
+            </CardContent>
+        </Card>
+    );
+    
+    const renderLobby = () => {
+        if (!game || !joinUrl) return null;
+
+        const teamLeft = game.teams.length > 1 ? game.teams[1] : null;
+        const teamRight = game.teams.length > 0 ? game.teams[0] : null;
+
+        return (
+            <div className="w-full max-w-7xl mx-auto flex items-stretch justify-around gap-8">
+                {/* Left Team */}
+                <div className="w-1/3">
+                    {teamLeft && <TeamDisplayCard team={teamLeft} />}
+                </div>
+
+                {/* Center Content */}
+                <div className="w-1/3 flex flex-col items-center justify-center text-center">
+                    <h2 className="text-4xl font-display text-accent mb-6">Scan to Join</h2>
+                     <div className="bg-white p-6 rounded-lg inline-block shadow-2xl">
+                        <QRCodeSVG value={joinUrl} size={320} />
+                    </div>
+                    <p className="text-xl text-muted-foreground mt-6">Session PIN</p>
+                    <h1 className="text-6xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
+                </div>
+
+                {/* Right Team */}
+                 <div className="w-1/3">
+                    {teamRight && <TeamDisplayCard team={teamRight} />}
+                </div>
+            </div>
+        )
+    }
+
+    const renderGameInProgress = () => {
+         if (!game) return null;
+         const sortedTeams = game.teams ? [...game.teams].sort((a, b) => b.score - a.score) : [];
+
+        return (
+             <div className="w-full max-w-6xl mx-auto text-center">
+                 <h2 className="text-6xl font-display text-accent mb-12">Game in Progress!</h2>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
+                    {sortedTeams.map(team => (
+                        <div key={team.name} className="p-8 border-4 rounded-lg bg-card/50 text-center transition-all duration-500" style={{ borderColor: team.color }}>
+                            <h3 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h3>
+                            <p className="text-8xl font-bold font-mono my-4">{team.score}</p>
+                            <p className="text-muted-foreground">{team.players.length} players</p>
+                        </div>
+                    ))}
+                </div>
+             </div>
+        )
+    }
     
     const renderContent = () => {
         if (loading) {
@@ -73,47 +142,19 @@ export default function DisplayPage() {
             return <h1 className="text-4xl text-destructive">Session Not Found</h1>;
         }
 
-        const sortedTeams = game.teams ? [...game.teams].sort((a, b) => b.score - a.score) : [];
-
         const renderStatus = () => {
             switch(game.status) {
-                case 'lobby': return 'Waiting for players...';
-                case 'starting': return 'Getting ready...';
-                case 'playing': return 'Game in Progress!';
-                case 'finished': return 'Game Over!';
-                default: return game.status;
+                case 'lobby': return renderLobby();
+                case 'starting': return <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">Getting ready...</h2>;
+                case 'playing': return renderGameInProgress();
+                case 'finished': return <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">Game Over!</h2>;
+                default: return <p>{game.status}</p>;
             }
         }
 
         return (
-            <div className="w-full max-w-6xl mx-auto">
-                <div className="text-center mb-12 p-6 bg-primary/10 border-2 border-primary rounded-xl flex items-center justify-around">
-                    <div>
-                        <p className="text-2xl text-muted-foreground">Session PIN</p>
-                        <h1 className="text-8xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
-                    </div>
-                    {joinUrl && (
-                        <div className="text-center">
-                            <p className="text-2xl text-muted-foreground mb-2">Scan to Join</p>
-                            <div className="bg-white p-4 rounded-lg inline-block">
-                                <QRCodeSVG value={joinUrl} size={160} />
-                            </div>
-                        </div>
-                    )}
-                </div>
-                 <h2 className="text-5xl font-display text-accent mt-4 text-center mb-12">{renderStatus()}</h2>
-
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 my-12">
-                    {sortedTeams.map(team => (
-                        <div key={team.name} className="p-8 border-4 rounded-lg bg-card/50 text-center transition-all duration-500" style={{ borderColor: team.color }}>
-                            <h3 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h3>
-                            <p className="text-8xl font-bold font-mono my-4">{team.score}</p>
-                            <p className="text-muted-foreground">{team.players.length} players</p>
-                        </div>
-                    ))}
-                </div>
-
+            <div className="w-full max-w-full">
+                {renderStatus()}
                 <div className="text-center mt-12 space-x-4">
                     {game.status === 'lobby' && (
                         <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl">
@@ -133,7 +174,6 @@ export default function DisplayPage() {
                 </div>
             </div>
         )
-
     }
 
     return (
