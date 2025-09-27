@@ -53,7 +53,6 @@ export default function DisplayPage() {
                 score: 0,
                 players: []
             })),
-            questions: [], // Questions will be regenerated
             gameStartedAt: null,
         });
     };

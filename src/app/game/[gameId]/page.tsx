@@ -235,7 +235,6 @@ export default function GamePage() {
           score: 0, 
           players: [] 
       })),
-      questions: [],
       gameStartedAt: null,
     });
     // Reset local state for the next round
