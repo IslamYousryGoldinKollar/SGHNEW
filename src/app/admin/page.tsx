@@ -59,8 +59,8 @@ export default function AdminDashboard() {
     const newGame: Omit<Game, 'id'> = {
         status: "lobby",
         teams: [
-          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347", coloringCredits: 0 },
-          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4", coloringCredits: 0 },
+          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347" },
+          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4" },
         ],
         questions: [],
         grid: initialGrid,

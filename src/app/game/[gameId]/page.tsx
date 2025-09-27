@@ -119,6 +119,7 @@ export default function GamePage() {
           name: playerName,
           teamName: teamName,
           answeredQuestions: [],
+          coloringCredits: 0,
         };
         
         const updatedTeams = [...currentGame.teams];
@@ -160,8 +161,7 @@ export default function GamePage() {
           gameStartedAt: serverTimestamp(),
           teams: game.teams.map(team => ({
             ...team,
-            players: team.players.map(p => ({ ...p, answeredQuestions: [] })),
-            coloringCredits: 0,
+            players: team.players.map(p => ({ ...p, answeredQuestions: [], coloringCredits: 0 })),
             score: 0
           }))
        });
@@ -201,14 +201,13 @@ export default function GamePage() {
       setView('question');
     }
      if (game?.status === 'playing' && currentPlayer) {
-        const team = game.teams.find(t => t.name === currentPlayer.teamName);
-        if(team && team.coloringCredits > 0) {
+        if(currentPlayer.coloringCredits > 0) {
             setView('grid');
         } else {
             setView('question');
         }
     }
-  }, [game?.status, currentPlayer, currentQuestion, getNextQuestion, game?.teams]);
+  }, [game?.status, currentPlayer, currentQuestion, getNextQuestion]);
 
 
   const handleAnswer = async (question: Question, answer: string) => {
@@ -233,7 +232,7 @@ export default function GamePage() {
         const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
 
         if (isCorrect) {
-            updatedTeams[teamIndex].coloringCredits += 1;
+            playerToUpdate.coloringCredits += 1;
         }
 
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
@@ -262,7 +261,12 @@ export default function GamePage() {
         const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
         if (teamIndex === -1) throw "Team not found!";
         
-        if (currentGame.teams[teamIndex].coloringCredits <= 0) {
+        const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
+        if (playerIndex === -1) throw "Player not found!";
+        
+        const playerToUpdate = currentGame.teams[teamIndex].players[playerIndex];
+        
+        if (playerToUpdate.coloringCredits <= 0) {
             toast({ title: "No credits!", description: "Answer more questions correctly to earn credits.", variant: "destructive" });
             throw "No coloring credits!";
         }
@@ -279,7 +283,7 @@ export default function GamePage() {
         updatedGrid[squareIndex].coloredBy = currentPlayer.teamName;
         
         const updatedTeams = [...currentGame.teams];
-        updatedTeams[teamIndex].coloringCredits -= 1;
+        updatedTeams[teamIndex].players[playerIndex].coloringCredits -= 1;
 
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
       });
@@ -322,7 +326,6 @@ export default function GamePage() {
           color: t.color,
           score: 0, 
           players: [],
-          coloringCredits: 0
       })),
       grid: initialGrid,
       gameStartedAt: null,
@@ -371,14 +374,14 @@ export default function GamePage() {
         const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
         if (!playerTeam) return <p>Error: Your team could not be found.</p>;
         
-        if (view === 'grid' && playerTeam.coloringCredits > 0) {
+        if (view === 'grid' && currentPlayer.coloringCredits > 0) {
              return (
                 <ColorGridScreen 
                     grid={game.grid}
                     teams={game.teams}
                     onColorSquare={handleColorSquare}
                     teamColoring={playerTeam.color}
-                    credits={playerTeam.coloringCredits}
+                    credits={currentPlayer.coloringCredits}
                     onSkip={handleSkipColoring}
                 />
             );

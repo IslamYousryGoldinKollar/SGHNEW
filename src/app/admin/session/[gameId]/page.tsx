@@ -187,7 +187,7 @@ export default function SessionConfigPage() {
     try {
         const gameRef = doc(db, "games", gameId);
         
-        const teams = data.teams.map(t => ({ ...t, score: 0, players: [], coloringCredits: 0 }));
+        const teams = data.teams.map(t => ({ ...t, score: 0, players: [] }));
 
         await updateDoc(gameRef, { 
           timer: data.timer,

@@ -17,6 +17,7 @@ export interface Player {
   name: string;
   teamName: string;
   answeredQuestions: string[]; // Array of question strings they've already answered
+  coloringCredits: number;
 }
 
 export interface GridSquare {
@@ -30,7 +31,6 @@ export interface Team {
   players: Player[];
   capacity: number;
   color: string;
-  coloringCredits: number;
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
