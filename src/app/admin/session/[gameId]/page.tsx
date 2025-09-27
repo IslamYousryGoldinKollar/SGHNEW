@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,9 +15,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { extractQuestionsFromPdfAction } from "@/lib/actions";
 
 const sessionSchema = z.object({
   topic: z.string().min(2, "Topic must be at least 2 characters."),
@@ -85,7 +86,7 @@ function QuestionItem({ control, index, removeQuestion, getValues }: { control: 
               )}
             />
             {optionFields.length < 4 && (
-              <Button type="button" size="sm" variant="outline" onClick={() => appendOption({value: ''})}>Add Option</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => appendOption('')}>Add Option</Button>
             )}
 
             <div className="grid grid-cols-2 gap-4">
@@ -117,6 +118,8 @@ export default function SessionConfigPage() {
   const gameId = params.gameId as string;
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -134,7 +137,7 @@ export default function SessionConfigPage() {
     name: "teams",
   });
 
-  const { fields: questionFields, append: appendQuestion, remove: removeQuestion } = useFieldArray({
+  const { fields: questionFields, append: appendQuestion, remove: removeQuestion, replace: replaceQuestions } = useFieldArray({
     control: form.control,
     name: "questions",
   });
@@ -157,6 +160,49 @@ export default function SessionConfigPage() {
       setLoading(false);
     });
   }, [gameId, form]);
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+        toast({ title: "Invalid File Type", description: "Please upload a PDF file.", variant: "destructive" });
+        return;
+    }
+
+    setIsExtracting(true);
+    try {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+            const pdfDataUri = reader.result as string;
+            const currentTopic = form.getValues('topic');
+
+            const result = await extractQuestionsFromPdfAction({ pdfDataUri, topic: currentTopic });
+            
+            if (result.questions && result.questions.length > 0) {
+                const existingQuestions = form.getValues('questions');
+                replaceQuestions([...existingQuestions, ...result.questions]);
+                toast({ title: "Success", description: `${result.questions.length} questions were extracted from the PDF.` });
+            } else {
+                 toast({ title: "No Questions Found", description: "The AI could not find any valid questions in the PDF.", variant: "destructive" });
+            }
+        };
+        reader.onerror = (error) => {
+            console.error('Error reading file:', error);
+            toast({ title: "File Read Error", description: "There was a problem reading your file.", variant: "destructive" });
+        }
+    } catch(error) {
+        console.error(error);
+        toast({ title: "Extraction Failed", description: "The AI failed to extract questions. Please check the console for errors.", variant: "destructive" });
+    } finally {
+        setIsExtracting(false);
+        // Reset file input
+        if(fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    }
+  };
 
   const onSubmit = async (data: SessionFormValues) => {
     try {
@@ -267,11 +313,18 @@ export default function SessionConfigPage() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Custom Questions</CardTitle>
-                             <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: ['', '', '', ''], answer: '', difficulty: 'medium', topic: form.getValues('topic') })}>
-                                <Plus className="mr-2" /> Add Question
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isExtracting}>
+                                    {isExtracting ? <Loader2 className="mr-2 animate-spin"/> : <Upload className="mr-2"/>}
+                                    Import from PDF
+                                </Button>
+                                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="application/pdf" className="hidden" />
+                                <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: ['', '', '', ''], answer: '', difficulty: 'medium', topic: form.getValues('topic') })}>
+                                    <Plus className="mr-2" /> Add Question
+                                </Button>
+                            </div>
                         </div>
-                        <CardDescription>Add custom multiple-choice questions here. If left empty, questions will be generated by AI.</CardDescription>
+                        <CardDescription>Add custom multiple-choice questions here. You can also import them from a PDF.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {questionFields.map((field, index) => (
@@ -283,7 +336,7 @@ export default function SessionConfigPage() {
                                 getValues={form.getValues}
                             />
                         ))}
-                         {questionFields.length === 0 && <p className="text-muted-foreground text-sm">No custom questions added. AI will generate them based on topic.</p>}
+                         {questionFields.length === 0 && <p className="text-muted-foreground text-sm">No custom questions added. AI will generate them based on topic if left empty.</p>}
                     </CardContent>
                 </Card>
 

@@ -6,6 +6,12 @@ import {
   type CurateTriviaQuestionsOutput,
 } from "@/ai/flows/ai-question-curator";
 
+import {
+  extractQuestionsFromPdf,
+  type ExtractQuestionsFromPdfInput,
+  type ExtractQuestionsFromPdfOutput,
+} from "@/ai/flows/ai-pdf-question-extractor";
+
 export async function generateQuestionsAction(
   input: CurateTriviaQuestionsInput
 ): Promise<CurateTriviaQuestionsOutput> {
@@ -16,5 +22,18 @@ export async function generateQuestionsAction(
     console.error("Error generating questions:", error);
     // Return a structured error or re-throw
     throw new Error("Failed to generate questions via AI flow.");
+  }
+}
+
+
+export async function extractQuestionsFromPdfAction(
+  input: ExtractQuestionsFromPdfInput
+): Promise<ExtractQuestionsFromPdfOutput> {
+  try {
+    const output = await extractQuestionsFromPdf(input);
+    return output;
+  } catch (error) {
+    console.error("Error extracting questions from PDF:", error);
+    throw new Error("Failed to extract questions from PDF via AI flow.");
   }
 }
