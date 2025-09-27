@@ -144,7 +144,7 @@ export default function DisplayPage() {
         )
     }
 
-    const GameGrid = ({ isBackground = false }: { isBackground?: boolean }) => {
+    const GameGrid = () => {
         if (!game || !game.grid) return null;
         const { grid, teams } = game;
         
@@ -154,17 +154,11 @@ export default function DisplayPage() {
         }
 
         return (
-            <div className={cn(
-                "grid grid-cols-10 gap-2",
-                isBackground ? "w-full h-full" : "aspect-square max-w-[60vh] mx-auto"
-            )}>
+            <div className={cn("grid grid-cols-10 gap-2 aspect-square w-full h-full")}>
                 {grid.map(square => (
                     <div 
                         key={square.id}
-                        className={cn(
-                            "transition-colors duration-500",
-                            isBackground ? "" : "rounded-md border-2 border-border"
-                        )}
+                        className="transition-colors duration-500 rounded-md border-2 border-border"
                         style={{ backgroundColor: getTeamColor(square.coloredBy)}}
                     />
                 ))}
@@ -190,16 +184,14 @@ export default function DisplayPage() {
          const teamRight = game.teams.length > 0 ? game.teams[0] : null;
 
         return (
-             <div className="flex-1 w-full relative">
-                <div className="absolute inset-0">
-                    <GameGrid isBackground={true} />
-                </div>
-                <div className="absolute inset-0 flex flex-col items-center justify-start p-8">
-                     <h2 className="text-5xl font-display text-accent mb-6 bg-background/50 px-4 py-2 rounded-lg">Color War</h2>
-                    <div className="w-full flex justify-between items-start">
-                        {teamLeft && <TeamScoreBar team={teamLeft} />}
-                        {teamRight && <TeamScoreBar team={teamRight} />}
+             <div className="flex-1 w-full flex flex-col items-center justify-center p-8">
+                <h2 className="text-5xl font-display text-accent mb-8 bg-background/50 px-4 py-2 rounded-lg">Color War</h2>
+                <div className="w-full flex items-center justify-center gap-8 flex-1">
+                    {teamLeft && <TeamScoreBar team={teamLeft} />}
+                    <div className="h-full w-auto aspect-square max-h-[80vh] max-w-[80vw]">
+                       <GameGrid />
                     </div>
+                    {teamRight && <TeamScoreBar team={teamRight} />}
                 </div>
              </div>
         )
