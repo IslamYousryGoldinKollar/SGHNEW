@@ -127,7 +127,6 @@ export default function GamePage() {
       if (questionsToUse.length === 0) {
         const result = await generateQuestionsAction({
             topic: game.topic || "General Knowledge",
-            difficulty: game.difficulty || "medium",
             numberOfQuestions: 20, // Generate a pool of 20 questions
         });
         if (result.questions) {

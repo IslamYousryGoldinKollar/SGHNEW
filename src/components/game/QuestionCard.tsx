@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -60,10 +61,6 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-2xl lg:text-3xl font-display">{question.question}</CardTitle>
-          <div className="flex gap-2 flex-shrink-0 ml-4">
-            <Badge variant="outline" className="capitalize">{question.difficulty}</Badge>
-            <Badge variant="secondary">{question.topic}</Badge>
-          </div>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-center">

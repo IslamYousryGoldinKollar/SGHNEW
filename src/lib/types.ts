@@ -1,3 +1,4 @@
+
 import type { CurateTriviaQuestionsOutput } from "@/ai/flows/ai-question-curator";
 import type { Timestamp } from "firebase/firestore";
 
@@ -9,8 +10,6 @@ export interface Question {
   question: string;
   options: string[];
   answer: string;
-  difficulty: "easy" | "medium" | "hard";
-  topic: string;
 }
 
 export interface Player {
@@ -38,5 +37,5 @@ export interface Game {
     gameStartedAt?: Timestamp | null;
     timer: number;
     topic: string;
-    difficulty: "easy" | "medium" | "hard";
 }
+

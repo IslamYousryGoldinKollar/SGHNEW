@@ -22,7 +22,6 @@ import { extractQuestionsFromPdfAction } from "@/lib/actions";
 
 const sessionSchema = z.object({
   topic: z.string().min(2, "Topic must be at least 2 characters."),
-  difficulty: z.enum(["easy", "medium", "hard"]),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
   teams: z.array(z.object({
     name: z.string().min(1, "Team name is required."),
@@ -32,8 +31,6 @@ const sessionSchema = z.object({
       question: z.string().min(1, "Question text is required."),
       options: z.array(z.string().min(1, "Option text is required.")).min(2, "At least two options are required.").max(4, "You can have a maximum of 4 options."),
       answer: z.string().min(1, "An answer is required."),
-      difficulty: z.enum(['easy', 'medium', 'hard']),
-      topic: z.string().min(1),
   })),
 });
 
@@ -89,23 +86,6 @@ function QuestionItem({ control, index, removeQuestion, getValues }: { control: 
               <Button type="button" size="sm" variant="outline" onClick={() => appendOption('')}>Add Option</Button>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormField control={control} name={`questions.${index}.difficulty`} render={({ field }) => (
-                  <FormItem><FormLabel>Difficulty</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormItem>
-              )}/>
-              <FormField control={control} name={`questions.${index}.topic`} render={({ field }) => (
-                  <FormItem><FormLabel>Topic</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
-              )}/>
-            </div>
         </div>
     );
 }
@@ -125,7 +105,6 @@ export default function SessionConfigPage() {
     resolver: zodResolver(sessionSchema),
     defaultValues: {
         topic: 'General Knowledge',
-        difficulty: 'medium',
         timer: 300,
         teams: [],
         questions: [],
@@ -151,7 +130,6 @@ export default function SessionConfigPage() {
         setGame(gameData);
         form.reset({
           topic: gameData.topic,
-          difficulty: gameData.difficulty,
           timer: gameData.timer,
           teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity })),
           questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
@@ -212,7 +190,6 @@ export default function SessionConfigPage() {
 
         await updateDoc(gameRef, { 
           topic: data.topic,
-          difficulty: data.difficulty,
           timer: data.timer,
           teams: teams,
           questions: data.questions 
@@ -253,25 +230,11 @@ export default function SessionConfigPage() {
               
               <Card className="bg-card/50">
                 <CardHeader><CardTitle>General Settings</CardTitle></CardHeader>
-                <CardContent className="grid md:grid-cols-3 gap-6">
+                <CardContent className="grid md:grid-cols-2 gap-6">
                     <FormField control={form.control} name="topic" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Topic (for AI Questions)</FormLabel>
                             <FormControl><Input {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )} />
-                    <FormField control={form.control} name="difficulty" render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Difficulty</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                <SelectContent>
-                                    <SelectItem value="easy">Easy</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="hard">Hard</SelectItem>
-                                </SelectContent>
-                            </Select>
                             <FormMessage />
                         </FormItem>
                     )} />
@@ -319,7 +282,7 @@ export default function SessionConfigPage() {
                                     Import from PDF
                                 </Button>
                                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="application/pdf" className="hidden" />
-                                <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: ['', '', '', ''], answer: '', difficulty: 'medium', topic: form.getValues('topic') })}>
+                                <Button type="button" variant="outline" size="sm" onClick={() => appendQuestion({ question: '', options: ['', '', '', ''], answer: '' })}>
                                     <Plus className="mr-2" /> Add Question
                                 </Button>
                             </div>
@@ -351,4 +314,3 @@ export default function SessionConfigPage() {
     </div>
   );
 }
-

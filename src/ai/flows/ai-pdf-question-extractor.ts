@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -23,10 +24,6 @@ const QuestionSchema = z.object({
     .describe(
       'The correct answer to the question. This must be one of the strings in the options array.'
     ),
-  difficulty: z
-    .enum(['easy', 'medium', 'hard'])
-    .describe('The difficulty level of the question.'),
-  topic: z.string().describe('The topic of the question.'),
 });
 
 const ExtractQuestionsFromPdfInputSchema = z.object({
@@ -64,13 +61,10 @@ const prompt = ai.definePrompt({
   output: {schema: ExtractQuestionsFromPdfOutputSchema},
   prompt: `You are an expert data extractor. Your task is to analyze the provided PDF document and extract all the multiple-choice trivia questions you can find.
 
-The user has specified that the general topic for these questions is '{{topic}}'. You should use this as the topic for the extracted questions unless the document specifies a different topic for a particular question.
-
 For each question, you must identify:
 - The question itself.
 - The available options (must be between 2 and 4).
 - The correct answer. The 'answer' field must exactly match one of the options.
-- The difficulty level ('easy', 'medium', 'hard'). If the difficulty is not specified, make a reasonable guess based on the question's content.
 
 The PDF document is provided below:
 {{media url=pdfDataUri}}

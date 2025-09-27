@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -59,7 +60,6 @@ export default function AdminDashboard() {
         gameStartedAt: null,
         timer: 300, // 5 minutes default
         topic: "General Knowledge",
-        difficulty: "medium",
     };
 
     await setDoc(gameRef, newGame);
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
     if (window.confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
         try {
             await deleteDoc(doc(db, "games", gameId));
-            // The onSnapshot listener will automatically update the UI.
+            setSessions(prevSessions => prevSessions.filter(s => s.id !== gameId));
         } catch (err) {
             console.error("Failed to delete session:", err);
             alert("Failed to delete session.");
