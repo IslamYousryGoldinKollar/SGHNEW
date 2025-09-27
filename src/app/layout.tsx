@@ -19,7 +19,7 @@ export default function RootLayout({
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} dark`}>
       <body className="font-sans antialiased min-h-screen">
         <Header />
-        <main className="flex-1 flex flex-col">{children}</main>
+        <main>{children}</main>
         <Toaster />
       </body>
     </html>
