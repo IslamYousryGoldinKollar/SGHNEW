@@ -57,6 +57,7 @@ export default function AdminDashboard() {
 
     // Default structure for a new game
     const newGame: Omit<Game, 'id'> = {
+        title: "Trivia Titans",
         status: "lobby",
         teams: [
           { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347" },
@@ -125,15 +126,18 @@ export default function AdminDashboard() {
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
-                                <span>Session: {session.id}</span>
+                                <span>{session.title || 'Trivia Titans'}</span>
                                 <span className="text-sm px-2 py-1 rounded-md bg-secondary text-secondary-foreground">{session.status}</span>
                             </CardTitle>
                             <CardDescription>
-                                {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + t.players.length, 0) || 0} players
+                                PIN: {session.id}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            <Button className="w-full" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
+                             <p className="text-sm text-muted-foreground">
+                                {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + t.players.length, 0) || 0} players
+                            </p>
+                            <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                 <Eye className="mr-2"/>
                                 Open Big Screen
                             </Button>

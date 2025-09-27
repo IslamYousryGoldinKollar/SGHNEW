@@ -28,6 +28,7 @@ const themes: {value: GameTheme, label: string}[] = [
 ];
 
 const sessionSchema = z.object({
+  title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
   teams: z.array(z.object({
     name: z.string().min(1, "Team name is required."),
@@ -113,6 +114,7 @@ export default function SessionConfigPage() {
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
+        title: "Trivia Titans",
         timer: 300,
         teams: [],
         questions: [],
@@ -139,6 +141,7 @@ export default function SessionConfigPage() {
         const gameData = docSnap.data() as Game;
         setGame(gameData);
         form.reset({
+          title: gameData.title || "Trivia Titans",
           timer: gameData.timer,
           teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff' })),
           questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
@@ -199,7 +202,8 @@ export default function SessionConfigPage() {
         
         const teams = data.teams.map(t => ({ ...t, score: 0, players: [] }));
 
-        await updateDoc(gameRef, { 
+        await updateDoc(gameRef, {
+          title: data.title,
           timer: data.timer,
           teams: teams,
           questions: data.questions,
@@ -243,6 +247,13 @@ export default function SessionConfigPage() {
               <Card>
                 <CardHeader><CardTitle>General Settings</CardTitle></CardHeader>
                 <CardContent className="grid md:grid-cols-3 gap-6">
+                    <FormField control={form.control} name="title" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Game Title</FormLabel>
+                            <FormControl><Input {...field} /></FormControl>
+                             <FormMessage />
+                        </FormItem>
+                    )} />
                     <FormField control={form.control} name="timer" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Game Timer (seconds)</FormLabel>

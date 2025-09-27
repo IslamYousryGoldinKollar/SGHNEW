@@ -38,6 +38,7 @@ export type GameTheme = "default" | "sunset" | "ocean" | "forest";
 
 export interface Game {
     id: string; // The game PIN
+    title: string;
     status: GameStatus;
     teams: Team[];
     questions: Question[];

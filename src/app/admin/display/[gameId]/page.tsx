@@ -213,7 +213,7 @@ export default function DisplayPage() {
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
                     <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
-                        <h2 className="text-4xl font-display text-accent mb-6">Scan to Join</h2>
+                        <h2 className="text-4xl font-display text-accent mb-6">{game.title || 'Scan to Join'}</h2>
                          <div className="bg-white p-4 rounded-lg inline-block">
                             <QRCodeSVG value={joinUrl} size={256} />
                         </div>
@@ -251,12 +251,16 @@ export default function DisplayPage() {
          const teamRight = game.teams.length > 1 ? game.teams[1] : null;
 
         return (
-             <div className="flex-1 w-full h-full flex items-center justify-between p-8 relative">
-                {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
-                <div className="absolute inset-0 w-full h-full">
+             <div className="flex-1 w-full h-full flex items-center justify-center p-8 relative">
+                <div className="absolute left-8 top-1/2 -translate-y-1/2">
+                    {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
+                </div>
+                <div className="w-[80%] h-[80%]">
                    <HexGrid grid={game.grid} teams={game.teams} />
                 </div>
-                {teamRight && <TeamScorePod team={teamRight} alignment="right" />}
+                <div className="absolute right-8 top-1/2 -translate-y-1/2">
+                    {teamRight && <TeamScorePod team={teamRight} alignment="right" />}
+                </div>
              </div>
         )
     }
