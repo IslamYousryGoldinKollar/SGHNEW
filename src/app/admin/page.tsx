@@ -14,7 +14,7 @@ import type { Game, GridSquare } from "@/lib/types";
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-const GRID_SIZE = 100; // 10x10 grid
+const GRID_SIZE = 22; // Based on the number of hexagons in the SVG
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -162,3 +162,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    

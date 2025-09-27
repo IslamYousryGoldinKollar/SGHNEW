@@ -329,7 +329,7 @@ export default function GamePage() {
 
   const handlePlayAgain = async () => {
     if (!game) return;
-    const initialGrid: GridSquare[] = Array.from({ length: 100 }, (_, i) => ({ id: i, coloredBy: null }));
+    const initialGrid: GridSquare[] = Array.from({ length: 22 }, (_, i) => ({ id: i, coloredBy: null }));
     
     await updateDoc(doc(db, "games", GAME_ID), {
       status: "lobby",

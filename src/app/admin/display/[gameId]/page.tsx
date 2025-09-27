@@ -6,89 +6,13 @@ import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Game, Team, GridSquare } from "@/lib/types";
-import { Loader2, Play, Square, RotateCw, Users, Shield, Trophy } from "lucide-react";
+import { Loader2, Play, Square, RotateCw, Users, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-
-
-// --- Hex Grid Components ---
-
-const HEX_SIZE = 40; // Size of the hexagon
-
-const Hexagon = ({ q, r, coloredBy, teamColor, onClick }: { q: number, r: number, coloredBy: string | null, teamColor: string | undefined, onClick: () => void }) => {
-  const x = HEX_SIZE * (3 / 2 * q);
-  const y = HEX_SIZE * (Math.sqrt(3) / 2 * q + Math.sqrt(3) * r);
-  
-  const points = [
-    [HEX_SIZE, 0],
-    [HEX_SIZE / 2, (HEX_SIZE * Math.sqrt(3)) / 2],
-    [-HEX_SIZE / 2, (HEX_SIZE * Math.sqrt(3)) / 2],
-    [-HEX_SIZE, 0],
-    [-HEX_SIZE / 2, (-HEX_SIZE * Math.sqrt(3)) / 2],
-    [HEX_SIZE / 2, (-HEX_SIZE * Math.sqrt(3)) / 2],
-  ].map(p => `${p[0]},${p[1]}`).join(' ');
-
-  return (
-    <g transform={`translate(${x}, ${y})`} onClick={onClick}>
-      <polygon
-        points={points}
-        className={cn(
-            "stroke-black/10 stroke-2 transition-all duration-500",
-            coloredBy ? "opacity-100" : "opacity-40 hover:opacity-70"
-        )}
-        style={{ fill: coloredBy ? teamColor : '#ffffff80' }}
-      />
-    </g>
-  );
-};
-
-const HexGrid = ({ grid, teams }: { grid: GridSquare[], teams: Team[] }) => {
-    const GRID_WIDTH = 12; // in hexes
-    const GRID_HEIGHT = 12; // in hexes
-
-    const getTeamColor = (teamName: string | null) => {
-        if (!teamName) return undefined;
-        return teams.find(t => t.name === teamName)?.color;
-    }
-
-    const hexes = [];
-    let i = 0;
-    for (let r = -Math.floor(GRID_HEIGHT / 2); r < Math.ceil(GRID_HEIGHT / 2); r++) {
-        for (let q = -Math.floor(GRID_WIDTH / 2); q < Math.ceil(GRID_WIDTH / 2); q++) {
-             if (Math.abs(q + r) > GRID_WIDTH/2 + 2) continue; // Create a rough hexagonal shape for the grid
-             const square = grid[i % grid.length]; // Use modulo to prevent out of bounds
-             if (square) {
-                hexes.push(
-                    <Hexagon
-                        key={`${q},${r}`}
-                        q={q}
-                        r={r}
-                        coloredBy={square.coloredBy}
-                        teamColor={getTeamColor(square.coloredBy)}
-                        onClick={() => {}}
-                    />
-                );
-             }
-             i++;
-        }
-    }
-
-
-    return (
-        <div className="w-full h-full flex items-center justify-center">
-            <svg viewBox="-450 -400 900 800" className="w-full h-full drop-shadow-2xl">
-                 <g>
-                    {hexes}
-                 </g>
-            </svg>
-        </div>
-    );
-}
-
-// --- End Hex Grid Components ---
+import HexMap from "@/components/game/HexMap";
 
 
 export default function DisplayPage() {
@@ -151,7 +75,7 @@ export default function DisplayPage() {
         if (!game) return;
         const gameRef = doc(db, "games", gameId.toUpperCase());
         
-        const initialGrid: GridSquare[] = Array.from({ length: 100 }, (_, i) => ({
+        const initialGrid: GridSquare[] = Array.from({ length: 22 }, (_, i) => ({
             id: i,
             coloredBy: null,
         }));
@@ -255,8 +179,8 @@ export default function DisplayPage() {
                 <div className="absolute left-8 top-1/2 -translate-y-1/2">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
-                <div className="w-[80%] h-[80%]">
-                   <HexGrid grid={game.grid} teams={game.teams} />
+                <div className="w-[60vh] h-[60vh] max-w-[80vw] max-h-[80vh]">
+                   <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
                 </div>
                 <div className="absolute right-8 top-1/2 -translate-y-1/2">
                     {teamRight && <TeamScorePod team={teamRight} alignment="right" />}
@@ -336,5 +260,7 @@ export default function DisplayPage() {
             {renderContent()}
         </div>
     );
+
+    }
 
     
