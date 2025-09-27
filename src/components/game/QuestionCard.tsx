@@ -57,7 +57,7 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
   }
 
   return (
-    <Card className={cn("h-full flex flex-col transition-all duration-300 bg-card/50")}>
+    <Card className={cn("h-full flex flex-col transition-all duration-300")}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-2xl lg:text-3xl font-display">{question.question}</CardTitle>

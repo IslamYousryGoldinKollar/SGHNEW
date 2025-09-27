@@ -33,7 +33,7 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsSc
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl my-12">
         {sortedTeams.map((team, index) => (
-          <Card key={team.name} className={cn("shadow-lg bg-card/50", index === 0 && !isTie ? "border-2" : "")} style={{borderColor: index === 0 && !isTie ? team.color : 'hsl(var(--border))' }}>
+          <Card key={team.name} className={cn("shadow-lg", index === 0 && !isTie ? "border-2" : "")} style={{borderColor: index === 0 && !isTie ? team.color : 'hsl(var(--border))' }}>
             <CardHeader>
               <CardTitle className="text-2xl font-display" style={{color: team.color}}>{team.name}</CardTitle>
             </CardHeader>

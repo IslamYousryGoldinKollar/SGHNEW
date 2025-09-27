@@ -34,6 +34,7 @@ export interface Team {
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
+export type GameTheme = "default" | "sunset" | "ocean" | "forest";
 
 export interface Game {
     id: string; // The game PIN
@@ -45,4 +46,5 @@ export interface Game {
     gameStartedAt?: Timestamp | null;
     timer: number;
     topic: string;
+    theme?: GameTheme;
 }

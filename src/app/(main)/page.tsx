@@ -60,7 +60,7 @@ export default function LandingPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-        <Card className="bg-card/50">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="text-accent" />
@@ -85,7 +85,7 @@ export default function LandingPage() {
           </CardFooter>
         </Card>
 
-        <Card className="bg-card/50">
+        <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="text-accent" />

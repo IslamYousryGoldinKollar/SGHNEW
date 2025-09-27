@@ -93,7 +93,7 @@ export default function DisplayPage() {
     };
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
-        <Card className="w-full h-full bg-card/50 flex flex-col" style={{ borderColor: team.color }}>
+        <Card className="w-full h-full flex flex-col" style={{ borderColor: team.color }}>
             <CardHeader className="text-center flex-shrink-0">
                 <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
                  <div className="flex items-center justify-center text-muted-foreground pt-2">

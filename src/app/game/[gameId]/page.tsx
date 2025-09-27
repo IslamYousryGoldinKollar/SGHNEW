@@ -30,6 +30,16 @@ export default function GamePage() {
   const [view, setView] = useState<'question' | 'grid'>('question');
 
   useEffect(() => {
+    // Apply theme from game data
+    if (game?.theme) {
+      document.documentElement.setAttribute('data-theme', game.theme);
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [game?.theme]);
+
+
+  useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setAuthUser(user);

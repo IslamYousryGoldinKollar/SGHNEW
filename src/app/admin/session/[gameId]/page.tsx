@@ -8,17 +8,24 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
-import type { Game } from "@/lib/types";
+import type { Game, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Trash2, Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
+
+const themes: {value: GameTheme, label: string}[] = [
+    { value: 'default', label: 'Default' },
+    { value: 'sunset', label: 'Sunset' },
+    { value: 'ocean', label: 'Ocean' },
+    { value: 'forest', label: 'Forest' },
+];
 
 const sessionSchema = z.object({
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
@@ -33,6 +40,7 @@ const sessionSchema = z.object({
       answer: z.string().min(1, "An answer is required."),
   })),
   topic: z.string(),
+  theme: z.enum(["default", "sunset", "ocean", "forest"]),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
@@ -109,6 +117,7 @@ export default function SessionConfigPage() {
         teams: [],
         questions: [],
         topic: "General Knowledge",
+        theme: "default",
     }
   });
   
@@ -134,6 +143,7 @@ export default function SessionConfigPage() {
           teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff' })),
           questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
           topic: gameData.topic,
+          theme: gameData.theme || 'default',
         });
       }
       setLoading(false);
@@ -194,6 +204,7 @@ export default function SessionConfigPage() {
           teams: teams,
           questions: data.questions,
           topic: data.topic,
+          theme: data.theme,
         });
 
         toast({
@@ -229,9 +240,9 @@ export default function SessionConfigPage() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               
-              <Card className="bg-card/50">
+              <Card>
                 <CardHeader><CardTitle>General Settings</CardTitle></CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-6">
+                <CardContent className="grid md:grid-cols-3 gap-6">
                     <FormField control={form.control} name="timer" render={({ field }) => (
                         <FormItem>
                             <FormLabel>Game Timer (seconds)</FormLabel>
@@ -246,10 +257,29 @@ export default function SessionConfigPage() {
                              <FormMessage />
                         </FormItem>
                     )} />
+                    <FormField control={form.control} name="theme" render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Session Theme</FormLabel>
+                             <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a theme" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    {themes.map(theme => (
+                                        <SelectItem key={theme.value} value={theme.value}>{theme.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <FormDescription>Customize the look and feel of the game.</FormDescription>
+                             <FormMessage />
+                        </FormItem>
+                    )} />
                 </CardContent>
               </Card>
 
-                <Card className="bg-card/50">
+                <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Teams</CardTitle>
@@ -276,7 +306,7 @@ export default function SessionConfigPage() {
                     </CardContent>
                 </Card>
 
-                <Card className="bg-card/50">
+                <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Custom Questions</CardTitle>

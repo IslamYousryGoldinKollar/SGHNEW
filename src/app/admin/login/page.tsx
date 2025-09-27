@@ -63,7 +63,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center justify-center">
-      <Card className="w-full max-w-sm bg-card/50">
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-display">Admin Login</CardTitle>
           <CardDescription>Enter your admin credentials to manage games.</CardDescription>

@@ -68,6 +68,7 @@ export default function AdminDashboard() {
         gameStartedAt: null,
         timer: 300, // 5 minutes default
         topic: "General Knowledge",
+        theme: "default",
     };
 
     await setDoc(gameRef, newGame);
@@ -121,7 +122,7 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => (
-                    <Card key={session.id} className="bg-card/50 flex flex-col">
+                    <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
                                 <span>Session: {session.id}</span>

@@ -22,7 +22,7 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 text-center">
-        <Card className="w-full max-w-2xl bg-card/50">
+        <Card className="w-full max-w-2xl">
             <CardHeader>
                 <CardTitle className="font-display text-3xl" style={{color: teamColoring}}>Claim Your Territory!</CardTitle>
                 <CardDescription>You have {credits} credit{credits !== 1 && 's'}. Click a square to claim it for your team.</CardDescription>

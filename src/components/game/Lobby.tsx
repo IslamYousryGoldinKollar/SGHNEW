@@ -32,7 +32,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
   }
 
   const TeamCard = ({ team }: { team: Team }) => (
-    <Card className="flex flex-col bg-card/50">
+    <Card className="flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center justify-between font-display">
           <span>{team.name}</span>

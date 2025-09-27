@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -47,7 +48,7 @@ export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps
   const timeColor = timeLeft <= 10 ? "text-red-500" : timeLeft <= 30 ? "text-yellow-400" : "text-primary";
 
   return (
-    <Card className="text-center bg-card/50 backdrop-blur-sm shadow-lg flex-1">
+    <Card className="text-center backdrop-blur-sm shadow-lg flex-1">
       <CardHeader className="p-3 md:p-6">
         <CardTitle className="flex items-center justify-center gap-2 font-display text-sm md:text-base">
           <Clock className="h-5 w-5" />
