@@ -12,7 +12,7 @@ export default function DisplayLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="bg-background text-foreground h-screen">
+    <div className="bg-background text-foreground h-screen w-screen overflow-hidden">
         {children}
     </div>
   );

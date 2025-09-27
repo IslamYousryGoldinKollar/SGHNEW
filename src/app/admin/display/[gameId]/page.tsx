@@ -58,7 +58,9 @@ export default function DisplayPage() {
         await updateDoc(gameRef, {
             status: "lobby",
             teams: game.teams.map(t => ({
-                ...t,
+                name: t.name,
+                color: t.color,
+                capacity: t.capacity,
                 score: 0,
                 players: []
             })),
@@ -157,7 +159,7 @@ export default function DisplayPage() {
         }
 
         return (
-            <div className="w-full h-full flex flex-col justify-center p-8">
+            <div className="w-full h-full flex flex-col p-8">
                 <div className="flex-1 flex flex-col justify-center min-h-0">
                     {renderStatus()}
                 </div>
