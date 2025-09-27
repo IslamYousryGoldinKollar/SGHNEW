@@ -38,13 +38,14 @@ const CurateTriviaQuestionsOutputSchema = z.object({
   questions: z.array(
     z.object({
       question: z.string().describe('The trivia question.'),
-      answer: z.string().describe('The correct answer to the question.'),
+      options: z.array(z.string()).describe('An array of 4 possible answers, one of which is correct.'),
+      answer: z.string().describe('The correct answer to the question. This must be one of the strings in the options array.'),
       difficulty: z
         .enum(['easy', 'medium', 'hard'])
         .describe('The difficulty level of the question.'),
       topic: z.string().describe('The topic of the question.'),
     })
-  ).describe('An array of curated trivia questions.'),
+  ).describe('An array of curated multiple-choice trivia questions.'),
 });
 export type CurateTriviaQuestionsOutput = z.infer<
   typeof CurateTriviaQuestionsOutputSchema
@@ -60,7 +61,7 @@ const curateTriviaQuestionsPrompt = ai.definePrompt({
   name: 'curateTriviaQuestionsPrompt',
   input: {schema: CurateTriviaQuestionsInputSchema},
   output: {schema: CurateTriviaQuestionsOutputSchema},
-  prompt: `You are an expert trivia question curator. Your task is to generate {{numberOfQuestions}} trivia questions based on the following criteria:
+  prompt: `You are an expert trivia question curator. Your task is to generate {{numberOfQuestions}} multiple-choice trivia questions based on the following criteria:
 
 Topic: {{topic}}
 Difficulty: {{difficulty}}
@@ -70,12 +71,15 @@ Player Engagement Metrics: {{playerEngagementMetrics}}
 Use these metrics to tailor the questions to maximize player engagement.
 {{/if}}
 
-Each question should be relevant to the topic, appropriate for the specified difficulty level, and engaging for players.  The output must be a valid JSON array of question objects.
+Each question should have exactly 4 options. One of the options must be the correct answer. The 'answer' field must exactly match one of the strings in the 'options' array.
+
+The output must be a valid JSON array of question objects.
 
 Here's the schema for each question:
 {
   question: string, // The trivia question.
-  answer: string, // The correct answer to the question.
+  options: string[], // An array of 4 possible answers.
+  answer: string, // The correct answer, which must be in the options array.
   difficulty: 'easy' | 'medium' | 'hard', // The difficulty level of the question.
   topic: string // The topic of the question.
 }

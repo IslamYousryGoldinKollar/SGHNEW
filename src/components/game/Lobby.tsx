@@ -17,6 +17,19 @@ type LobbyProps = {
 
 export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
   const [playerName, setPlayerName] = useState("");
+  // The new fields required by the user
+  const [surname, setSurname] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+
+
+  const handleJoin = (teamName: string) => {
+    if (!playerName.trim() || !surname.trim() || !idNumber.trim()) {
+        alert("Please fill in your name, surname, and ID number.");
+        return;
+    }
+    const fullName = `${playerName.trim()} ${surname.trim()}`;
+    onJoinTeam(fullName, teamName);
+  }
 
   const TeamCard = ({ team }: { team: Team }) => (
     <Card className="flex flex-col bg-card/50">
@@ -71,23 +84,40 @@ export default function Lobby({ teams, onJoinTeam, onStartGame, currentPlayer, i
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1">
       <h1 className="text-5xl font-bold font-display">Join the Battle</h1>
-      <p className="text-muted-foreground mt-2 max-w-xl">Enter your name, choose a team, and get ready to prove your knowledge.</p>
+      <p className="text-muted-foreground mt-2 max-w-xl">Enter your details, choose a team, and get ready to prove your knowledge.</p>
       
-      <div className="my-8 w-full max-w-md">
+      <div className="my-8 w-full max-w-md space-y-4">
         <Input
           type="text"
-          placeholder="Enter your name"
+          placeholder="Enter your first name"
           value={playerName}
           onChange={(e) => setPlayerName(e.target.value)}
           className="text-lg p-6 w-full text-center"
-          aria-label="Player Name"
+          aria-label="Player First Name"
         />
+        <Input
+          type="text"
+          placeholder="Enter your surname"
+          value={surname}
+          onChange={(e) => setSurname(e.target.value)}
+          className="text-lg p-6 w-full text-center"
+          aria-label="Player Surname"
+        />
+        <Input
+          type="text"
+          placeholder="Enter your ID number"
+          value={idNumber}
+          onChange={(e) => setIdNumber(e.target.value)}
+          className="text-lg p-6 w-full text-center"
+          aria-label="Player ID Number"
+        />
+
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {teams.map((team) => (
             <Button 
                 key={team.name} 
-                onClick={() => onJoinTeam(playerName, team.name)} 
-                disabled={!playerName.trim() || team.players.length >= team.capacity}
+                onClick={() => handleJoin(team.name)} 
+                disabled={!playerName.trim() || !surname.trim() || !idNumber.trim() || team.players.length >= team.capacity}
                 size="lg"
             >
                 Join {team.name}
