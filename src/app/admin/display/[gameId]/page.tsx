@@ -120,7 +120,7 @@ export default function DisplayPage() {
         const teamRight = game.teams.length > 0 ? game.teams[0] : null;
 
         return (
-            <div className="flex-1 w-full max-w-full flex items-stretch justify-around gap-8">
+            <div className="flex-1 w-full max-w-full flex items-end justify-around gap-8">
                 {/* Left Team */}
                 <div className="w-1/3 flex">
                     {teamLeft && <TeamDisplayCard team={teamLeft} />}
@@ -244,10 +244,10 @@ export default function DisplayPage() {
         return (
             <div className="w-full h-full flex flex-col relative">
                 <GameOverOverlay />
-                <div className="flex-1 flex flex-col justify-start min-h-0 pt-[2%] pb-4 px-8">
+                <div className="flex-1 flex flex-col justify-start min-h-0 pt-[2%] pb-8 px-8">
                     {renderStatus()}
                 </div>
-                <div className="text-center pb-4 flex-shrink-0">
+                <div className="text-center pb-8 flex-shrink-0">
                     {game.status === 'lobby' && (
                         <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl">
                             <Play className="mr-4"/> Start Game
