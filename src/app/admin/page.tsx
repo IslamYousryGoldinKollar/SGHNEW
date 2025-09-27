@@ -106,7 +106,7 @@ export default function AdminDashboard() {
                 {sessions.map(session => (
                     <Card key={session.id} className="bg-card/50 flex flex-col">
                         <CardHeader>
-                            <CardTitle className="flex justify-between items-center">
+                            <CardTitle className="flex justify-between items-start">
                                 <span>Session: {session.id}</span>
                                 <span className="text-sm px-2 py-1 rounded-md bg-secondary text-secondary-foreground">{session.status}</span>
                             </CardTitle>
