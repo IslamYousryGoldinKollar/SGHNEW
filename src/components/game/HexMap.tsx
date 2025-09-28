@@ -68,21 +68,19 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                     {hexPaths.map((path, index) => {
                         const square = grid.find(s => s.id === index);
                         const isColored = !!square?.coloredBy;
-                        const isDisabled = isColored || !isClickable;
-
+                        
                         return (
                             <path
                                 key={index}
                                 d={path}
                                 data-hex-id={index}
-                                onClick={(e) => !isDisabled && onHexClick(index, e)}
+                                onClick={(e) => isClickable && onHexClick(index, e)}
                                 fill={getTeamColor(square?.coloredBy || null)}
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
                                     "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
-                                    isClickable && "pointer-events-auto",
-                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30",
-                                    isClickable && isColored && "cursor-pointer"
+                                    isClickable && "pointer-events-auto cursor-pointer",
+                                    isClickable && !isColored && "hover:stroke-primary hover:fill-white/30"
                                 )}
                             />
                         );
@@ -96,3 +94,5 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
+
+    
