@@ -33,6 +33,7 @@ const hexPaths = [
     "M1004 530.3 1004 598.8 1181.9 676.8 1359.9 598.8 1359.9 530.3 1181.9 452.2 1004 530.3"
 ];
 
+// The correct, clean base URL for the storage bucket.
 const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.appspot.com/o/assets%2F";
 
 // This map correctly assigns the image number to the index of the hex path in the array above.
