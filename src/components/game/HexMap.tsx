@@ -43,9 +43,9 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     const isClickable = !!onHexClick;
     
     return (
-        <div className="relative w-full aspect-[2048/2048]">
+        <div className="relative w-full h-full">
             <Image
-                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fjffj.png?alt=media&token=656867cc-387c-4dfb-9e21-f17b65b8c50a"
+                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fland%20v4.png?alt=media&token=525dcb7b-164c-4d67-9a41-cc2f41ed40f5"
                 alt="Game Map"
                 fill
                 className="object-contain"
