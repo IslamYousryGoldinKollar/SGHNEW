@@ -2,7 +2,6 @@
 import type { GridSquare, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import placeholderImages from "@/lib/placeholder-images.json";
 
 const hexPaths = [
     "M826 969.8 826 1038.2 1004 1116.3 1181.9 1038.2 1181.9 969.8 1004 891.7 826 969.8",
@@ -42,16 +41,16 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     };
 
     const isClickable = !!onHexClick;
-    const { mapBackground } = placeholderImages;
+    const mapImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FLayer%201.png?alt=media&token=9db343de-a221-41c3-a494-0d4b7445b3c2";
     
     return (
         <div className="relative w-full h-full">
             <Image
-                src={mapBackground.src}
-                alt={mapBackground.alt}
+                src={mapImageUrl}
+                alt="Island map background"
                 fill
-                className="object-cover"
-                data-ai-hint={mapBackground['data-ai-hint']}
+                className="object-contain"
+                data-ai-hint="island map"
             />
             <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg">
                 {hexPaths.map((path, index) => {
