@@ -5,9 +5,8 @@ import { useState, useEffect } from "react";
 import type { Question } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, XCircle, Lightbulb, Loader2, ChevronRight } from "lucide-react";
+import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 
 type QuestionCardProps = {
   question: Question;
@@ -38,11 +37,6 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     
     // The backend call
     onAnswer(question, option);
-    
-    // Wait for feedback animation before telling parent to get next question
-    setTimeout(() => {
-      onNextQuestion();
-    }, 1500);
   };
 
   const getButtonClass = (option: string) => {
@@ -51,14 +45,14 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     const isCorrectAnswer = option.toLowerCase() === question.answer.toLowerCase();
     const isSelectedAnswer = option.toLowerCase() === selectedAnswer?.toLowerCase();
 
-    if (isCorrectAnswer) return "bg-green-500/20 border-green-500 hover:bg-green-500/30 animate-pulse";
-    if (isSelectedAnswer && !isCorrectAnswer) return "bg-red-500/20 border-red-500 hover:bg-red-500/30";
+    if (isCorrectAnswer) return "bg-green-500 border-green-600 text-white hover:bg-green-500 animate-pulse";
+    if (isSelectedAnswer && !isCorrectAnswer) return "bg-red-500 border-red-600 text-white hover:bg-red-500";
 
-    return "border-primary/20 opacity-50";
+    return "border-gray-300 bg-gray-100 text-gray-400 opacity-60";
   }
 
   return (
-    <Card className={cn("h-full flex flex-col transition-all duration-300")}>
+    <Card className={cn("h-full flex flex-col transition-all duration-300 relative")}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-2xl lg:text-3xl font-display">{question.question}</CardTitle>
@@ -80,31 +74,29 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
             </Button>
           ))}
         </div>
-        
+      </CardContent>
+
         {feedback !== 'idle' && (
-           <div className="text-center mt-6 space-y-4 animate-in fade-in duration-500">
+           <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 space-y-4 animate-in fade-in duration-300">
              {feedback === 'correct' && (
-               <div className="flex justify-center items-center gap-2 text-green-400">
-                 <CheckCircle2 className="h-8 w-8" />
-                 <p className="text-2xl font-bold">Correct!</p>
+               <div className="flex flex-col items-center gap-2 text-green-500">
+                 <CheckCircle2 className="h-24 w-24" />
+                 <p className="text-4xl font-bold font-display">Correct!</p>
                </div>
              )}
              {feedback === 'incorrect' && (
-               <div className="flex flex-col items-center gap-2 text-red-400">
-                 <XCircle className="h-8 w-8" />
-                 <p className="text-2xl font-bold">Incorrect!</p>
+               <div className="flex flex-col items-center gap-2 text-red-500">
+                 <XCircle className="h-24 w-24" />
+                 <p className="text-4xl font-bold font-display">Incorrect!</p>
+                  <p className="text-lg text-muted-foreground">The correct answer was: <span className="font-bold text-foreground">{question.answer}</span></p>
                </div>
              )}
-              <div className="flex justify-center items-center gap-2 text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin"/>
-                <span>Loading next question...</span>
-                <Button variant="ghost" size="sm" onClick={onNextQuestion} className="ml-4">
-                    Next Question <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
+              <Button size="lg" onClick={onNextQuestion} className="mt-8">
+                  Next Question <ChevronRight className="w-5 h-5 ml-2" />
+              </Button>
            </div>
         )}
-      </CardContent>
     </Card>
   );
 }
+
