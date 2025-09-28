@@ -55,18 +55,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                 className="object-contain"
                 priority
             />
-            <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full" style={{filter: 'drop-shadow(0px 4px 4px #3b82f6)'}}>
-                <defs>
-                    <filter id="inner-shadow" x="-50%" y="-50%" width="200%" height="200%">
-                        <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
-                        <feOffset dy="0" dx="0" />
-                        <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="shadowDiff" />
-                        <feFlood floodColor="#ffffff" floodOpacity="0.75" />
-                        <feComposite in2="shadowDiff" operator="in" />
-                        <feComposite in2="SourceGraphic" operator="over" result="firstPass"/>
-                        <feBlend in="firstPass" in2="SourceGraphic" mode="overlay" />
-                    </filter>
-                </defs>
+            <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full">
                 <g transform="scale(0.92) translate(85, 170)">
                     {hexPaths.map((path, index) => {
                         const square = grid.find(s => s.id === index);
@@ -81,13 +70,11 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                                 onClick={(e) => !isDisabled && onHexClick(index, e)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
                                 className={cn(
-                                    "stroke-black/50 dark:stroke-white/50 fill-opacity-70",
+                                    "stroke-black/50 dark:stroke-white/50 fill-opacity-50",
                                     "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
                                     !isColored && "fill-opacity-0",
                                     isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
-                                    isClickable && !isColored && "hover:[filter:url(#inner-shadow)]",
-                                    isClickable && isColored && "cursor-pointer",
-                                    isColored && "[filter:url(#inner-shadow)]",
+                                    isClickable && isColored && "cursor-pointer"
                                 )}
                             />
                         );
@@ -101,3 +88,5 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
+
+    
