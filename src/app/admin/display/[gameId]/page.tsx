@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -14,6 +14,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import HexMap from "@/components/game/HexMap";
 import Image from "next/image";
+import Timer from "@/components/game/Timer";
+import confetti from 'canvas-confetti';
 
 
 export default function DisplayPage() {
@@ -22,6 +24,8 @@ export default function DisplayPage() {
     const [game, setGame] = useState<Game | null>(null);
     const [loading, setLoading] = useState(true);
     const [joinUrl, setJoinUrl] = useState("");
+    const prevGridRef = useRef<GridSquare[] | null>(null);
+    const hexMapRef = useRef<SVGSVGElement>(null);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -59,6 +63,48 @@ export default function DisplayPage() {
         });
         return () => unsubscribe();
     }, [gameId]);
+
+    // Effect for territory capture confetti
+    useEffect(() => {
+      if (!game || !game.grid || !prevGridRef.current || !hexMapRef.current) {
+        prevGridRef.current = game?.grid ?? null;
+        return;
+      }
+    
+      const prevGrid = prevGridRef.current;
+      const currentGrid = game.grid;
+      const mapRect = hexMapRef.current.getBoundingClientRect();
+      if (mapRect.width === 0) return; // Don't fire if map is not visible
+    
+      for (let i = 0; i < currentGrid.length; i++) {
+        if (prevGrid[i].coloredBy === null && currentGrid[i].coloredBy !== null) {
+          // A square has been captured
+          const teamName = currentGrid[i].coloredBy;
+          const team = game.teams.find(t => t.name === teamName);
+          if (team) {
+            const hexPath = hexMapRef.current.querySelector(`path[data-hex-id="${i}"]`);
+            if (hexPath) {
+              const pathRect = hexPath.getBoundingClientRect();
+              const origin = {
+                x: (pathRect.left + pathRect.right) / 2 / window.innerWidth,
+                y: (pathRect.top + pathRect.bottom) / 2 / window.innerHeight,
+              };
+
+              confetti({
+                particleCount: 50,
+                spread: 40,
+                origin: origin,
+                colors: [team.color],
+                scalar: 0.8
+              });
+            }
+          }
+        }
+      }
+    
+      prevGridRef.current = currentGrid;
+    }, [game]);
+
 
     const handleStartGame = async () => {
         if (!gameId) return;
@@ -225,12 +271,15 @@ export default function DisplayPage() {
 
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
+                <div className="absolute left-8 top-8 z-10 w-64">
+                    <Timer duration={game.timer} onTimeout={() => {}} gameStartedAt={game.gameStartedAt}/>
+                </div>
                 <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
                 <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
-                        <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
+                        <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} ref={hexMapRef} />
                     </div>
                 </div>
                 <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
@@ -240,6 +289,52 @@ export default function DisplayPage() {
         )
     }
     
+    const GameOverOverlay = () => {
+        if (!game || game.status !== 'finished') return null;
+
+        const sortedTeams = [...game.teams].sort((a,b) => b.score - a.score);
+        const winner = sortedTeams.length > 0 ? sortedTeams[0] : null;
+        const isTie = sortedTeams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
+
+        useEffect(() => {
+            if (winner && !isTie) {
+              const duration = 5 * 1000;
+              const animationEnd = Date.now() + duration;
+              const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+        
+              const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+        
+              const interval = setInterval(() => {
+                const timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) {
+                  return clearInterval(interval);
+                }
+                const particleCount = 50 * (timeLeft / duration);
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }, colors: game.teams.map(t=>t.color) });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }, colors: game.teams.map(t=>t.color) });
+              }, 250);
+            }
+        }, [winner, isTie, game.teams]);
+
+        return (
+            <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
+                <Card className="max-w-xl text-center p-8 bg-background/90">
+                    <CardHeader>
+                        <CardTitle className="text-7xl font-display text-yellow-400">{isTie ? "Draw!" : "Game Over"}</CardTitle>
+                        <CardDescription className="text-2xl pt-4">
+                            {isTie ? "Both teams got the same score!" : winner ? `${winner.name} Wins!` : 'The game has ended.'}
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                         <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-8">
+                            <RotateCw className="mr-4"/> Play Again
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
+
     const renderContent = () => {
         if (loading) {
             return <div className="flex-1 flex items-center justify-center"><Loader2 className="h-16 w-16 animate-spin text-primary" /></div>;
@@ -256,32 +351,6 @@ export default function DisplayPage() {
                 case 'finished': return renderGameInProgress();
                 default: return <p>{game.status}</p>;
             }
-        }
-        
-        const GameOverOverlay = () => {
-            if (game.status !== 'finished') return null;
-
-            const sortedTeams = [...game.teams].sort((a,b) => b.score - a.score);
-            const winner = sortedTeams[0];
-            const isTie = sortedTeams.length > 1 && sortedTeams[0].score === sortedTeams[1].score;
-
-            return (
-                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-20 animate-in fade-in">
-                    <Card className="max-w-xl text-center p-8 bg-background/90">
-                        <CardHeader>
-                            <CardTitle className="text-7xl font-display text-yellow-400">{isTie ? "Draw!" : "Game Over"}</CardTitle>
-                            <CardDescription className="text-2xl pt-4">
-                                {isTie ? "Both teams got the same score!" : `${winner.name} Wins!`}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl mt-8">
-                                <RotateCw className="mr-4"/> Play Again
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            )
         }
 
         return (
@@ -313,8 +382,3 @@ export default function DisplayPage() {
     );
 
     }
-
-    
-    
-
-    

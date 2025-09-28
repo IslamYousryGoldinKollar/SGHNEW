@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, forwardRef } from "react";
 import type { GridSquare, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -38,7 +38,7 @@ type HexMapProps = {
     onHexClick: (id: number, event: React.MouseEvent<SVGPathElement>) => void;
 }
 
-export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
+const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick }, ref) => {
     const getTeamColor = (teamName: string | null) => {
         if (!teamName) return 'transparent';
         return teams.find(t => t.name === teamName)?.color || '#333';
@@ -55,7 +55,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 className="object-contain"
                 priority
             />
-            <svg viewBox="0 0 2048 2048" className="absolute inset-0 w-full h-full" style={{filter: 'drop-shadow(0px 4px 4px #a3e635)'}}>
+            <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full" style={{filter: 'drop-shadow(0px 4px 4px #a3e635)'}}>
                 <defs>
                     <filter id="inner-shadow" x="-50%" y="-50%" width="200%" height="200%">
                         <feGaussianBlur in="SourceAlpha" stdDeviation="10" result="blur" />
@@ -77,6 +77,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                             <path
                                 key={index}
                                 d={path}
+                                data-hex-id={index}
                                 onClick={(e) => !isDisabled && onHexClick(index, e)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
                                 style={{ fillOpacity: isColored ? 0.7 : 0, strokeDasharray: '10, 10', strokeWidth: 1.5 }}
@@ -95,4 +96,8 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
             </svg>
         </div>
     );
-}
+});
+
+HexMap.displayName = 'HexMap';
+
+export default HexMap;
