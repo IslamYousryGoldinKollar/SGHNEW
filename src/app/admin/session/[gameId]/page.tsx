@@ -27,6 +27,8 @@ const themes: {value: GameTheme, label: string}[] = [
     { value: 'team-bravo', label: 'Team Bravo' },
 ];
 
+const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
+
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
@@ -138,17 +140,16 @@ export default function SessionConfigPage() {
 
   useEffect(() => {
     if (!gameId || authLoading) return;
-    const gameRef = doc(db, "games", gameId);
+    const gameRef = doc(db, "games", gameId.toUpperCase());
     
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        const isOwner = user && (gameData.adminId === user.uid || !gameData.adminId);
+        const isOwner = user && (ADMIN_UIDS.includes(user.uid));
 
         if (isOwner) {
             setIsAuthorized(true);
             setGame(gameData);
-            // Check if form is dirty to avoid overwriting user's input
             if (!form.formState.isDirty) {
               form.reset({
                 title: gameData.title || "Trivia Titans",
@@ -206,7 +207,6 @@ export default function SessionConfigPage() {
         toast({ title: "Extraction Failed", description: "The AI failed to extract questions. Please check the console for errors.", variant: "destructive" });
     } finally {
         setIsExtracting(false);
-        // Reset file input
         if(fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -219,7 +219,7 @@ export default function SessionConfigPage() {
         
         const teams = data.teams.map(t => ({
           ...t,
-          score: 0,
+          score: game?.teams.find(originalTeam => originalTeam.name === t.name)?.score || 0,
           players: game?.teams.find(originalTeam => originalTeam.name === t.name)?.players || []
         }));
 
@@ -248,11 +248,28 @@ export default function SessionConfigPage() {
   };
 
   if (loading || authLoading) {
-    return <div><Loader2 className="h-16 w-16 animate-spin" /></div>;
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-16 w-16 animate-spin" /></div>;
   }
   
+  if (!user) {
+     router.replace("/admin/login");
+     return null;
+  }
+
   if (!isAuthorized) {
-    return <div><h1>You are not authorized to edit this session.</h1></div>;
+    return (
+        <div className="flex items-center justify-center h-screen">
+            <Card className="max-w-md text-center">
+                <CardHeader>
+                    <CardTitle className="text-destructive">Access Denied</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>You are not authorized to edit this session. Please contact the session creator or an administrator.</p>
+                    <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
   
   if (!game) {
@@ -260,7 +277,7 @@ export default function SessionConfigPage() {
   }
 
   return (
-    <div>
+    <div className="container mx-auto px-4 py-8">
       <Card>
         <CardHeader>
           <CardTitle>Configure Session: {gameId}</CardTitle>
@@ -327,18 +344,18 @@ export default function SessionConfigPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {teamFields.map((field, index) => (
-                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-end p-4 border rounded-lg">
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_1fr_auto] gap-4 items-end p-4 border rounded-lg">
                                 <FormField control={form.control} name={`teams.${index}.name`} render={({ field }) => (
-                                    <FormItem><FormLabel>Team Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                    <FormItem><FormLabel>Team Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.capacity`} render={({ field }) => (
-                                     <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" {...field} className="w-24"/></FormControl></FormItem>
+                                     <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" {...field} className="w-24"/></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.color`} render={({ field }) => (
-                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10 w-16" /></FormControl></FormItem>
+                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10 w-16" /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.icon`} render={({ field }) => (
-                                     <FormItem className="col-span-full md:col-span-1"><FormLabel>Icon URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                     <FormItem><FormLabel>Icon URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)}><Trash2 /></Button>
                             </div>

@@ -15,6 +15,7 @@ import type { Game, GridSquare } from "@/lib/types";
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 const GRID_SIZE = 22; // Based on the number of hexagons in the SVG
+const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -111,7 +112,7 @@ export default function AdminDashboard() {
         adminId: user.uid,
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
         questions: originalGameData.questions,
-        grid: originalGameData.grid,
+        grid: Array.from({ length: GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null })),
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
         timer: originalGameData.timer,
@@ -163,7 +164,7 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  const isOwner = session.adminId === user.uid || !session.adminId;
+                  const isOwner = ADMIN_UIDS.includes(user.uid);
                   return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
@@ -212,3 +213,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    

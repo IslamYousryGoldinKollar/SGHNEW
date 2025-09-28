@@ -16,6 +16,7 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
+const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 export default function GamePage() {
   const params = useParams();
@@ -63,7 +64,7 @@ export default function GamePage() {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         
         // Check for admin status
-        if (authUser && gameData.adminId === authUser.uid) {
+        if (authUser && ADMIN_UIDS.includes(authUser.uid)) {
             setIsAdmin(true);
         } else {
             setIsAdmin(false);
@@ -354,7 +355,7 @@ export default function GamePage() {
   };
 
   const renderContent = () => {
-    if (loading || !game) {
+    if (loading || !game || !authUser) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -439,3 +440,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
