@@ -325,10 +325,8 @@ export default function GamePage() {
             }
 
             // --- Game Logic: Land Grab vs. Capture ---
-            if (originalOwnerName === null) {
-                // Phase 1: Land Grab. This is always allowed.
-            } else {
-                // Phase 2: Capture. Only allowed if no free squares are left.
+            if (originalOwnerName !== null) {
+                // This is a capture attempt. Check if free land is available.
                 const hasFreeSquares = currentGrid.some(s => s.coloredBy === null);
                 if (hasFreeSquares) {
                     throw new Error("You can only capture free land while it's available.");
@@ -352,9 +350,20 @@ export default function GamePage() {
 
             // 3. Update grid ownership
             currentGrid[squareIndex].coloredBy = currentPlayer.teamName;
+            
+            const updates: { grid: GridSquare[]; teams: Team[]; status?: GameStatus } = {
+              grid: currentGrid,
+              teams: updatedTeams,
+            };
 
-            // 4. Commit transaction
-            transaction.update(gameRef, { grid: currentGrid, teams: updatedTeams });
+            // 4. Check if the game should end
+            const isGridFull = currentGrid.every(s => s.coloredBy !== null);
+            if (isGridFull) {
+                updates.status = "finished";
+            }
+
+            // 5. Commit transaction
+            transaction.update(gameRef, updates);
         });
 
         setCurrentQuestion(getNextQuestion());
@@ -514,5 +523,7 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
 
     

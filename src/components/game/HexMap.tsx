@@ -80,7 +80,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
                                     "stroke-black/50 dark:stroke-white/50",
                                     "transition-all duration-300 [stroke-dasharray:10_10] [stroke-width:1.5px]",
                                     isClickable && "pointer-events-auto cursor-pointer",
-                                    isClickable && !isColored && "hover:stroke-primary hover:fill-white/30"
+                                    isClickable && !isColored && "hover:fill-white/30"
                                 )}
                             />
                         );
@@ -94,5 +94,7 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
+
+    
 
     
