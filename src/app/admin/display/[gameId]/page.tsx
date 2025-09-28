@@ -179,7 +179,7 @@ export default function DisplayPage() {
                 <div className="absolute left-8 top-1/2 -translate-y-1/2">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
-                <div className="w-[60vh] h-[60vh] max-w-[80vw] max-h-[80vh]">
+                <div className="w-full max-w-[calc(100vh*355/222)] max-h-full p-12 aspect-[355/222]">
                    <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
                 </div>
                 <div className="absolute right-8 top-1/2 -translate-y-1/2">
