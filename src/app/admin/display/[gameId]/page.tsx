@@ -140,11 +140,11 @@ export default function DisplayPage() {
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
                     <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
-                        <div className="mb-6 w-full max-w-sm h-auto text-accent">
+                        <div className="mb-6 w-full max-w-sm h-auto text-primary">
                             <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3189.14 1035.43">
                                 <defs>
                                     <style>
-                                    {`.cls-1 { fill: currentColor; }`}
+                                      {`.cls-1 { fill: hsl(var(--primary)); }`}
                                     </style>
                                 </defs>
                                 <g id="Layer_1-2" data-name="Layer 1">
