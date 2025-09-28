@@ -110,7 +110,8 @@
     @apply bg-background text-foreground;
     background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground.png?alt=media&token=11c26d82-783e-40d0-aa51-5cbc533d5788');
     background-size: cover;
-    background-repeat: repeat;
+    background-position: center;
+    background-repeat: no-repeat;
   }
 }
 
