@@ -41,7 +41,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     };
 
     const isClickable = !!onHexClick;
-    const mapImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FLayer%201.png?alt=media&token=9db343de-a221-41c3-a494-0d4b7445b3c2";
+    const mapImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fland.png?alt=media&token=9a0cc5b2-f7e1-4316-975c-f89f7d9d00c7";
     
     return (
         <div className="relative w-full h-full">
