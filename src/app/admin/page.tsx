@@ -101,7 +101,7 @@ export default function AdminDashboard() {
         return;
       }
 
-      const originalGameData = originalGameSnap.data();
+      const originalGameData = originalGameSnap.data() as Game;
       const newPin = generatePin();
       const newGameRef = doc(db, "games", newPin);
       
@@ -162,7 +162,9 @@ export default function AdminDashboard() {
             <Loader2 className="animate-spin"/>
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sessions.map(session => (
+                {sessions.map(session => {
+                  const isOwner = session.adminId === user.uid || !session.adminId;
+                  return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
@@ -186,7 +188,7 @@ export default function AdminDashboard() {
                             </Button>
                         </CardContent>
                          <CardFooter className="grid grid-cols-3 gap-2">
-                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={session.adminId !== user.uid}>
+                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={!isOwner}>
                                  <Edit className="mr-2 h-4 w-4"/>
                                  Edit
                              </Button>
@@ -194,13 +196,14 @@ export default function AdminDashboard() {
                                  <Copy className="mr-2 h-4 w-4"/>
                                  Duplicate
                              </Button>
-                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={session.adminId !== user.uid}>
+                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={!isOwner}>
                                  <Trash2 className="mr-2 h-4 w-4"/>
                                  Delete
                              </Button>
                         </CardFooter>
                     </Card>
-                ))}
+                  )
+                })}
             </div>
         ) : (
             <p>No active sessions. Create one to get started!</p>
