@@ -31,6 +31,7 @@ export interface Team {
   players: Player[];
   capacity: number;
   color: string;
+  icon: string;
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";

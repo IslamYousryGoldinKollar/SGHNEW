@@ -34,6 +34,7 @@ const sessionSchema = z.object({
     name: z.string().min(1, "Team name is required."),
     capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color"),
+    icon: z.string().url("Must be a valid URL."),
   })).min(1, "At least one team is required."),
   questions: z.array(z.object({
       question: z.string().min(1, "Question text is required."),
@@ -143,7 +144,7 @@ export default function SessionConfigPage() {
         form.reset({
           title: gameData.title || "Trivia Titans",
           timer: gameData.timer,
-          teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff' })),
+          teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff', icon: t.icon || '' })),
           questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
           topic: gameData.topic,
           theme: gameData.theme || 'default',
@@ -294,22 +295,25 @@ export default function SessionConfigPage() {
                     <CardHeader>
                         <div className="flex justify-between items-center">
                             <CardTitle>Teams</CardTitle>
-                            <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ name: `Team ${teamFields.length + 1}`, capacity: 10, color: '#FFFFFF' })}>
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendTeam({ name: `Team ${teamFields.length + 1}`, capacity: 10, color: '#FFFFFF', icon: '' })}>
                                 <Plus className="mr-2" /> Add Team
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {teamFields.map((field, index) => (
-                            <div key={field.id} className="flex gap-4 items-center p-4 border rounded-lg">
+                            <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-end p-4 border rounded-lg">
                                 <FormField control={form.control} name={`teams.${index}.name`} render={({ field }) => (
-                                    <FormItem className="flex-1"><FormLabel>Team Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
+                                    <FormItem><FormLabel>Team Name</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.capacity`} render={({ field }) => (
-                                     <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" {...field} /></FormControl></FormItem>
+                                     <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" {...field} className="w-24"/></FormControl></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.color`} render={({ field }) => (
-                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10" /></FormControl></FormItem>
+                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10 w-16" /></FormControl></FormItem>
+                                )} />
+                                <FormField control={form.control} name={`teams.${index}.icon`} render={({ field }) => (
+                                     <FormItem className="col-span-full md:col-span-1"><FormLabel>Icon URL</FormLabel><FormControl><Input {...field} /></FormControl></FormItem>
                                 )} />
                                 <Button type="button" variant="destructive" size="icon" onClick={() => removeTeam(index)}><Trash2 /></Button>
                             </div>

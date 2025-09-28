@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import HexMap from "@/components/game/HexMap";
+import Image from "next/image";
 
 
 export default function DisplayPage() {
@@ -83,9 +84,7 @@ export default function DisplayPage() {
         await updateDoc(gameRef, {
             status: "lobby",
             teams: game.teams.map(t => ({
-                name: t.name,
-                capacity: t.capacity,
-                color: t.color,
+                ...t,
                 score: 0, 
                 players: [],
             })),
@@ -99,7 +98,7 @@ export default function DisplayPage() {
             <CardHeader className="text-center flex-shrink-0 relative p-4">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-background p-1 rounded-full">
                     <div className="w-16 h-16 rounded-full border-4 flex items-center justify-center" style={{borderColor: team.color, backgroundColor: team.color+'30'}}>
-                       <Trophy className="w-8 h-8" style={{color: team.color}} />
+                       {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={48} height={48} className="object-contain" /> : <Trophy className="w-8 h-8" style={{color: team.color}} />}
                     </div>
                 </div>
                  <CardTitle className="text-4xl font-display pt-8" style={{ color: team.color }}>{team.name}</CardTitle>
@@ -160,7 +159,10 @@ export default function DisplayPage() {
             alignment === 'left' ? "rounded-l-2xl" : "rounded-r-2xl"
             )} 
             style={{ borderColor: team.color }}>
-            <h3 className="text-3xl font-display" style={{ color: team.color }}>{team.name}</h3>
+            <div className="flex items-center justify-center gap-4">
+                {team.icon && <Image src={team.icon} alt={`${team.name} icon`} width={40} height={40} />}
+                <h3 className="text-3xl font-display" style={{ color: team.color }}>{team.name}</h3>
+            </div>
              <div className="flex items-center justify-center text-muted-foreground text-xl my-2">
                 <Users className="mr-2 h-5 w-5" /> 
                 <span>{team.players.length}</span>
@@ -179,8 +181,8 @@ export default function DisplayPage() {
                 <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} alignment="left" />}
                 </div>
-                <div className="h-full w-full flex items-center justify-center">
-                    <div className="w-full h-full max-h-[100vh] max-w-[100vw] aspect-[1065/666] p-4">
+                <div className="w-full h-full flex items-center justify-center p-4">
+                    <div className="w-full h-full max-h-[calc(100vh-200px)] max-w-[calc(100vw-600px)] aspect-[1065/666] relative">
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}}/>
                     </div>
                 </div>
@@ -264,5 +266,3 @@ export default function DisplayPage() {
     );
 
     }
-
-    

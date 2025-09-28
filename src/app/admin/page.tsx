@@ -60,8 +60,8 @@ export default function AdminDashboard() {
         title: "Trivia Titans",
         status: "lobby",
         teams: [
-          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347" },
-          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4" },
+          { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
+          { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
         ],
         questions: [],
         grid: initialGrid,
@@ -162,5 +162,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
