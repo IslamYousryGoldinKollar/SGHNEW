@@ -34,32 +34,32 @@ const hexPaths = [
 ];
 
 // The correct, clean base URL for the storage bucket.
-const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.appspot.com/o/assets%2F";
+const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2F";
 
 // IMPORTANT: You must get the access token for each image from the Firebase Console and add it here.
 const accessTokens: Record<string, string> = {
     "01": "3df822fb-e8e5-4ee4-b217-e99b075719e3",
-    "02": "your-token-for-02.png", // REPLACE THIS
-    "03": "your-token-for-03.png", // REPLACE THIS
-    "04": "your-token-for-04.png", // REPLACE THIS
-    "05": "your-token-for-05.png", // REPLACE THIS
-    "06": "your-token-for-06.png", // REPLACE THIS
-    "07": "your-token-for-07.png", // REPLACE THIS
-    "08": "your-token-for-08.png", // REPLACE THIS
-    "09": "your-token-for-09.png", // REPLACE THIS
-    "10": "your-token-for-10.png", // REPLACE THIS
-    "11": "your-token-for-11.png", // REPLACE THIS
-    "12": "your-token-for-12.png", // REPLACE THIS
-    "13": "your-token-for-13.png", // REPLACE THIS
-    "14": "your-token-for-14.png", // REPLACE THIS
-    "15": "your-token-for-15.png", // REPLACE THIS
-    "16": "your-token-for-16.png", // REPLACE THIS
-    "17": "your-token-for-17.png", // REPLACE THIS
-    "18": "your-token-for-18.png", // REPLACE THIS
-    "19": "your-token-for-19.png", // REPLACE THIS
-    "20": "your-token-for-20.png", // REPLACE THIS
-    "21": "your-token-for-21.png", // REPLACE THIS
-    "22": "your-token-for-22.png", // REPLACE THIS
+    "02": "a8e68836-42f6-4879-a105-e8546c0e0e6c",
+    "03": "430e6620-6659-444b-9d0a-798d8be2a74d",
+    "04": "cca66808-6781-4bd9-b279-6aaba57f22fc",
+    "05": "0bd5304a-3948-4c87-8c09-9eb95d2defd0",
+    "06": "your-token-for-06.png",
+    "07": "your-token-for-07.png",
+    "08": "your-token-for-08.png",
+    "09": "your-token-for-09.png",
+    "10": "your-token-for-10.png",
+    "11": "your-token-for-11.png",
+    "12": "your-token-for-12.png",
+    "13": "your-token-for-13.png",
+    "14": "your-token-for-14.png",
+    "15": "your-token-for-15.png",
+    "16": "your-token-for-16.png",
+    "17": "your-token-for-17.png",
+    "18": "your-token-for-18.png",
+    "19": "your-token-for-19.png",
+    "20": "your-token-for-20.png",
+    "21": "your-token-for-21.png",
+    "22": "your-token-for-22.png",
 };
 
 
