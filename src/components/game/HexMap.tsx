@@ -44,29 +44,38 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     
     return (
         <div className="relative w-full h-full">
-            <svg viewBox="293.1 452.2 1600.7 1103.7" className="relative w-full h-full drop-shadow-lg">
-                {hexPaths.map((path, index) => {
-                    const square = grid.find(s => s.id === index);
-                    const isColored = !!square?.coloredBy;
-                    const isDisabled = isColored || !isClickable;
+            <Image
+                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fland%20v4.png?alt=media&token=525dcb7b-164c-4d67-9a41-cc2f41ed40f5"
+                alt="Game Map"
+                fill
+                className="object-contain"
+                priority
+            />
+            <svg viewBox="293.1 452.2 1600.7 1103.7" className="absolute inset-0 w-full h-full drop-shadow-lg">
+                <g transform="scale(0.58)">
+                    {hexPaths.map((path, index) => {
+                        const square = grid.find(s => s.id === index);
+                        const isColored = !!square?.coloredBy;
+                        const isDisabled = isColored || !isClickable;
 
-                    return (
-                        <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
-                            {/* Hexagon Path */}
-                            <path
-                                d={path}
-                                fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
-                                style={{ fillOpacity: isColored ? 0.7 : 0 }}
-                                className={cn(
-                                    "stroke-black/50 dark:stroke-white/50",
-                                    "stroke-[3px] transition-all duration-300",
-                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/10",
-                                    isColored && "cursor-not-allowed",
-                                )}
-                            />
-                        </g>
-                    );
-                })}
+                        return (
+                            <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
+                                {/* Hexagon Path */}
+                                <path
+                                    d={path}
+                                    fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
+                                    style={{ fillOpacity: isColored ? 0.7 : 0 }}
+                                    className={cn(
+                                        "stroke-black/50 dark:stroke-white/50",
+                                        "stroke-[3px] transition-all duration-300",
+                                        isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/10",
+                                        isColored && "cursor-not-allowed",
+                                    )}
+                                />
+                            </g>
+                        );
+                    })}
+                </g>
             </svg>
         </div>
     );
