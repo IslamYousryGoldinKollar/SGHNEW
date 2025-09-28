@@ -407,21 +407,21 @@ export default function GamePage() {
         );
     }
     
-    if (!currentPlayer) {
+    if (game.status === 'lobby' || (game.status === 'starting' && !currentPlayer)) {
         return (
              <Lobby
                 game={game}
                 onJoinTeam={handleJoinTeam}
                 onStartGame={handleStartGame}
-                currentPlayer={null}
+                currentPlayer={currentPlayer}
                 isAdmin={isAdmin}
             />
         );
     }
 
     switch (game.status) {
-      case "lobby":
-      case "starting":
+      case "starting": // Player is in a team and game is starting
+      case "lobby": // Should be covered above, but as a fallback
         return (
           <Lobby
             game={game}
@@ -432,8 +432,8 @@ export default function GamePage() {
           />
         );
       case "playing":
-        const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
-        if (!playerTeam) return <p>Error: Your team could not be found.</p>;
+        const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
+        if (!playerTeam || !currentPlayer) return <p>Error: Your team or player data could not be found.</p>;
         
         if (view === 'grid') {
              return (
@@ -482,3 +482,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+  
