@@ -27,17 +27,15 @@ const hexPaths = [
     "M1004 530.3 1004 598.8 1181.9 676.8 1359.9 598.8 1359.9 530.3 1181.9 452.2 1004 530.3"
 ];
 
-// Correct, final URL for Firebase Storage assets.
 const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2F";
 
-// Access tokens are required for private Firebase Storage files.
 const accessTokens: Record<string, string> = {
     "01": "3df822fb-e8e5-4ee4-b217-e99b075719e3",
     "02": "a8e68836-42f6-4879-a105-e8546c0e0e6c",
     "03": "430e6620-6659-444b-9d0a-798d8be2a74d",
     "04": "cca66808-6781-4bd9-b279-6aaba57f22fc",
     "05": "0bd5304a-3948-4c87-8c09-9eb95d2defd0",
-    "06": "your-token-for-06.png", // TODO: User needs to fill these in
+    "06": "your-token-for-06.png",
     "07": "your-token-for-07.png",
     "08": "your-token-for-08.png",
     "09": "your-token-for-09.png",
@@ -56,7 +54,6 @@ const accessTokens: Record<string, string> = {
     "22": "your-token-for-22.png",
 };
 
-// This correctly maps the visual order of the hexagons to the image file numbers.
 const imageMap: Record<number, number> = {
     0: 11, 1: 10, 2: 14, 3: 15, 4: 18, 5: 19, 6: 16, 7: 12, 8: 21,
     9: 22, 10: 20, 11: 17, 12: 6, 13: 7, 14: 8, 15: 9, 16: 13,
@@ -102,10 +99,10 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                         >
                             <image
                                 href={imageUrl}
-                                x="0"
-                                y="0"
-                                width="1"
-                                height="1"
+                                x="0.05"
+                                y="0.05"
+                                width="0.9"
+                                height="0.9"
                                 preserveAspectRatio="xMidYMid slice"
                             />
                         </pattern>
