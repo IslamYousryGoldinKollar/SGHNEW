@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Question } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,13 +18,39 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
   const [feedback, setFeedback] = useState<"idle" | "correct" | "incorrect">("idle");
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const nextQuestionTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Reset state when a new question comes in
+
+  // Reset state and clear timer when a new question comes in
   useEffect(() => {
     setFeedback("idle");
     setSelectedAnswer(null);
     setIsSubmitting(false);
+    if(nextQuestionTimer.current) {
+        clearTimeout(nextQuestionTimer.current);
+    }
+    // Cleanup timer on component unmount
+    return () => {
+        if(nextQuestionTimer.current) {
+            clearTimeout(nextQuestionTimer.current);
+        }
+    }
   }, [question]);
+
+  // Automatically move to the next question after a delay
+  useEffect(() => {
+    if (feedback !== 'idle') {
+      nextQuestionTimer.current = setTimeout(() => {
+        onNextQuestion();
+      }, 2000); // 2-second delay
+    }
+    return () => {
+      if (nextQuestionTimer.current) {
+        clearTimeout(nextQuestionTimer.current);
+      }
+    };
+  }, [feedback, onNextQuestion]);
+
 
   const handleAnswerClick = (option: string) => {
     if (isSubmitting) return;
@@ -35,9 +61,16 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     const isCorrect = question.answer.trim().toLowerCase() === option.trim().toLowerCase();
     setFeedback(isCorrect ? "correct" : "incorrect");
     
-    // The backend call
     onAnswer(question, option);
   };
+  
+  const handleNextClick = () => {
+    if (nextQuestionTimer.current) {
+      clearTimeout(nextQuestionTimer.current);
+    }
+    onNextQuestion();
+  }
+
 
   const getButtonClass = (option: string) => {
     if (feedback === 'idle') return "border-primary/20 hover:bg-primary/10";
@@ -91,7 +124,7 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
                   <p className="text-lg text-muted-foreground">The correct answer was: <span className="font-bold text-foreground">{question.answer}</span></p>
                </div>
              )}
-              <Button size="lg" onClick={onNextQuestion} className="mt-8">
+              <Button size="lg" onClick={handleNextClick} className="mt-8">
                   Next Question <ChevronRight className="w-5 h-5 ml-2" />
               </Button>
            </div>
@@ -99,4 +132,3 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     </Card>
   );
 }
-
