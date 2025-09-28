@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import type { Game, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ import { Loader2, Trash2, Plus, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 const themes: {value: GameTheme, label: string}[] = [
     { value: 'default', label: 'Default' },
@@ -106,8 +107,10 @@ export default function SessionConfigPage() {
   const router = useRouter();
   const { toast } = useToast();
   const gameId = params.gameId as string;
+  const [user, authLoading] = useAuthState(auth);
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,24 +137,30 @@ export default function SessionConfigPage() {
   });
 
   useEffect(() => {
-    if (!gameId) return;
+    if (!gameId || authLoading) return;
     const gameRef = doc(db, "games", gameId);
     getDoc(gameRef).then((docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        setGame(gameData);
-        form.reset({
-          title: gameData.title || "Trivia Titans",
-          timer: gameData.timer,
-          teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff', icon: t.icon || '' })),
-          questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
-          topic: gameData.topic,
-          theme: gameData.theme || 'default',
-        });
+
+        if (user && gameData.adminId === user.uid) {
+            setIsAuthorized(true);
+            setGame(gameData);
+            form.reset({
+              title: gameData.title || "Trivia Titans",
+              timer: gameData.timer,
+              teams: gameData.teams.map(t => ({ name: t.name, capacity: t.capacity, color: t.color || '#ffffff', icon: t.icon || '' })),
+              questions: gameData.questions.map(q => ({...q, options: q.options || []})), // Ensure options is an array
+              topic: gameData.topic,
+              theme: gameData.theme || 'default',
+            });
+        } else {
+            setIsAuthorized(false);
+        }
       }
       setLoading(false);
     });
-  }, [gameId, form]);
+  }, [gameId, form, user, authLoading]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -200,7 +209,11 @@ export default function SessionConfigPage() {
     try {
         const gameRef = doc(db, "games", gameId);
         
-        const teams = data.teams.map(t => ({ ...t, score: 0, players: [] }));
+        const teams = data.teams.map(t => ({
+          ...t,
+          score: 0,
+          players: game?.teams.find(originalTeam => originalTeam.name === t.name)?.players || []
+        }));
 
         await updateDoc(gameRef, {
           title: data.title,
@@ -226,9 +239,14 @@ export default function SessionConfigPage() {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return <div className="flex h-screen items-center justify-center"><Loader2 className="h-16 w-16 animate-spin" /></div>;
   }
+  
+  if (!isAuthorized) {
+    return <div className="flex h-screen items-center justify-center"><h1 className="text-2xl text-destructive">You are not authorized to edit this session.</h1></div>;
+  }
+  
   if (!game) {
     return <div className="flex h-screen items-center justify-center"><h1 className="text-2xl">Game session not found.</h1></div>;
   }

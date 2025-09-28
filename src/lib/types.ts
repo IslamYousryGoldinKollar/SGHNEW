@@ -49,4 +49,5 @@ export interface Game {
     timer: number;
     topic: string;
     theme?: GameTheme;
+    adminId?: string; // UID of the user who created the game
 }

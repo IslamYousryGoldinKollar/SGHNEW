@@ -4,17 +4,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
-import { doc, setDoc } from "firebase/firestore";
-
-// The designated admin user ID.
-const ADMIN_UID = "40J7xdA4thUfcFf9vGvxUpTfSAD3";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -28,22 +24,9 @@ export default function AdminLoginPage() {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      // Any user can log in now. Admin status is determined per-session.
+      await signInWithEmailAndPassword(auth, email, password);
       
-      // Check if the signed-in user's UID matches the admin UID
-      if (userCredential.user.uid !== ADMIN_UID) {
-        toast({
-            title: "Access Denied",
-            description: "You are not authorized to access the admin dashboard.",
-            variant: "destructive",
-        });
-        await auth.signOut(); // Sign out the unauthorized user
-        setIsLoading(false);
-        return;
-      }
-      
-      // Set the admin UID in a known location in Firestore for other clients to check
-      await setDoc(doc(db, "settings", "admin"), { uid: userCredential.user.uid });
       toast({
         title: "Login Successful",
         description: "Redirecting to the admin dashboard...",
@@ -66,7 +49,7 @@ export default function AdminLoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-display">Admin Login</CardTitle>
-          <CardDescription>Enter your admin credentials to manage games.</CardDescription>
+          <CardDescription>Enter your credentials to create and manage games.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -75,7 +58,7 @@ export default function AdminLoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="your-admin-email@example.com"
+                placeholder="your-email@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

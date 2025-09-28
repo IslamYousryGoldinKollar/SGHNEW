@@ -43,10 +43,7 @@ export default function GamePage() {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setAuthUser(user);
-        const adminSettingsDoc = await getDoc(doc(db, "settings", "admin"));
-        if (adminSettingsDoc.exists() && adminSettingsDoc.data().uid === user.uid) {
-            setIsAdmin(true);
-        }
+        // Admin check will now happen inside the game snapshot useEffect
       } else {
         signInAnonymously(auth).catch((error) => {
           console.error("Anonymous sign-in error", error);
@@ -64,6 +61,13 @@ export default function GamePage() {
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
+        
+        // Check for admin status
+        if (authUser && gameData.adminId === authUser.uid) {
+            setIsAdmin(true);
+        } else {
+            setIsAdmin(false);
+        }
         
         const scores = new Map<string, number>();
         gameData.teams.forEach(team => scores.set(team.name, 0));
@@ -141,6 +145,11 @@ export default function GamePage() {
 
   const handleStartGame = async () => {
     if (!game) return;
+    if (!isAdmin) {
+      toast({ title: "Not Authorized", description: "Only the session admin can start the game.", variant: "destructive"});
+      return;
+    }
+
     const totalPlayers = game.teams.reduce((sum, t) => sum + t.players.length, 0);
     if (totalPlayers === 0) {
         toast({ title: "No players!", description: "At least one player must join to start.", variant: "destructive" });
@@ -313,7 +322,7 @@ export default function GamePage() {
   };
 
   const handleTimeout = async () => {
-    if(game?.status === 'playing') {
+    if(game?.status === 'playing' && isAdmin) {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
       toast({
         title: "Time's Up!",
@@ -328,7 +337,7 @@ export default function GamePage() {
   };
 
   const handlePlayAgain = async () => {
-    if (!game) return;
+    if (!game || !isAdmin) return;
     const initialGrid: GridSquare[] = Array.from({ length: 22 }, (_, i) => ({ id: i, coloredBy: null }));
     
     await updateDoc(doc(db, "games", GAME_ID), {
@@ -337,6 +346,7 @@ export default function GamePage() {
           name: t.name,
           capacity: t.capacity,
           color: t.color,
+          icon: t.icon,
           score: 0, 
           players: [],
       })),
@@ -433,5 +443,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

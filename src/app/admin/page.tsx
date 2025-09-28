@@ -47,6 +47,7 @@ export default function AdminDashboard() {
   }, [user]);
 
   const createNewSession = async () => {
+    if (!user) return;
     const newPin = generatePin();
     const gameRef = doc(db, "games", newPin);
     
@@ -59,6 +60,7 @@ export default function AdminDashboard() {
     const newGame: Omit<Game, 'id'> = {
         title: "Trivia Titans",
         status: "lobby",
+        adminId: user.uid,
         teams: [
           { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
           { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
@@ -89,6 +91,7 @@ export default function AdminDashboard() {
   }
 
   const duplicateSession = async (gameId: string) => {
+    if (!user) return;
     try {
       const originalGameRef = doc(db, "games", gameId);
       const originalGameSnap = await getDoc(originalGameRef);
@@ -105,6 +108,7 @@ export default function AdminDashboard() {
       const duplicatedGame: Omit<Game, 'id'> = {
         ...originalGameData,
         status: "lobby",
+        adminId: user.uid, // Assign the current user as the new admin
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
@@ -168,13 +172,16 @@ export default function AdminDashboard() {
                              <p className="text-sm text-muted-foreground">
                                 {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + t.players.length, 0) || 0} players
                             </p>
+                             <p className="text-xs text-muted-foreground mt-1">
+                                Admin: {session.adminId ? "Assigned" : "None"}
+                            </p>
                             <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                 <Eye className="mr-2"/>
                                 Open Big Screen
                             </Button>
                         </CardContent>
                          <CardFooter className="grid grid-cols-3 gap-2">
-                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)}>
+                             <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={session.adminId !== user.uid}>
                                  <Edit className="mr-2 h-4 w-4"/>
                                  Edit
                              </Button>
@@ -182,7 +189,7 @@ export default function AdminDashboard() {
                                  <Copy className="mr-2 h-4 w-4"/>
                                  Duplicate
                              </Button>
-                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)}>
+                             <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={session.adminId !== user.uid}>
                                  <Trash2 className="mr-2 h-4 w-4"/>
                                  Delete
                              </Button>
