@@ -38,28 +38,9 @@ const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831
 // This map correctly assigns the image number to the index of the hex path in the array above.
 // The key is the visual image number (1-22), the value is the index in the hexPaths array.
 const imageMap: Record<number, number> = {
-    1: 20,
-    2: 17,
-    3: 18,
-    4: 12,
-    5: 13,
-    6: 14,
-    7: 15,
-    8: 1,
-    9: 7,
-    10: 0,
-    11: 2,
-    12: 3,
-    13: 6,
-    14: 11,
-    15: 4,
-    16: 5,
-    17: 10,
-    18: 16,
-    19: 8,
-    20: 9,
-    21: 19,
-    22: 21,
+    1: 20, 2: 17, 3: 12, 4: 1, 5: 7, 6: 0, 7: 18, 8: 13, 9: 3,
+    10: 10, 11: 6, 12: 14, 13: 4, 14: 15, 15: 8, 16: 19, 17: 21,
+    18: 2, 19: 5, 20: 9, 21: 11, 22: 16
 };
 
 // We need to reverse the map for easier lookup: pathIndex -> imageFileNumber
@@ -80,44 +61,57 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     return (
         <svg viewBox="0 0 2048 2048" className="w-full h-full drop-shadow-lg">
             <defs>
-                {Array.from({ length: 22 }, (_, i) => {
-                    const imgNum = i + 1;
-                    const paddedNum = String(imgNum).padStart(2, '0');
-                    return (
-                        <pattern key={i} id={`hex-bg-${imgNum}`} patternContentUnits="objectBoundingBox" width="1" height="1">
-                             <image href={`${BUCKET_BASE_URL}${paddedNum}.png?alt=media`} x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice"/>
-                        </pattern>
-                    )
-                })}
+                {hexPaths.map((path, index) => (
+                    <clipPath key={`clip-${index}`} id={`clip-hex-${index}`}>
+                        <path d={path} />
+                    </clipPath>
+                ))}
             </defs>
 
             {hexPaths.map((path, index) => {
                 const square = grid.find(s => s.id === index);
                 const isColored = !!square?.coloredBy;
                 const isDisabled = isColored || !isClickable;
-
-                // Use the map to find the correct background image for this hexagon path index
                 const imageFileNumber = pathIndexToImageNumber[index];
+                const paddedNum = String(imageFileNumber).padStart(2, '0');
+                const imageUrl = `${BUCKET_BASE_URL}${paddedNum}.png?alt=media`;
 
                 return (
-                    <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
-                        <path
-                            d={path}
-                            style={{ fill: `url(#hex-bg-${imageFileNumber})` }}
+                    <g key={index} onClick={() => !isDisabled && onHexClick(index)} clipPath={`url(#clip-hex-${index})`}>
+                        {/* Background Image */}
+                        <image 
+                            href={imageUrl} 
+                            x="0" 
+                            y="0" 
+                            width="2048" 
+                            height="2048" 
+                            preserveAspectRatio="xMidYMid slice"
                             className={cn(
-                                "stroke-black/50 dark:stroke-white/50",
-                                "stroke-[3px] transition-all duration-300",
-                                isClickable && !isColored && "cursor-pointer hover:opacity-80 hover:scale-[1.02] hover:stroke-primary",
-                                isColored && "cursor-not-allowed",
+                                "transition-all duration-300",
+                                isClickable && !isColored && "cursor-pointer group-hover:opacity-80 group-hover:scale-[1.02]",
                             )}
                         />
-                         {isColored && (
+
+                        {/* Team Color Overlay */}
+                        {isColored && (
                             <path 
                                 d={path}
                                 style={{ fill: getTeamColor(square?.coloredBy || null), fillOpacity: 0.7 }}
                                 className="pointer-events-none"
                             />
                         )}
+
+                        {/* Border (rendered on top) */}
+                        <path
+                            d={path}
+                            fill="none"
+                            className={cn(
+                                "stroke-black/50 dark:stroke-white/50",
+                                "stroke-[3px] transition-all duration-300",
+                                isClickable && !isColored && "cursor-pointer group-hover:stroke-primary",
+                                isColored && "cursor-not-allowed",
+                            )}
+                        />
                     </g>
                 )
             })}
