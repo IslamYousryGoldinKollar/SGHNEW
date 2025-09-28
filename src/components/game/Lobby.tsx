@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Swords, Loader2 } from "lucide-react";
+import Image from "next/image";
 
 type LobbyProps = {
   game: Game;
@@ -92,6 +93,14 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
 
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1">
+      <div className="md:hidden flex justify-center items-center -space-x-8 mb-8">
+        {teams[0]?.icon && (
+            <Image src={teams[0].icon} alt={teams[0].name} width={128} height={128} className="drop-shadow-lg"/>
+        )}
+        {teams[1]?.icon && (
+            <Image src={teams[1].icon} alt={teams[1].name} width={128} height={128} className="drop-shadow-lg" style={{transform: 'scaleX(-1)'}}/>
+        )}
+      </div>
       <h1 className="text-5xl font-bold font-display">Join the Battle</h1>
       <p className="text-muted-foreground mt-2 max-w-xl">Enter your details, choose a team, and get ready to prove your knowledge.</p>
       
