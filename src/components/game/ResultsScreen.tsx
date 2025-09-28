@@ -1,9 +1,13 @@
 
+"use client";
+
 import type { Team, Player } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useEffect } from "react";
+import confetti from "canvas-confetti";
 
 type ResultsScreenProps = {
   teams: Team[];
@@ -18,6 +22,26 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin }: ResultsSc
   
   const topScore = sortedPlayers.length > 0 ? sortedPlayers[0].score : 0;
   const winners = sortedPlayers.filter(p => p.score === topScore && topScore > 0);
+
+  useEffect(() => {
+    if (winners.length > 0) {
+      const duration = 3 * 1000;
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+      const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+      const interval = setInterval(() => {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+        confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+      }, 250);
+    }
+  }, [winners.length]);
 
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
