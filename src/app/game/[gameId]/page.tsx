@@ -313,6 +313,14 @@ export default function GamePage() {
             if (originalOwnerName === currentPlayer.teamName) {
                 throw new Error("Your team already owns this square.");
             }
+
+            // New Rule: Check if any free squares exist
+            if (originalOwnerName) { // Trying to capture an owned square
+                const hasFreeSquares = updatedGrid.some(s => s.coloredBy === null);
+                if (hasFreeSquares) {
+                    throw new Error("You can only capture free land while it's available.");
+                }
+            }
             
             // Update scores and ownership
             playerToUpdate.coloringCredits -= 1;
