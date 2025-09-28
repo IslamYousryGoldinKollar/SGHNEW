@@ -147,5 +147,3 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
         </svg>
     )
 }
-
-    
