@@ -128,16 +128,16 @@ export default function DisplayPage() {
     };
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
-        <div className="relative pt-8 w-full h-full">
+        <div className="relative pt-16 w-full h-full">
             <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
-                <div className="bg-background p-1 rounded-full shadow-lg">
-                    <div className="w-16 h-16 rounded-full border-4 flex items-center justify-center" style={{borderColor: team.color, backgroundColor: team.color+'30'}}>
-                       {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={48} height={48} className="object-contain" /> : <Trophy className="w-8 h-8" style={{color: team.color}} />}
+                <div className="bg-background p-2 rounded-full shadow-lg">
+                    <div className="w-32 h-32 rounded-full border-4 flex items-center justify-center" style={{borderColor: team.color, backgroundColor: team.color+'30'}}>
+                       {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={96} height={96} className="object-contain" /> : <Trophy className="w-16 h-16" style={{color: team.color}} />}
                     </div>
                 </div>
             </div>
             <Card className="w-full h-full flex flex-col bg-background/80 backdrop-blur-sm" style={{ borderColor: team.color }}>
-                <CardHeader className="text-center flex-shrink-0 p-4 pt-12">
+                <CardHeader className="text-center flex-shrink-0 p-4 pt-20">
                      <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
                      <div className="flex items-center justify-center text-muted-foreground pt-2">
                         <Users className="mr-2 h-5 w-5" /> 
@@ -406,6 +406,7 @@ export default function DisplayPage() {
     
 
     
+
 
 
 
