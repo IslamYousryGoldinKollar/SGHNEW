@@ -73,13 +73,13 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
 
 
   const getButtonClass = (option: string) => {
-    if (feedback === 'idle') return "border-primary/20 hover:bg-primary/10";
+    if (feedback === 'idle') return "border-primary/20";
     
     const isCorrectAnswer = option.toLowerCase() === question.answer.toLowerCase();
     const isSelectedAnswer = option.toLowerCase() === selectedAnswer?.toLowerCase();
 
-    if (isCorrectAnswer) return "bg-green-500 border-green-600 text-white hover:bg-green-500 animate-pulse";
-    if (isSelectedAnswer && !isCorrectAnswer) return "bg-red-500 border-red-600 text-white hover:bg-red-500";
+    if (isCorrectAnswer) return "bg-green-500 border-green-600 text-white animate-pulse";
+    if (isSelectedAnswer && !isCorrectAnswer) return "bg-red-500 border-red-600 text-white";
 
     return "border-gray-300 bg-gray-100 text-gray-400 opacity-60";
   }
