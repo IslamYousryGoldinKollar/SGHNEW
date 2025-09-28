@@ -145,7 +145,7 @@ export default function SessionConfigPage() {
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        const isOwner = user && (ADMIN_UIDS.includes(user.uid));
+        const isOwner = user && (gameData.adminId === user.uid || ADMIN_UIDS.includes(user.uid));
 
         if (isOwner) {
             setIsAuthorized(true);
@@ -405,5 +405,7 @@ export default function SessionConfigPage() {
     </div>
   );
 }
+
+    
 
     

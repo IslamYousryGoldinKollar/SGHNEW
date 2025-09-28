@@ -164,7 +164,7 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  const isOwner = ADMIN_UIDS.includes(user.uid);
+                  const isOwner = user.uid === session.adminId || ADMIN_UIDS.includes(user.uid);
                   return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
                                 {session.teams?.length || 0} teams, {session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players
                             </p>
                              <p className="text-xs text-muted-foreground mt-1">
-                                Admin: {session.adminId ? "Assigned" : "None"}
+                                Admin ID: {session.adminId ? session.adminId.slice(0, 8) + '...' : "None"}
                             </p>
                             <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                 <Eye className="mr-2"/>
@@ -213,5 +213,7 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
 
     

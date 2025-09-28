@@ -65,7 +65,7 @@ export default function GamePage() {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         
         if (authUser) {
-            setIsAdmin(ADMIN_UIDS.includes(authUser.uid));
+            setIsAdmin(gameData.adminId === authUser.uid || ADMIN_UIDS.includes(authUser.uid));
             const player = gameData.teams?.flatMap(t => t.players).find(p => p.id === authUser.uid) || null;
             setCurrentPlayer(player);
         }
@@ -474,5 +474,7 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
 
     
