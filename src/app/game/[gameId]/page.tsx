@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -282,52 +283,61 @@ export default function GamePage() {
 
   const handleColorSquare = async (squareId: number) => {
     if (!game || !currentPlayer) return;
-    
+
     const gameRef = doc(db, "games", GAME_ID);
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw "Game does not exist!";
-        const currentGame = gameDoc.data() as Game;
+        await runTransaction(db, async (transaction) => {
+            const gameDoc = await transaction.get(gameRef);
+            if (!gameDoc.exists()) throw new Error("Game does not exist!");
 
-        const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
-        if (teamIndex === -1) throw "Team not found!";
-        
-        const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
-        if (playerIndex === -1) throw "Player not found!";
-        
-        const playerToUpdate = currentGame.teams[teamIndex].players[playerIndex];
-        
-        if (playerToUpdate.coloringCredits <= 0) {
-            throw new Error("No coloring credits!");
-        }
+            const currentGame = gameDoc.data() as Game;
+            const updatedTeams = JSON.parse(JSON.stringify(currentGame.teams)) as Team[];
+            const updatedGrid = [...currentGame.grid];
 
-        const squareIndex = currentGame.grid.findIndex(s => s.id === squareId);
-        if (squareIndex === -1) throw "Square not found!";
-        
-        if (currentGame.grid[squareIndex].coloredBy) {
-            throw new Error("This square has already been claimed.");
-        }
+            const playerTeamIndex = updatedTeams.findIndex(t => t.name === currentPlayer.teamName);
+            if (playerTeamIndex === -1) throw new Error("Your team could not be found.");
 
-        const updatedGrid = [...currentGame.grid];
-        updatedGrid[squareIndex].coloredBy = currentPlayer.teamName;
-        
-        const updatedTeams = [...currentGame.teams];
-        updatedTeams[teamIndex].players[playerIndex].coloringCredits -= 1;
-        updatedTeams[teamIndex].players[playerIndex].score += 1;
-        updatedTeams[teamIndex].score += 1;
+            const playerIndex = updatedTeams[playerTeamIndex].players.findIndex(p => p.id === currentPlayer.id);
+            if (playerIndex === -1) throw new Error("Could not find your player data.");
 
-        transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
-      });
+            const playerToUpdate = updatedTeams[playerTeamIndex].players[playerIndex];
+            if (playerToUpdate.coloringCredits <= 0) throw new Error("You have no coloring credits.");
 
-      setCurrentQuestion(getNextQuestion());
+            const squareIndex = updatedGrid.findIndex(s => s.id === squareId);
+            if (squareIndex === -1) throw new Error("Square not found.");
+            
+            const squareToUpdate = updatedGrid[squareIndex];
+            const originalOwnerName = squareToUpdate.coloredBy;
+
+            if (originalOwnerName === currentPlayer.teamName) {
+                throw new Error("Your team already owns this square.");
+            }
+            
+            // Update scores and ownership
+            playerToUpdate.coloringCredits -= 1;
+            playerToUpdate.score += 1;
+            updatedTeams[playerTeamIndex].score += 1;
+            squareToUpdate.coloredBy = currentPlayer.teamName;
+
+            // If the square was previously owned, deduct score from the original owner team
+            if (originalOwnerName) {
+                const originalOwnerTeamIndex = updatedTeams.findIndex(t => t.name === originalOwnerName);
+                if (originalOwnerTeamIndex !== -1) {
+                    updatedTeams[originalOwnerTeamIndex].score -= 1;
+                }
+            }
+
+            transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
+        });
+
+        setCurrentQuestion(getNextQuestion());
 
     } catch (error: any) {
         console.error("Failed to color square: ", error);
         toast({ title: "Error Coloring Square", description: error.message, variant: "destructive" });
     }
-  };
+};
 
   const handleTimeout = async () => {
     if(game?.status === 'playing' && isAdmin) {
