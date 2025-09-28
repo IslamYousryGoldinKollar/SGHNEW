@@ -40,8 +40,6 @@ export default function DisplayPage() {
             if (doc.exists()) {
                 const gameData = { id: doc.id, ...doc.data() } as Game;
                 
-                // Team scores are now directly read from the database, no need to calculate here
-                
                 setGame(gameData);
             } else {
                 setGame(null);
@@ -53,40 +51,37 @@ export default function DisplayPage() {
 
     // Effect for territory capture confetti
     useEffect(() => {
-      if (!game || !game.grid || !prevGridRef.current || !hexMapRef.current) {
-        prevGridRef.current = game?.grid ?? null;
+      if (!game || !game.grid || !hexMapRef.current) {
         return;
       }
     
       const prevGrid = prevGridRef.current;
       const currentGrid = game.grid;
       const mapRect = hexMapRef.current.getBoundingClientRect();
-      if (mapRect.width === 0) { // Don't fire if map is not visible
-        prevGridRef.current = currentGrid;
-        return; 
-      }
     
-      for (let i = 0; i < currentGrid.length; i++) {
-        if (prevGrid[i].coloredBy === null && currentGrid[i].coloredBy !== null) {
-          // A square has been captured
-          const teamName = currentGrid[i].coloredBy;
-          const team = game.teams.find(t => t.name === teamName);
-          if (team) {
-            const hexPath = hexMapRef.current.querySelector(`path[data-hex-id="${i}"]`);
-            if (hexPath) {
-              const pathRect = hexPath.getBoundingClientRect();
-              const origin = {
-                x: (pathRect.left + pathRect.right) / 2 / window.innerWidth,
-                y: (pathRect.top + pathRect.bottom) / 2 / window.innerHeight,
-              };
-
-              confetti({
-                particleCount: 50,
-                spread: 40,
-                origin: origin,
-                colors: [team.color],
-                scalar: 0.8
-              });
+      if (prevGrid && mapRect.width > 0) {
+        for (let i = 0; i < currentGrid.length; i++) {
+          if (prevGrid[i].coloredBy === null && currentGrid[i].coloredBy !== null) {
+            // A square has been captured
+            const teamName = currentGrid[i].coloredBy;
+            const team = game.teams.find(t => t.name === teamName);
+            if (team) {
+              const hexPath = hexMapRef.current.querySelector(`path[data-hex-id="${i}"]`);
+              if (hexPath) {
+                const pathRect = hexPath.getBoundingClientRect();
+                const origin = {
+                  x: (pathRect.left + pathRect.right) / 2 / window.innerWidth,
+                  y: (pathRect.top + pathRect.bottom) / 2 / window.innerHeight,
+                };
+  
+                confetti({
+                  particleCount: 50,
+                  spread: 40,
+                  origin: origin,
+                  colors: [team.color],
+                  scalar: 0.8
+                });
+              }
             }
           }
         }
