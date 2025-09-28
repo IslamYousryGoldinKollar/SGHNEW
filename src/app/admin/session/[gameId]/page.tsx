@@ -145,13 +145,13 @@ export default function SessionConfigPage() {
   });
 
   useEffect(() => {
-    if (!gameId || authLoading) return;
+    if (!gameId || authLoading || !user) return;
     const gameRef = doc(db, "games", gameId.toUpperCase());
     
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        const isOwner = user && (gameData.adminId === user.uid || ADMIN_UIDS.includes(user.uid));
+        const isOwner = gameData.adminId === user.uid || ADMIN_UIDS.includes(user.uid);
 
         if (isOwner) {
             setIsAuthorized(true);
@@ -166,7 +166,7 @@ export default function SessionConfigPage() {
                 theme: gameData.theme || 'default',
               });
             }
-        } else if (user) { // user is logged in but not the admin
+        } else {
             setIsAuthorized(false);
         }
       }

@@ -137,6 +137,8 @@ export default function AdminDashboard() {
     );
   }
 
+  const isGlobalAdmin = ADMIN_UIDS.includes(user.uid);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -164,7 +166,7 @@ export default function AdminDashboard() {
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  const isOwner = user.uid === session.adminId || ADMIN_UIDS.includes(user.uid);
+                  const isOwner = user.uid === session.adminId || isGlobalAdmin;
                   return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
