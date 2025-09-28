@@ -11,7 +11,7 @@
     --card-foreground: 220 15% 10%;
     --popover: 220 20% 100%;
     --popover-foreground: 220 15% 10%;
-    --primary: 262 84% 59%; /* Purple */
+    --primary: 0 100% 47%; /* Red from RGB(240, 0, 0) */
     --primary-foreground: 210 40% 98%;
     --secondary: 220 15% 90%; /* Light gray */
     --secondary-foreground: 220 15% 20%;
@@ -23,7 +23,7 @@
     --destructive-foreground: 210 40% 98%;
     --border: 220 15% 85%;
     --input: 220 15% 85%;
-    --ring: 262 84% 59%;
+    --ring: 0 100% 47%;
     --radius: 0.8rem;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
