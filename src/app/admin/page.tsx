@@ -115,6 +115,7 @@ export default function AdminDashboard() {
       };
 
       await setDoc(newGameRef, duplicatedGame);
+      setSessions(prev => prev.filter(s => s.id !== gameId)); // Remove old session from local state to prevent key error
       router.push(`/admin/session/${newPin}`);
 
     } catch (err) {
