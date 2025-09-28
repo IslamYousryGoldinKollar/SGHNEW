@@ -64,7 +64,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                                 d={path}
                                 onClick={() => !isDisabled && onHexClick(index)}
                                 fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
-                                style={{ fillOpacity: isColored ? 0.7 : 0 }}
+                                style={{ fillOpacity: isColored ? 0.7 : 0, strokeDasharray: '10, 10' }}
                                 className={cn(
                                     "stroke-black/50 dark:stroke-white/50",
                                     "stroke-2 transition-all duration-300",
@@ -79,4 +79,3 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
         </div>
     );
 }
-
