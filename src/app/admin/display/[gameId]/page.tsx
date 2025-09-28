@@ -224,7 +224,7 @@ export default function DisplayPage() {
                             <QRCodeSVG value={joinUrl} size={256} />
                         </div>
                         <p className="text-xl text-muted-foreground mt-6">Session PIN</p>
-                        <h1 className="text-6xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
+                        <h1 className="text-3xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
                     </div>
                 </div>
 
@@ -261,7 +261,7 @@ export default function DisplayPage() {
 
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
-                <div className="absolute left-8 top-8 z-10 w-64">
+                <div className="absolute left-4 top-4 z-10 w-48 h-24">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
                 <div className="absolute left-8 top-1/2 -translate-y-1/2 z-10">
