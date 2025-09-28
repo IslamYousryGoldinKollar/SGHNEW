@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -44,7 +43,6 @@ export default function GamePage() {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setAuthUser(user);
-        // Admin check will now happen inside the game snapshot useEffect
       } else {
         signInAnonymously(auth).catch((error) => {
           console.error("Anonymous sign-in error", error);
@@ -59,26 +57,23 @@ export default function GamePage() {
   useEffect(() => {
     if (!GAME_ID) return;
     const gameRef = doc(db, "games", GAME_ID);
+    
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
+      setLoading(true);
       if (docSnap.exists()) {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         
-        // Check for admin status
-        if (authUser && ADMIN_UIDS.includes(authUser.uid)) {
-            setIsAdmin(true);
-        } else {
-            setIsAdmin(false);
+        if (authUser) {
+            setIsAdmin(ADMIN_UIDS.includes(authUser.uid));
+            const player = gameData.teams?.flatMap(t => t.players).find(p => p.id === authUser.uid) || null;
+            setCurrentPlayer(player);
         }
         
         setGame(gameData);
-        
-        if (authUser) {
-          const player = gameData.teams?.flatMap(t => t.players).find(p => p.id === authUser.uid);
-          setCurrentPlayer(player || null);
-        }
       } else {
         toast({ title: "Game not found", description: "This game session does not exist.", variant: "destructive" });
         setGame(null);
+        setCurrentPlayer(null);
       }
       setLoading(false);
     });
@@ -105,7 +100,8 @@ export default function GamePage() {
 
             const isAlreadyInTeam = currentGame.teams.some(t => t.players.some(p => p.id === authUser.uid));
             if(isAlreadyInTeam) {
-                toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" });
+                // This is a soft check. The UI should already prevent this.
+                // We'll let the onSnapshot handle the UI update rather than throwing an error.
                 return;
             }
             
@@ -134,7 +130,6 @@ export default function GamePage() {
             transaction.update(gameRef, { teams: updatedTeams });
         });
 
-        // Log the player join event to the new collection
         const playerJoinsCollection = collection(db, "player_joins");
         await addDoc(playerJoinsCollection, {
             gameId: GAME_ID,
@@ -268,18 +263,15 @@ export default function GamePage() {
 
         if (isCorrect) {
             playerToUpdate.coloringCredits += 1;
-            playerToUpdate.score += 1; // Add 1 point for a correct answer
-            teamToUpdate.score += 1; // Also update the team's score
+            playerToUpdate.score += 1;
+            teamToUpdate.score += 1;
         }
         
         transaction.update(gameRef, { teams: updatedTeams });
     });
 
-    // We don't need to manually set the view here. The useEffect hook will react
-    // to the `currentPlayer` state update from Firestore and switch the view.
     if (!isCorrect) {
-       // If wrong, immediately fetch the next question to show after feedback animation
-        setCurrentQuestion(getNextQuestion());
+       setCurrentQuestion(getNextQuestion());
     }
   };
   
@@ -318,13 +310,12 @@ export default function GamePage() {
         
         const updatedTeams = [...currentGame.teams];
         updatedTeams[teamIndex].players[playerIndex].coloringCredits -= 1;
-        updatedTeams[teamIndex].players[playerIndex].score += 1; // Add 1 point for coloring a square
-        updatedTeams[teamIndex].score += 1; // Also update the team's score
+        updatedTeams[teamIndex].players[playerIndex].score += 1;
+        updatedTeams[teamIndex].score += 1;
 
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
       });
 
-      // After coloring, fetch next question and the useEffect will switch the view
       setCurrentQuestion(getNextQuestion());
 
     } catch (error: any) {
@@ -384,6 +375,27 @@ export default function GamePage() {
       )
     }
 
+    if (!currentPlayer && game.status !== 'lobby') {
+       return (
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
+                <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
+                <p className="text-muted-foreground mt-2">A game is currently being played. You can join the next round once this one is finished.</p>
+            </div>
+        );
+    }
+    
+    if (!currentPlayer) {
+        return (
+             <Lobby
+                game={game}
+                onJoinTeam={handleJoinTeam}
+                onStartGame={handleStartGame}
+                currentPlayer={null}
+                isAdmin={isAdmin}
+            />
+        );
+    }
+
     switch (game.status) {
       case "lobby":
       case "starting":
@@ -397,15 +409,6 @@ export default function GamePage() {
           />
         );
       case "playing":
-        if (!currentPlayer) {
-            return (
-                <div className="flex flex-col items-center justify-center flex-1 text-center">
-                    <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
-                    <p className="text-muted-foreground mt-2">A game is currently being played. You can join the next round once this one is finished.</p>
-                </div>
-            );
-        }
-        
         const playerTeam = game.teams.find((t) => t.name === currentPlayer.teamName);
         if (!playerTeam) return <p>Error: Your team could not be found.</p>;
         
