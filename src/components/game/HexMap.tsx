@@ -52,7 +52,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 className="object-contain"
                 data-ai-hint="island map"
             />
-            <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg" transform="scale(0.92) translate(0, 41)">
+            <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg" transform="scale(0.915) translate(0, 41)">
                 {hexPaths.map((path, index) => {
                     const square = grid.find(s => s.id === index);
                     const isColored = !!square?.coloredBy;
@@ -79,3 +79,5 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
         </div>
     );
 }
+
+    
