@@ -16,7 +16,7 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
+const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1", "rFmz1nJvm6X5d0jR7l6qZ8wY3gE2"];
 
 export default function GamePage() {
   const params = useParams();
@@ -407,7 +407,7 @@ export default function GamePage() {
         );
     }
     
-    if (game.status === 'lobby' || (game.status === 'starting' && !currentPlayer)) {
+    if (game.status === 'lobby') {
         return (
              <Lobby
                 game={game}
@@ -420,8 +420,8 @@ export default function GamePage() {
     }
 
     switch (game.status) {
-      case "starting": // Player is in a team and game is starting
-      case "lobby": // Should be covered above, but as a fallback
+      case "starting":
+      case "lobby": 
         return (
           <Lobby
             game={game}

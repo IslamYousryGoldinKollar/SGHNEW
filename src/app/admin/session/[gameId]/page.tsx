@@ -27,7 +27,7 @@ const themes: {value: GameTheme, label: string}[] = [
     { value: 'team-bravo', label: 'Team Bravo' },
 ];
 
-const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
+const ADMIN_UIDS = ["qBMAWCoI5naA7P67tLqg2AbeV3t1", "DqPp28DfHAPTibRoMXNoPtj67Mt1", "rFmz1nJvm6X5d0jR7l6qZ8wY3gE2"];
 
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
