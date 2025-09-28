@@ -60,15 +60,15 @@ const accessTokens: Record<string, string> = {
     "22": "your-token-for-22.png",
 };
 
-
 const imageMap: Record<number, number> = {
-    0: 20, 1: 17, 2: 12, 3: 1, 4: 7, 5: 0, 6: 18, 7: 13, 8: 3,
-    9: 10, 10: 6, 11: 14, 12: 4, 13: 15, 14: 8, 15: 19, 16: 21,
-    17: 2, 18: 5, 19: 9, 20: 11, 21: 16
+    0: 11, 1: 10, 2: 14, 3: 15, 4: 18, 5: 19, 6: 12, 7: 1, 8: 16,
+    9: 20, 10: 17, 11: 2, 12: 8, 13: 7, 14: 3, 15: 4, 16: 5,
+    17: 9, 18: 6, 19: 21, 20: 22, 21: 13
 };
 
+
 const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).reduce((acc, [pathIdx, imgNum]) => {
-    acc[parseInt(pathIdx, 10)] = imgNum + 1;
+    acc[parseInt(pathIdx, 10)] = imgNum;
     return acc;
 }, {} as Record<number, number>);
 
