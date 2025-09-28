@@ -67,7 +67,6 @@ export default function Particles({
     dy: number
     magnetism: number
     color: string // Added color property
-    waveAngle: number;
   }
 
   const resizeCanvas = () => {
@@ -84,18 +83,19 @@ export default function Particles({
   }
 
   const circleParams = (): Circle => {
-    const x = Math.floor(Math.random() * canvasSize.current.w)
-    const y = Math.floor(Math.random() * canvasSize.current.h)
-    const translateX = 0
-    const translateY = 0
-    const size = Math.floor(Math.random() * 2) + 0.5 // Allow smaller particles
-    const alpha = 0
-    const targetAlpha = parseFloat((Math.random() * 0.6 + 0.2).toFixed(1)) // Lower alpha for subtlety
-    const dx = (Math.random() - 0.5) * 0.1 // Slower movement
-    const dy = (Math.random() - 0.5) * 0.1 // Slower movement
-    const magnetism = 0.1 + Math.random() * 4
-    const color = Math.random() > 0.5 ? 'rgba(0, 122, 255, 1)' : 'rgba(255, 255, 255, 1)' // 50% chance of being white
-    const waveAngle = Math.random() * Math.PI * 2;
+    const x = canvasSize.current.w / 2;
+    const y = canvasSize.current.h / 2;
+    const translateX = 0;
+    const translateY = 0;
+    const size = Math.floor(Math.random() * 2) + 0.5;
+    const alpha = 0;
+    const targetAlpha = parseFloat((Math.random() * 0.6 + 0.3).toFixed(1));
+    const angle = Math.random() * 2 * Math.PI;
+    const speed = (Math.random() * 0.5) + 0.1;
+    const dx = Math.cos(angle) * speed;
+    const dy = Math.sin(angle) * speed;
+    const magnetism = 0.1 + Math.random() * 4;
+    const color = Math.random() > 0.5 ? 'rgba(0, 122, 255, 1)' : 'rgba(255, 255, 255, 1)';
     return {
       x,
       y,
@@ -108,7 +108,6 @@ export default function Particles({
       dy,
       magnetism,
       color,
-      waveAngle,
     }
   }
 
@@ -179,9 +178,9 @@ export default function Particles({
       } else {
         circle.alpha = circle.targetAlpha * remapClosestEdge
       }
-      circle.x += circle.dx
-      circle.waveAngle += 0.01;
-      circle.y += circle.dy + Math.sin(circle.waveAngle) * 0.2;
+
+      circle.x += circle.dx;
+      circle.y += circle.dy;
       circle.translateX +=
         (mouse.current.x / (staticity / circle.magnetism) - circle.translateX) /
         ease
@@ -195,12 +194,8 @@ export default function Particles({
         circle.y < -circle.size ||
         circle.y > canvasSize.current.h + circle.size
       ) {
-        // remove the circle from the array
-        circles.current.splice(i, 1)
-        // create a new circle
-        const newCircle = circleParams()
-        drawCircle(newCircle)
-        // update the circle position
+        // remove the circle from the array and create a new one from the center
+        circles.current[i] = circleParams();
       } else {
         drawCircle(
           {
