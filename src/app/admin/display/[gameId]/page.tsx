@@ -25,7 +25,6 @@ export default function DisplayPage() {
     const [loading, setLoading] = useState(true);
     const [joinUrl, setJoinUrl] = useState("");
     const prevGridRef = useRef<GridSquare[] | null>(null);
-    const hexMapRef = useRef<SVGSVGElement>(null);
 
     useEffect(() => {
         if (typeof window !== "undefined") {
@@ -51,43 +50,44 @@ export default function DisplayPage() {
 
     // Effect for territory capture confetti
     useEffect(() => {
-      if (!game || !game.grid || !hexMapRef.current) {
+      if (!game || !game.grid) {
         return;
       }
     
       const prevGrid = prevGridRef.current;
       const currentGrid = game.grid;
-      const mapRect = hexMapRef.current.getBoundingClientRect();
     
-      if (prevGrid && mapRect.width > 0) {
+      if (prevGrid) {
         for (let i = 0; i < currentGrid.length; i++) {
           if (prevGrid[i].coloredBy === null && currentGrid[i].coloredBy !== null) {
             // A square has been captured
             const teamName = currentGrid[i].coloredBy;
             const team = game.teams.find(t => t.name === teamName);
+            const teamIndex = game.teams.findIndex(t => t.name === teamName);
+
             if (team) {
-              const hexPath = hexMapRef.current.querySelector(`path[data-hex-id="${i}"]`);
-              if (hexPath) {
-                const pathRect = hexPath.getBoundingClientRect();
-                const origin = {
-                  x: (pathRect.left + pathRect.right) / 2 / window.innerWidth,
-                  y: (pathRect.top + pathRect.bottom) / 2 / window.innerHeight,
-                };
-  
-                confetti({
-                  particleCount: 50,
-                  spread: 40,
-                  origin: origin,
-                  colors: [team.color],
-                  scalar: 0.8
-                });
-              }
+              // Pre-defined origins for the towers. These are percentages of the screen width/height.
+              const towerOrigins = [
+                { x: 0.35, y: 0.3 }, // Left tower (Team Alpha)
+                { x: 0.65, y: 0.3 }  // Right tower (Team Bravo)
+              ];
+              const origin = towerOrigins[teamIndex] || { x: 0.5, y: 0.5 };
+              
+              confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: origin,
+                colors: [team.color],
+                angle: 90,
+                startVelocity: 40,
+                scalar: 1.2
+              });
             }
           }
         }
       }
     
-      prevGridRef.current = currentGrid;
+      prevGridRef.current = [...currentGrid];
     }, [game]);
 
 
@@ -267,7 +267,7 @@ export default function DisplayPage() {
                 </div>
                 <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
-                        <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} ref={hexMapRef} />
+                        <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} />
                     </div>
                 </div>
                 <div className="absolute right-8 top-1/2 -translate-y-1/2 z-10">
