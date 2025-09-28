@@ -105,7 +105,7 @@ export default function GamePage() {
 
         await runTransaction(db, async (transaction) => {
             const gameDoc = await transaction.get(gameRef);
-            if (!gameDoc.exists()) throw "Game does not exist!";
+            if (!gameDoc.exists()) throw new Error("Game does not exist!");
             
             const currentGame = gameDoc.data() as Game;
 
@@ -117,7 +117,7 @@ export default function GamePage() {
             }
             
             const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
-            if(teamIndex === -1) throw "Team not found!";
+            if(teamIndex === -1) throw new Error("Team not found!");
 
             const team = currentGame.teams[teamIndex];
 
@@ -250,7 +250,7 @@ export default function GamePage() {
     
     await runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw "Game does not exist!";
+        if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
 
         const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
@@ -486,3 +486,4 @@ export default function GamePage() {
     
 
     
+
