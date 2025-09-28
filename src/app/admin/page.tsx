@@ -5,8 +5,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp } from "firebase/firestore";
-import { Loader2, Plus, Eye, Edit, Trash2 } from "lucide-react";
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { Loader2, Plus, Eye, Edit, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import type { Game, GridSquare } from "@/lib/types";
@@ -88,6 +88,37 @@ export default function AdminDashboard() {
     }
   }
 
+  const duplicateSession = async (gameId: string) => {
+    try {
+      const originalGameRef = doc(db, "games", gameId);
+      const originalGameSnap = await getDoc(originalGameRef);
+
+      if (!originalGameSnap.exists()) {
+        alert("Session to duplicate not found.");
+        return;
+      }
+
+      const originalGameData = originalGameSnap.data();
+      const newPin = generatePin();
+      const newGameRef = doc(db, "games", newPin);
+      
+      const duplicatedGame: Omit<Game, 'id'> = {
+        ...originalGameData,
+        status: "lobby",
+        teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
+        createdAt: serverTimestamp() as any,
+        gameStartedAt: null,
+      };
+
+      await setDoc(newGameRef, duplicatedGame);
+      router.push(`/admin/session/${newPin}`);
+
+    } catch (err) {
+      console.error("Failed to duplicate session:", err);
+      alert("Failed to duplicate session.");
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -142,13 +173,17 @@ export default function AdminDashboard() {
                                 Open Big Screen
                             </Button>
                         </CardContent>
-                         <CardFooter className="flex gap-2">
+                         <CardFooter className="grid grid-cols-3 gap-2">
                              <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)}>
-                                 <Edit className="mr-2"/>
+                                 <Edit className="mr-2 h-4 w-4"/>
                                  Edit
                              </Button>
+                              <Button className="w-full" variant="outline" onClick={() => duplicateSession(session.id)}>
+                                 <Copy className="mr-2 h-4 w-4"/>
+                                 Duplicate
+                             </Button>
                              <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)}>
-                                 <Trash2 className="mr-2"/>
+                                 <Trash2 className="mr-2 h-4 w-4"/>
                                  Delete
                              </Button>
                         </CardFooter>
