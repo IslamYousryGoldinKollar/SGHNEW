@@ -38,13 +38,28 @@ const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831
 // This map correctly assigns the image number to the index of the hex path in the array above.
 // The order is based on the visual layout of the SVG paths, from top-to-bottom, left-to-right.
 const imageMap = [
-    21, 22, // Top row
-    18, 19, 20, // 2nd row
-    13, 14, 15, 16, // 3rd row
-    1, 12, 0, 7, 17, // 4th row (center)
-    2, 3, 6, 11, // 5th row
-    4, 5, 10, // 6th row
-    8, 9, // Bottom row
+    10, // index 0  -> visual hex for 10.png
+    8,  // index 1  -> visual hex for 8.png
+    11, // index 2  -> visual hex for 11.png
+    12, // index 3  -> visual hex for 12.png
+    15, // index 4  -> visual hex for 15.png
+    16, // index 5  -> visual hex for 16.png
+    13, // index 6  -> visual hex for 13.png
+    9,  // index 7  -> visual hex for 9.png
+    19, // index 8  -> visual hex for 19.png
+    20, // index 9  -> visual hex for 20.png
+    17, // index 10 -> visual hex for 17.png
+    14, // index 11 -> visual hex for 14.png
+    4,  // index 12 -> visual hex for 4.png
+    5,  // index 13 -> visual hex for 5.png
+    6,  // index 14 -> visual hex for 6.png
+    7,  // index 15 -> visual hex for 7.png
+    18, // index 16 -> visual hex for 18.png
+    2,  // index 17 -> visual hex for 2.png
+    3,  // index 18 -> visual hex for 3.png
+    21, // index 19 -> visual hex for 21.png
+    1,  // index 20 -> visual hex for 1.png
+    22, // index 21 -> visual hex for 22.png
 ];
 
 
@@ -63,7 +78,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                     const imgNum = i + 1;
                     const paddedNum = String(imgNum).padStart(2, '0');
                     return (
-                        <pattern key={i} id={`hex-bg-${i}`} patternContentUnits="objectBoundingBox" width="1" height="1">
+                        <pattern key={i} id={`hex-bg-${imgNum}`} patternContentUnits="objectBoundingBox" width="1" height="1">
                              <image href={`${BUCKET_BASE_URL}${paddedNum}.png?alt=media`} x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice"/>
                         </pattern>
                     )
@@ -76,13 +91,13 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 const isDisabled = isColored || !isClickable;
 
                 // Use the imageMap to find the correct background image for this hexagon path index
-                const imageIndex = imageMap[index] ?? index;
+                const imageFileNumber = imageMap[index];
 
                 return (
                     <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
                         <path
                             d={path}
-                            style={{ fill: `url(#hex-bg-${imageIndex})` }}
+                            style={{ fill: `url(#hex-bg-${imageFileNumber})` }}
                             className={cn(
                                 "stroke-black/50 dark:stroke-white/50",
                                 "stroke-[3px] transition-all duration-300",
