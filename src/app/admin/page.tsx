@@ -69,7 +69,7 @@ export default function AdminDashboard() {
         gameStartedAt: null,
         timer: 300, // 5 minutes default
         topic: "General Knowledge",
-        theme: "default",
+        theme: "team-alpha",
     };
 
     await setDoc(gameRef, newGame);

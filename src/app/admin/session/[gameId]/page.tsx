@@ -22,9 +22,8 @@ import { extractQuestionsFromPdfAction } from "@/lib/actions";
 
 const themes: {value: GameTheme, label: string}[] = [
     { value: 'default', label: 'Default' },
-    { value: 'sunset', label: 'Sunset' },
-    { value: 'ocean', label: 'Ocean' },
-    { value: 'forest', label: 'Forest' },
+    { value: 'team-alpha', label: 'Team Alpha' },
+    { value: 'team-bravo', label: 'Team Bravo' },
 ];
 
 const sessionSchema = z.object({
@@ -42,7 +41,7 @@ const sessionSchema = z.object({
       answer: z.string().min(1, "An answer is required."),
   })),
   topic: z.string(),
-  theme: z.enum(["default", "sunset", "ocean", "forest"]),
+  theme: z.enum(["default", "team-alpha", "team-bravo"]),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;

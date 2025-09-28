@@ -35,7 +35,7 @@ export interface Team {
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
-export type GameTheme = "default" | "sunset" | "ocean" | "forest";
+export type GameTheme = "default" | "team-alpha" | "team-bravo";
 
 export interface Game {
     id: string; // The game PIN
