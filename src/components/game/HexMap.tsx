@@ -99,10 +99,10 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                         >
                             <image
                                 href={imageUrl}
-                                x="0.05"
-                                y="0.05"
-                                width="0.9"
-                                height="0.9"
+                                x="0.075"
+                                y="0.075"
+                                width="0.85"
+                                height="0.85"
                                 preserveAspectRatio="xMidYMid slice"
                             />
                         </pattern>
