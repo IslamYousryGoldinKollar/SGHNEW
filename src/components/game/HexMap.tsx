@@ -1,6 +1,8 @@
 
 import type { GridSquare, Team } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
+import placeholderImages from "@/lib/placeholder-images.json";
 
 const hexPaths = [
     "M826 969.8 826 1038.2 1004 1116.3 1181.9 1038.2 1181.9 969.8 1004 891.7 826 969.8",
@@ -27,45 +29,6 @@ const hexPaths = [
     "M1004 530.3 1004 598.8 1181.9 676.8 1359.9 598.8 1359.9 530.3 1181.9 452.2 1004 530.3"
 ];
 
-const BUCKET_BASE_URL = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2F";
-
-const accessTokens: Record<string, string> = {
-    "01": "3df822fb-e8e5-4ee4-b217-e99b075719e3",
-    "02": "a8e68836-42f6-4879-a105-e8546c0e0e6c",
-    "03": "430e6620-6659-444b-9d0a-798d8be2a74d",
-    "04": "cca66808-6781-4bd9-b279-6aaba57f22fc",
-    "05": "0bd5304a-3948-4c87-8c09-9eb95d2defd0",
-    "06": "your-token-for-06.png",
-    "07": "your-token-for-07.png",
-    "08": "your-token-for-08.png",
-    "09": "your-token-for-09.png",
-    "10": "your-token-for-10.png",
-    "11": "your-token-for-11.png",
-    "12": "your-token-for-12.png",
-    "13": "your-token-for-13.png",
-    "14": "your-token-for-14.png",
-    "15": "your-token-for-15.png",
-    "16": "your-token-for-16.png",
-    "17": "your-token-for-17.png",
-    "18": "your-token-for-18.png",
-    "19": "your-token-for-19.png",
-    "20": "your-token-for-20.png",
-    "21": "your-token-for-21.png",
-    "22": "your-token-for-22.png",
-};
-
-const imageMap: Record<number, number> = {
-    0: 11, 1: 10, 2: 14, 3: 15, 4: 18, 5: 19, 6: 16, 7: 12, 8: 21,
-    9: 22, 10: 20, 11: 17, 12: 6, 13: 7, 14: 8, 15: 9, 16: 13,
-    17: 3, 18: 4, 19: 5, 20: 1, 21: 2
-};
-
-
-const pathIndexToImageNumber: Record<number, number> = Object.entries(imageMap).reduce((acc, [pathIdx, imgNum]) => {
-    acc[parseInt(pathIdx, 10)] = imgNum;
-    return acc;
-}, {} as Record<number, number>);
-
 type HexMapProps = {
     grid: GridSquare[];
     teams: Team[];
@@ -79,68 +42,41 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     };
 
     const isClickable = !!onHexClick;
+    const { mapBackground } = placeholderImages;
     
     return (
-        <svg viewBox="0 0 2048 2048" className="w-full h-full drop-shadow-lg">
-            <defs>
-                {hexPaths.map((_, index) => {
-                    const imageFileNumber = pathIndexToImageNumber[index];
-                    const paddedNum = String(imageFileNumber).padStart(2, '0');
-                    const token = accessTokens[paddedNum] || "";
-                    const imageUrl = `${BUCKET_BASE_URL}${paddedNum}.png?alt=media${token ? `&token=${token}` : ""}`;
+        <div className="relative w-full h-full">
+            <Image
+                src={mapBackground.src}
+                alt={mapBackground.alt}
+                fill
+                className="object-cover"
+                data-ai-hint={mapBackground['data-ai-hint']}
+            />
+            <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg">
+                {hexPaths.map((path, index) => {
+                    const square = grid.find(s => s.id === index);
+                    const isColored = !!square?.coloredBy;
+                    const isDisabled = isColored || !isClickable;
 
                     return (
-                        <pattern
-                            key={`hex-bg-${index}`}
-                            id={`hex-bg-${index}`}
-                            patternContentUnits="objectBoundingBox"
-                            width="1"
-                            height="1"
-                        >
-                            <image
-                                href={imageUrl}
-                                x="0.075"
-                                y="0.075"
-                                width="0.85"
-                                height="0.85"
-                                preserveAspectRatio="xMidYMid slice"
-                            />
-                        </pattern>
-                    );
-                })}
-            </defs>
-
-            {hexPaths.map((path, index) => {
-                const square = grid.find(s => s.id === index);
-                const isColored = !!square?.coloredBy;
-                const isDisabled = isColored || !isClickable;
-
-                return (
-                    <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
-                        {/* Hex background with pattern */}
-                        <path
-                            d={path}
-                            style={{ fill: `url(#hex-bg-${index})` }}
-                            className={cn(
-                                "stroke-black/50 dark:stroke-white/50",
-                                "stroke-[3px] transition-all duration-300",
-                                isClickable && !isColored && "cursor-pointer hover:opacity-80 hover:scale-[1.02] hover:stroke-primary",
-                                isColored && "cursor-not-allowed",
-                            )}
-                        />
-
-                        {/* Team color overlay */}
-                        {isColored && (
+                        <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
+                            {/* Hexagon Path */}
                             <path
                                 d={path}
-                                style={{ fill: getTeamColor(square?.coloredBy || null), fillOpacity: 0.7 }}
-                                className="pointer-events-none"
+                                fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
+                                style={{ fillOpacity: isColored ? 0.7 : 0 }}
+                                className={cn(
+                                    "stroke-black/50 dark:stroke-white/50",
+                                    "stroke-[3px] transition-all duration-300",
+                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/10",
+                                    isColored && "cursor-not-allowed",
+                                )}
                             />
-                        )}
-                    </g>
-                );
-            })}
-        </svg>
+                        </g>
+                    );
+                })}
+            </svg>
+        </div>
     );
 }
-
