@@ -52,31 +52,29 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 className="object-contain"
                 data-ai-hint="island map"
             />
-            <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg">
-                <g transform="translate(-69.45, 171.95)">
-                    {hexPaths.map((path, index) => {
-                        const square = grid.find(s => s.id === index);
-                        const isColored = !!square?.coloredBy;
-                        const isDisabled = isColored || !isClickable;
+            <svg viewBox="293.1 452.2 1600.7 1103.7" className="relative w-full h-full drop-shadow-lg">
+                {hexPaths.map((path, index) => {
+                    const square = grid.find(s => s.id === index);
+                    const isColored = !!square?.coloredBy;
+                    const isDisabled = isColored || !isClickable;
 
-                        return (
-                            <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
-                                {/* Hexagon Path */}
-                                <path
-                                    d={path}
-                                    fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
-                                    style={{ fillOpacity: isColored ? 0.7 : 0 }}
-                                    className={cn(
-                                        "stroke-black/50 dark:stroke-white/50",
-                                        "stroke-[3px] transition-all duration-300",
-                                        isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/10",
-                                        isColored && "cursor-not-allowed",
-                                    )}
-                                />
-                            </g>
-                        );
-                    })}
-                </g>
+                    return (
+                        <g key={index} onClick={() => !isDisabled && onHexClick(index)}>
+                            {/* Hexagon Path */}
+                            <path
+                                d={path}
+                                fill={isColored ? getTeamColor(square.coloredBy) : 'transparent'}
+                                style={{ fillOpacity: isColored ? 0.7 : 0 }}
+                                className={cn(
+                                    "stroke-black/50 dark:stroke-white/50",
+                                    "stroke-[3px] transition-all duration-300",
+                                    isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/10",
+                                    isColored && "cursor-not-allowed",
+                                )}
+                            />
+                        </g>
+                    );
+                })}
             </svg>
         </div>
     );
