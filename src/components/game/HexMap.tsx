@@ -41,7 +41,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
     };
 
     const isClickable = !!onHexClick;
-    const mapImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fland%202.png?alt=media&token=07eaf83a-446d-429e-ba08-3c5af4fe5aad";
+    const mapImageUrl = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fland%203.png?alt=media&token=0624248a-f3bc-4719-b2dd-81de2b7b7201";
     
     return (
         <div className="relative w-full h-full">
@@ -52,7 +52,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                 className="object-contain"
                 data-ai-hint="island map"
             />
-            <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg" transform="scale(1.1)">
+            <svg viewBox="0 0 2048 2048" className="relative w-full h-full drop-shadow-lg" transform="scale(0.95) translate(0, 41)">
                 {hexPaths.map((path, index) => {
                     const square = grid.find(s => s.id === index);
                     const isColored = !!square?.coloredBy;
