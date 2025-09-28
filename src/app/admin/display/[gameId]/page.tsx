@@ -172,7 +172,13 @@ export default function DisplayPage() {
                 </div>
 
                 {/* Center Content */}
-                <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
+                <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground relative">
+                     <Image 
+                        src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land%20copy.png?alt=media&token=ff315d80-6d9c-40ac-a7fd-b23ac0c19cfb"
+                        alt="Game map background"
+                        fill
+                        className="object-contain -z-10 opacity-50"
+                     />
                     <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
                         <div className="mb-6 w-full max-w-sm h-auto text-primary">
                             <svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3189.14 1035.43">
@@ -400,6 +406,7 @@ export default function DisplayPage() {
     
 
     
+
 
 
 
