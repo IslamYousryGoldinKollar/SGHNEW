@@ -82,6 +82,7 @@ export default function HexMap({ grid, teams, onHexClick }: HexMapProps) {
                                     isClickable && !isColored && "cursor-pointer hover:stroke-primary hover:fill-white/30 hover:!fill-opacity-100",
                                     isClickable && !isColored && "hover:[filter:url(#inner-shadow)]",
                                     isColored && "cursor-not-allowed",
+                                    isColored && "[filter:url(#inner-shadow)]",
                                 )}
                             />
                         );
