@@ -81,14 +81,14 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
           }
       }
 
-      const imageRef = ref(storage, `game-thumbnails/${user.uid}/${file.name}`);
+      const imageRef = ref(storage, `game-thumbnails/${user.uid}/${session.id}-${file.name}`);
       const snapshot = await uploadBytes(imageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       setThumbnailUrl(downloadURL);
       toast({ title: "Thumbnail uploaded!", description: "Save your changes to apply." });
     } catch (error) {
       console.error("Error uploading thumbnail:", error);
-      toast({ title: "Upload Failed", description: "Could not upload the image. Your storage rules might need an update.", variant: "destructive" });
+      toast({ title: "Upload Failed", description: "Could not upload the image. Please ensure your Firebase Storage rules are configured correctly.", variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -104,6 +104,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
         toast({ title: "Thumbnail removed", description: "Save your changes to apply." });
       } catch (error: any) {
          if (error.code === 'storage/object-not-found') {
+            // If the file is already gone, just update the state
             setThumbnailUrl(null);
             toast({ title: "Thumbnail removed", description: "Save your changes to apply." });
         } else {
