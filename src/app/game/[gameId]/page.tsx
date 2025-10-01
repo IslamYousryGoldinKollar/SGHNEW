@@ -341,8 +341,13 @@ export default function GamePage() {
 
   const handleCancelQueue = async () => {
     if(!authUser) return;
-    const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
-    await deleteDoc(ticketRef);
+    try {
+        const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+        await deleteDoc(ticketRef);
+    } catch (error) {
+        console.error("Error cancelling queue:", error);
+        toast({ title: "Error", description: "Could not cancel matchmaking.", variant: "destructive" });
+    }
   }
 
   // Handler for team mode
@@ -705,5 +710,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
