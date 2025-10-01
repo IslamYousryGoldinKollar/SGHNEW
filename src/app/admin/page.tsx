@@ -6,10 +6,11 @@ import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
 import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where, runTransaction } from "firebase/firestore";
-import { Loader2, Plus, Eye, Edit, Trash2, Copy, Users, BarChart } from "lucide-react";
+import { Loader2, Plus, Eye, Edit, Trash2, Copy, Users, BarChart, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import type { Game, GridSquare } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
 
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -21,6 +22,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [sessions, setSessions] = useState<Game[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -155,6 +157,15 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleShare = (gameId: string) => {
+    const joinUrl = `${window.location.origin}/game/${gameId}`;
+    navigator.clipboard.writeText(joinUrl);
+    toast({
+      title: "Link Copied!",
+      description: "The session join link has been copied to your clipboard.",
+    });
+  };
+
   if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -208,7 +219,7 @@ export default function AdminDashboard() {
                                 <Users className="mr-2 h-4 w-4"/>
                                 {isIndividual 
                                     ? `${session.teams?.[0]?.players?.length || 0} participants`
-                                    : `${session.teams?.length || 0} teams, ${session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players`
+                                    : `${session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players`
                                 }
                             </p>
                             {isIndividual ? (
@@ -223,12 +234,16 @@ export default function AdminDashboard() {
                                 </Button>
                             )}
                         </CardContent>
-                         <CardFooter className="grid grid-cols-3 gap-2">
+                         <CardFooter className="grid grid-cols-2 gap-2">
                              <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={!isOwner}>
                                  <Edit className="mr-2 h-4 w-4"/>
                                  Edit
                              </Button>
-                              <Button className="w-full" variant="outline" onClick={() => duplicateSession(session.id)}>
+                             <Button className="w-full" variant="default" onClick={() => handleShare(session.id)}>
+                                 <Share2 className="mr-2 h-4 w-4"/>
+                                 Share
+                             </Button>
+                             <Button className="w-full" variant="outline" onClick={() => duplicateSession(session.id)}>
                                  <Copy className="mr-2 h-4 w-4"/>
                                  Duplicate
                              </Button>
@@ -248,3 +263,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
