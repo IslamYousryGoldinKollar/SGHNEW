@@ -28,7 +28,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2, Copy, Upload, Trash2, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import Image from "next/image";
-import { refFromURL } from "firebase/storage";
 
 interface ShareSessionModalProps {
   session: Game | null;
@@ -90,7 +89,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
 
   const deleteThumbnailFromStorage = async (url: string) => {
     try {
-      const oldRef = refFromURL(storage, url);
+      const oldRef = ref(storage, url);
       await deleteObject(oldRef);
     } catch (error: any) {
       if (error.code !== "storage/object-not-found") {

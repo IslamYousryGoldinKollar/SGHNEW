@@ -3,7 +3,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
-import type { Player, Question, Game, Team, GridSquare, MatchmakingTicket } from "@/lib/types";
+import type {
+  Player,
+  Question,
+  Game,
+  Team,
+  GridSquare,
+  MatchmakingTicket,
+} from "@/lib/types";
 import { generateQuestionsAction } from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
 import {
@@ -41,7 +48,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
 
-const generatePin = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+const generatePin = () =>
+  Math.random().toString(36).substring(2, 6).toUpperCase();
 
 const IndividualLobby = ({
   game,
@@ -55,7 +63,9 @@ const IndividualLobby = ({
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
-  const nameFieldId = game.requiredPlayerFields.find((f) => f.label.toLowerCase().includes("name"))?.id;
+  const nameFieldId = game.requiredPlayerFields.find((f) =>
+    f.label.toLowerCase().includes("name")
+  )?.id;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +73,12 @@ const IndividualLobby = ({
       setError("Please fill out your name.");
       return;
     }
-    const otherFields = game.requiredPlayerFields.filter((f) => f.id !== nameFieldId);
+    const otherFields = game.requiredPlayerFields.filter(
+      (f) => f.id !== nameFieldId
+    );
     const allOtherFieldsFilled = otherFields.every(
-      (field) => formData[field.id] && formData[field.id].trim() !== ""
+      (field) =>
+        formData[field.id] && formData[field.id].trim() !== ""
     );
 
     if (!allOtherFieldsFilled) {
@@ -90,8 +103,9 @@ const IndividualLobby = ({
       <div className="text-center">
         <h1 className="text-5xl font-bold font-display">{game.title}</h1>
         <p className="text-muted-foreground mt-2 max-w-xl">
-          Enter your details to start the challenge. You will have {Math.floor(game.timer / 60)} minutes to answer
-          questions and capture territory.
+          Enter your details to start the challenge. You will have{" "}
+          {Math.floor(game.timer / 60)} minutes to answer questions
+          and capture territory.
         </p>
       </div>
 
@@ -121,15 +135,28 @@ const IndividualLobby = ({
                     id={field.id}
                     type={field.type}
                     value={formData[field.id] || ""}
-                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    onChange={(e) =>
+                      handleChange(field.id, e.target.value)
+                    }
                     required
                     className="text-lg p-6 w-full"
                   />
                 </div>
               ))}
-            {error && <p className="text-destructive text-sm">{error}</p>}
-            <Button type="submit" size="lg" className="w-full" disabled={isJoining}>
-              {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Start Challenge"}
+            {error && (
+              <p className="text-destructive text-sm">{error}</p>
+            )}
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={isJoining}
+            >
+              {isJoining ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                "Start Challenge"
+              )}
             </Button>
           </form>
         </CardContent>
@@ -164,9 +191,12 @@ const MatchmakingLobby = ({
     return (
       <div className="flex flex-col items-center justify-center flex-1 text-center">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
-        <h1 className="text-4xl font-bold mt-4 font-display">Waiting for an opponent...</h1>
+        <h1 className="text-4xl font-bold mt-4 font-display">
+          Waiting for an opponent...
+        </h1>
         <p className="text-muted-foreground mt-2">
-          You are in the queue, {ticket.playerName}. A match will begin automatically.
+          You are in the queue, {ticket.playerName}. A match will begin
+          automatically.
         </p>
         <Button variant="outline" className="mt-8" onClick={onCancel}>
           Cancel
@@ -181,7 +211,8 @@ const MatchmakingLobby = ({
         <Swords className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-5xl font-bold font-display">1v1 Matchmaking</h1>
         <p className="text-muted-foreground mt-2 max-w-xl">
-          Enter your name and ID to find a worthy opponent. The battle begins soon!
+          Enter your name and ID to find a worthy opponent. The battle
+          begins soon!
         </p>
       </div>
       <div className="my-8 w-full max-w-md space-y-4">
@@ -215,9 +246,15 @@ const MatchmakingLobby = ({
           size="lg"
           className="w-full"
           onClick={handleJoin}
-          disabled={isJoining || !playerName.trim() || !idNumber.trim()}
+          disabled={
+            isJoining || !playerName.trim() || !idNumber.trim()
+          }
         >
-          {isJoining ? <Loader2 className="animate-spin" /> : "Find Match"}
+          {isJoining ? (
+            <Loader2 className="animate-spin" />
+          ) : (
+            "Find Match"
+          )}
         </Button>
       </div>
     </div>
@@ -234,14 +271,18 @@ export default function GamePage() {
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [currentQuestion, setCurrentQuestion] =
+    useState<Question | null>(null);
   const [view, setView] = useState<"question" | "grid">("question");
   const [ticket, setTicket] = useState<MatchmakingTicket | null>(null);
   const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
     if (game?.theme) {
-      document.documentElement.setAttribute("data-theme", game.theme);
+      document.documentElement.setAttribute(
+        "data-theme",
+        game.theme
+      );
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
@@ -272,14 +313,19 @@ export default function GamePage() {
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       setLoading(true);
       if (docSnap.exists()) {
-        const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
+        const gameData = {
+          id: docSnap.id,
+          ...docSnap.data(),
+        } as Game;
         setGame(gameData);
 
         const isUserAdmin = gameData.adminId === authUser.uid;
         setIsAdmin(isUserAdmin);
 
         const player =
-          gameData.teams?.flatMap((t) => t.players).find((p) => p.id === authUser.uid) || null;
+          gameData.teams
+            ?.flatMap((t) => t.players)
+            .find((p) => p.id === authUser.uid) || null;
         setCurrentPlayer(player);
       } else {
         toast({
@@ -297,7 +343,8 @@ export default function GamePage() {
   }, [GAME_ID, authUser, toast]);
 
   useEffect(() => {
-    if (!game || game.sessionType !== "matchmaking" || !authUser) return;
+    if (!game || game.sessionType !== "matchmaking" || !authUser)
+      return;
 
     const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
     const unsubTicket = onSnapshot(ticketRef, (docSnap) => {
@@ -324,9 +371,12 @@ export default function GamePage() {
         if (snapshot.docs.length > 0) {
           const player1Ticket = ticket;
           const player2TicketDoc = snapshot.docs[0];
-          const player2Ticket = player2TicketDoc.data() as MatchmakingTicket;
+          const player2Ticket =
+            player2TicketDoc.data() as MatchmakingTicket;
 
-          if (player1Ticket.playerId < player2Ticket.playerId) {
+          if (
+            player1Ticket.playerId < player2Ticket.playerId
+          ) {
             const batch = writeBatch(db);
 
             const newGameId = generatePin();
@@ -381,14 +431,28 @@ export default function GamePage() {
             };
             batch.set(newGameRef, newGame);
 
-            batch.update(doc(db, "matchmakingTickets", player1Ticket.playerId), {
-              status: "matched",
-              gameId: newGameId,
-            });
-            batch.update(doc(db, "matchmakingTickets", player2Ticket.playerId), {
-              status: "matched",
-              gameId: newGameId,
-            });
+            batch.update(
+              doc(
+                db,
+                "matchmakingTickets",
+                player1Ticket.playerId
+              ),
+              {
+                status: "matched",
+                gameId: newGameId,
+              }
+            );
+            batch.update(
+              doc(
+                db,
+                "matchmakingTickets",
+                player2Ticket.playerId
+              ),
+              {
+                status: "matched",
+                gameId: newGameId,
+              }
+            );
 
             await batch.commit();
           }
@@ -399,6 +463,19 @@ export default function GamePage() {
 
     return () => unsubTicket();
   }, [game, authUser, isAdmin, router, ticket]);
+
+  const getNextQuestion = useCallback(() => {
+    if (!game || !currentPlayer) return null;
+    const answered = currentPlayer.answeredQuestions || [];
+    const availableQuestions = game.questions.filter(
+      (q) => !answered.includes(q.question)
+    );
+    if (availableQuestions.length === 0) return null;
+    const randomIndex = Math.floor(
+      Math.random() * availableQuestions.length
+    );
+    return availableQuestions[randomIndex];
+  }, [game, currentPlayer]);
 
   useEffect(() => {
     if (!game || !currentPlayer) return;
@@ -417,9 +494,13 @@ export default function GamePage() {
         playerStartTime && game.timer
           ? Date.now() > playerStartTime + game.timer * 1000
           : false;
-      const allQuestionsAnswered = !nextQ && game.questions.length > 0;
+      const allQuestionsAnswered =
+        !nextQ && game.questions.length > 0;
 
-      if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
+      if (
+        isTimeUp ||
+        (allQuestionsAnswered && currentPlayer.coloringCredits === 0)
+      ) {
         setCurrentQuestion(null);
         setView("question");
         return;
@@ -434,7 +515,9 @@ export default function GamePage() {
     }
 
     if (nextQ) {
-      setCurrentQuestion((prev) => (prev?.question === nextQ.question ? prev : nextQ));
+      setCurrentQuestion((prev) =>
+        prev?.question === nextQ.question ? prev : nextQ
+      );
       setView("question");
     } else {
       setCurrentQuestion(null);
@@ -442,16 +525,10 @@ export default function GamePage() {
     }
   }, [game, currentPlayer, getNextQuestion]);
 
-  const getNextQuestion = useCallback(() => {
-    if (!game || !currentPlayer) return null;
-    const answered = currentPlayer.answeredQuestions || [];
-    const availableQuestions = game.questions.filter((q) => !answered.includes(q.question));
-    if (availableQuestions.length === 0) return null;
-    const randomIndex = Math.floor(Math.random() * availableQuestions.length);
-    return availableQuestions[randomIndex];
-  }, [game, currentPlayer]);
-
-  const handleJoinQueue = async (playerName: string, playerId: string) => {
+  const handleJoinQueue = async (
+    playerName: string,
+    playerId: string
+  ) => {
     if (!game || !authUser) return;
     setIsJoining(true);
     try {
@@ -469,7 +546,8 @@ export default function GamePage() {
       console.error("Error joining queue:", error);
       toast({
         title: "Error",
-        description: "Could not join the matchmaking queue.",
+        description:
+          "Could not join the matchmaking queue.",
         variant: "destructive",
       });
     } finally {
@@ -483,7 +561,11 @@ export default function GamePage() {
     await deleteDoc(ticketRef);
   };
 
-  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
+  const handleJoinTeam = async (
+    playerName: string,
+    playerId: string,
+    teamName: string
+  ) => {
     if (!playerName.trim()) {
       toast({
         title: "Invalid Name",
@@ -501,7 +583,8 @@ export default function GamePage() {
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
 
-        if (currentGame.sessionType !== "team") throw new Error("This is not a team game.");
+        if (currentGame.sessionType !== "team")
+          throw new Error("This is not a team game.");
 
         const isAlreadyInAnyTeam = currentGame.teams.some((t) =>
           t.players.some((p) => p.id === authUser.uid)
@@ -515,9 +598,14 @@ export default function GamePage() {
           return;
         }
 
-        const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
+        const teamIndex = currentGame.teams.findIndex(
+          (t) => t.name === teamName
+        );
         if (teamIndex === -1) throw new Error("Team not found!");
-        if (currentGame.teams[teamIndex].players.length >= currentGame.teams[teamIndex].capacity)
+        if (
+          currentGame.teams[teamIndex].players.length >=
+          currentGame.teams[teamIndex].capacity
+        )
           throw new Error(`Sorry, ${teamName} is full.`);
 
         const newPlayer: Player = {
@@ -537,13 +625,17 @@ export default function GamePage() {
       console.error("Error joining team: ", error);
       toast({
         title: "Could Not Join",
-        description: error.message || "An unexpected error occurred.",
+        description:
+          error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
     }
   };
 
-  const handleJoinIndividual = async (customData: Record<string, string>, name: string) => {
+  const handleJoinIndividual = async (
+    customData: Record<string, string>,
+    name: string
+  ) => {
     if (!game || !authUser) return;
     setIsJoining(true);
 
@@ -553,8 +645,10 @@ export default function GamePage() {
       const currentDoc = await getDoc(gameRef);
       const currentGame = currentDoc.data() as Game;
       if (
-        (!currentGame.questions || currentGame.questions.length === 0) &&
-        (!currentGame.teams[0] || currentGame.teams[0].players.length === 0)
+        (!currentGame.questions ||
+          currentGame.questions.length === 0) &&
+        (!currentGame.teams[0] ||
+          currentGame.teams[0].players.length === 0)
       ) {
         const result = await generateQuestionsAction({
           topic: game.topic || "General Knowledge",
@@ -569,16 +663,22 @@ export default function GamePage() {
 
       await runTransaction(db, async (transaction) => {
         const freshGameDoc = await transaction.get(gameRef);
-        if (!freshGameDoc.exists()) throw new Error("Game does not exist!");
+        if (!freshGameDoc.exists())
+          throw new Error("Game does not exist!");
         const freshGame = freshGameDoc.data() as Game;
 
-        if (freshGame.sessionType !== "individual") throw new Error("This is not an individual challenge.");
+        if (freshGame.sessionType !== "individual")
+          throw new Error("This is not an individual challenge.");
 
-        const isAlreadyPlaying = freshGame.teams?.[0]?.players.some((p) => p.id === authUser.uid);
+        const isAlreadyPlaying =
+          freshGame.teams?.[0]?.players.some(
+            (p) => p.id === authUser.uid
+          );
         if (isAlreadyPlaying) {
           toast({
             title: "Already Joined",
-            description: "You have already started this challenge.",
+            description:
+              "You have already started this challenge.",
             variant: "destructive",
           });
           return;
@@ -610,15 +710,22 @@ export default function GamePage() {
             ];
         updatedTeams[0].players.push(newPlayer);
 
-        transaction.update(gameRef, { teams: updatedTeams, status: "playing" });
+        transaction.update(gameRef, {
+          teams: updatedTeams,
+          status: "playing",
+        });
       });
       setView("question");
       setCurrentQuestion(null);
     } catch (error: any) {
-      console.error("Error joining individual challenge: ", error);
+      console.error(
+        "Error joining individual challenge: ",
+        error
+      );
       toast({
         title: "Could Not Join",
-        description: error.message || "An unexpected error occurred.",
+        description:
+          error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -635,7 +742,12 @@ export default function GamePage() {
       });
       return;
     }
-    if (game.teams.reduce((sum, t) => sum + t.players.length, 0) === 0) {
+    if (
+      game.teams.reduce(
+        (sum, t) => sum + t.players.length,
+        0
+      ) === 0
+    ) {
       toast({
         title: "No players!",
         description: "At least one player must join.",
@@ -676,9 +788,14 @@ export default function GamePage() {
     }
   };
 
-  const handleAnswer = async (question: Question, answer: string) => {
+  const handleAnswer = async (
+    question: Question,
+    answer: string
+  ) => {
     if (!game || !currentPlayer || !authUser) return;
-    const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
+    const isCorrect =
+      question.answer.trim().toLowerCase() ===
+      answer.trim().toLowerCase();
 
     try {
       await runTransaction(db, async (transaction) => {
@@ -687,13 +804,19 @@ export default function GamePage() {
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
 
-        const teamIndex = currentGame.teams.findIndex((t) => t.name === currentPlayer.teamName);
+        const teamIndex = currentGame.teams.findIndex(
+          (t) => t.name === currentPlayer.teamName
+        );
         if (teamIndex === -1) return;
-        const playerIndex = currentGame.teams[teamIndex].players.findIndex((p) => p.id === currentPlayer.id);
+        const playerIndex =
+          currentGame.teams[teamIndex].players.findIndex(
+            (p) => p.id === currentPlayer.id
+          );
         if (playerIndex === -1) return;
 
         const updatedTeams = [...currentGame.teams];
-        const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
+        const playerToUpdate =
+          updatedTeams[teamIndex].players[playerIndex];
         const teamToUpdate = updatedTeams[teamIndex];
 
         playerToUpdate.answeredQuestions = [
@@ -712,9 +835,12 @@ export default function GamePage() {
             .map((sq, i) => ({ ...sq, originalIndex: i }))
             .filter((sq) => sq.coloredBy === authUser.uid);
           if (playerGridSquares.length > 0) {
-            const randomIndex = Math.floor(Math.random() * playerGridSquares.length);
+            const randomIndex = Math.floor(
+              Math.random() * playerGridSquares.length
+            );
             const hexToClear = playerGridSquares[randomIndex];
-            currentGame.grid[hexToClear.originalIndex].coloredBy = null;
+            currentGame.grid[hexToClear.originalIndex].coloredBy =
+              null;
             transaction.update(gameRef, { grid: currentGame.grid });
           }
         }
@@ -726,7 +852,8 @@ export default function GamePage() {
     }
   };
 
-  const handleNextQuestion = () => setCurrentQuestion(getNextQuestion());
+  const handleNextQuestion = () =>
+    setCurrentQuestion(getNextQuestion());
 
   const handleColorSquare = async (squareId: number) => {
     if (!game || !currentPlayer || !authUser) return;
@@ -737,24 +864,37 @@ export default function GamePage() {
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
 
-        const playerTeamIndex = currentGame.teams.findIndex((t) => t.name === currentPlayer.teamName);
-        if (playerTeamIndex === -1) throw new Error("Could not find player's team.");
-        const playerIndex = currentGame.teams[playerTeamIndex].players.findIndex(
-          (p) => p.id === currentPlayer.id
+        const playerTeamIndex = currentGame.teams.findIndex(
+          (t) => t.name === currentPlayer.teamName
         );
-        if (playerIndex === -1) throw new Error("Could not find player data.");
+        if (playerTeamIndex === -1)
+          throw new Error("Could not find player's team.");
+        const playerIndex =
+          currentGame.teams[playerTeamIndex].players.findIndex(
+            (p) => p.id === currentPlayer.id
+          );
+        if (playerIndex === -1)
+          throw new Error("Could not find player data.");
 
         let currentGrid = currentGame.grid;
 
-        const playerToUpdate = currentGame.teams[playerTeamIndex].players[playerIndex];
-        if (playerToUpdate.coloringCredits <= 0) throw new Error("You have no coloring credits.");
+        const playerToUpdate =
+          currentGame.teams[playerTeamIndex].players[playerIndex];
+        if (playerToUpdate.coloringCredits <= 0)
+          throw new Error("You have no coloring credits.");
 
-        const squareIndex = currentGrid.findIndex((s) => s.id === squareId);
-        if (squareIndex === -1) throw new Error("Square not found.");
+        const squareIndex = currentGrid.findIndex(
+          (s) => s.id === squareId
+        );
+        if (squareIndex === -1)
+          throw new Error("Square not found.");
 
         const coloredByName =
-          currentGame.sessionType === "individual" ? authUser.uid : currentPlayer.teamName;
-        if (currentGrid[squareIndex].coloredBy === coloredByName) return;
+          currentGame.sessionType === "individual"
+            ? authUser.uid
+            : currentPlayer.teamName;
+        if (currentGrid[squareIndex].coloredBy === coloredByName)
+          return;
 
         playerToUpdate.coloringCredits -= 1;
 
@@ -776,7 +916,9 @@ export default function GamePage() {
 
         currentGrid[squareIndex].coloredBy = coloredByName;
 
-        const isGridFull = currentGrid.every((s) => s.coloredBy !== null);
+        const isGridFull = currentGrid.every(
+          (s) => s.coloredBy !== null
+        );
 
         transaction.update(gameRef, {
           grid: currentGrid,
@@ -798,7 +940,10 @@ export default function GamePage() {
   const handleTimeout = async () => {
     if (game?.status === "playing" && isAdmin) {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
-      toast({ title: "Time's Up!", description: `The game timer has expired.` });
+      toast({
+        title: "Time's Up!",
+        description: `The game timer has expired.`,
+      });
     }
   };
 
@@ -812,12 +957,17 @@ export default function GamePage() {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <h1 className="mt-4 text-4xl font-bold font-display">Loading Session...</h1>
+          <h1 className="mt-4 text-4xl font-bold font-display">
+            Loading Session...
+          </h1>
         </div>
       );
     }
 
-    if (game.sessionType === "matchmaking" && game.status === "lobby") {
+    if (
+      game.sessionType === "matchmaking" &&
+      game.status === "lobby"
+    ) {
       return (
         <MatchmakingLobby
           onJoinQueue={handleJoinQueue}
@@ -830,7 +980,13 @@ export default function GamePage() {
 
     if (game.sessionType === "individual") {
       if (!currentPlayer) {
-        return <IndividualLobby game={game} onJoin={handleJoinIndividual} isJoining={isJoining} />;
+        return (
+          <IndividualLobby
+            game={game}
+            onJoin={handleJoinIndividual}
+            isJoining={isJoining}
+          />
+        );
       }
 
       const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
@@ -838,9 +994,13 @@ export default function GamePage() {
         playerStartTime && game.timer
           ? Date.now() > playerStartTime + game.timer * 1000
           : false;
-      const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
+      const allQuestionsAnswered =
+        !getNextQuestion() && game.questions.length > 0;
 
-      if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
+      if (
+        isTimeUp ||
+        (allQuestionsAnswered && currentPlayer.coloringCredits === 0)
+      ) {
         return (
           <ResultsScreen
             teams={game.teams}
@@ -851,14 +1011,19 @@ export default function GamePage() {
         );
       }
 
-      const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
-      if (!playerTeam) return <p>Error: Player data could not be found.</p>;
+      const playerTeam = game.teams.find(
+        (t) => t.name === currentPlayer?.teamName
+      );
+      if (!playerTeam)
+        return <p>Error: Player data could not be found.</p>;
 
       if (isJoining) {
         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="mt-4 text-4xl font-bold font-display">Starting Challenge...</h1>
+            <h1 className="mt-4 text-4xl font-bold font-display">
+              Starting Challenge...
+            </h1>
           </div>
         );
       }
@@ -882,7 +1047,9 @@ export default function GamePage() {
         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="mt-4 text-4xl font-bold font-display">Preparing your first question...</h1>
+            <h1 className="mt-4 text-4xl font-bold font-display">
+              Preparing your first question...
+            </h1>
           </div>
         );
       }
@@ -904,12 +1071,18 @@ export default function GamePage() {
     if (
       game.status === "lobby" ||
       game.status === "starting" ||
-      ((game.status === "playing" || game.status === "finished") && !currentPlayer)
+      ((game.status === "playing" || game.status === "finished") &&
+        !currentPlayer)
     ) {
-      if ((game.status === "playing" || game.status === "finished") && !currentPlayer) {
+      if (
+        (game.status === "playing" || game.status === "finished") &&
+        !currentPlayer
+      ) {
         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
+            <h1 className="text-4xl font-bold font-display">
+              Game in Progress
+            </h1>
             <p className="mt-2 text-muted-foreground">
               A game is currently being played. You can join the next round.
             </p>
@@ -930,8 +1103,13 @@ export default function GamePage() {
     switch (game.status) {
       case "playing":
         if (!currentPlayer) return <p>Joining game...</p>;
-        const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
-        if (!playerTeam) return <p>Error: Your team or player data could not be found.</p>;
+        const playerTeam = game.teams.find(
+          (t) => t.name === currentPlayer?.teamName
+        );
+        if (!playerTeam)
+          return (
+            <p>Error: Your team or player data could not be found.</p>
+          );
 
         if (view === "grid") {
           return (
@@ -949,8 +1127,12 @@ export default function GamePage() {
         if (!currentQuestion) {
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
-              <h1 className="text-4xl font-bold font-display">You've answered all questions!</h1>
-              <p className="mt-2 text-muted-foreground">Waiting for the game to end...</p>
+              <h1 className="text-4xl font-bold font-display">
+                You've answered all questions!
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                Waiting for the game to end...
+              </p>
             </div>
           );
         }
@@ -967,11 +1149,21 @@ export default function GamePage() {
           />
         );
       case "finished":
-        return <ResultsScreen teams={game.teams} onPlayAgain={() => {}} isAdmin={isAdmin} />;
+        return (
+          <ResultsScreen
+            teams={game.teams}
+            onPlayAgain={() => {}}
+            isAdmin={isAdmin}
+          />
+        );
       default:
         return <div className="text-center">Unknown game state.</div>;
     }
   };
 
-  return <div className="container mx-auto flex flex-1 flex-col px-4 py-8">{renderContent()}</div>;
+  return (
+    <div className="container mx-auto flex flex-1 flex-col px-4 py-8">
+      {renderContent()}
+    </div>
+  );
 }
