@@ -20,7 +20,6 @@ import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { SUPER_ADMIN_UIDS } from "@/lib/constants";
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -261,13 +260,13 @@ export default function SessionConfigPage() {
         
         let teamsUpdate;
 
-        if (data.sessionType === 'team') {
+        if (data.sessionType === 'team' || data.sessionType === 'matchmaking') {
             teamsUpdate = data.teams.map(t => ({
                 ...t,
                 score: game?.teams.find(originalTeam => originalTeam.name === t.name)?.score || 0,
                 players: game?.teams.find(originalTeam => originalTeam.name === t.name)?.players || []
             }));
-        } else { // individual or matchmaking
+        } else { // individual
             // For these modes, we create a "virtual" team to hold all players/state.
             teamsUpdate = [{
                 name: "Participants",
@@ -328,7 +327,7 @@ export default function SessionConfigPage() {
   
   if (!game) {
     return (
-      <div>
+      <div className="flex items-center justify-center h-screen">
         <h1>Game session not found.</h1>
       </div>
     );
@@ -542,5 +541,3 @@ export default function SessionConfigPage() {
     </div>
   );
 }
-
-    
