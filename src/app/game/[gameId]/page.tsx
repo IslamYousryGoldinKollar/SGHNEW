@@ -475,8 +475,7 @@ export default function GamePage() {
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
         const teamToUpdate = updatedTeams[teamIndex];
-        let updatedGrid = [...currentGame.grid];
-
+        
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
         
         if (isCorrect) {
@@ -485,27 +484,9 @@ export default function GamePage() {
           if(currentGame.sessionType !== 'individual') {
             teamToUpdate.score += 1; 
           }
-        } else if (currentGame.sessionType === 'individual') {
-            // Incorrect answer in solo challenge
-            const playerColoredSquares = updatedGrid.filter(sq => sq.coloredBy === authUser.uid);
-            if (playerColoredSquares.length > 0) {
-                const randomIndex = Math.floor(Math.random() * playerColoredSquares.length);
-                const squareToClearId = playerColoredSquares[randomIndex].id;
-                const gridIndex = updatedGrid.findIndex(sq => sq.id === squareToClearId);
-                if (gridIndex !== -1) {
-                    updatedGrid[gridIndex].coloredBy = null;
-                }
-            }
         }
         
-        // Recalculate individual session score
-        if (currentGame.sessionType === 'individual') {
-            const coloredCount = updatedGrid.filter(sq => sq.coloredBy === authUser.uid).length;
-            playerToUpdate.score = coloredCount;
-            teamToUpdate.score = coloredCount; // Team score reflects this one player's score
-        }
-
-        transaction.update(gameRef, { teams: updatedTeams, grid: updatedGrid });
+        transaction.update(gameRef, { teams: updatedTeams });
       });
     } catch (error) {
         console.error("Error handling answer:", error);
@@ -536,14 +517,11 @@ export default function GamePage() {
         const squareIndex = currentGrid.findIndex((s) => s.id === squareId);
         if (squareIndex === -1) throw new Error("Square not found.");
         
-        // In individual mode, owner is player's UID. In team mode, it's team name.
         const coloredByName = currentGame.sessionType === 'individual' ? authUser.uid : currentPlayer.teamName;
-
         if (currentGrid[squareIndex].coloredBy === coloredByName) return; // Can't color own square
 
         playerToUpdate.coloringCredits -= 1;
         
-        // In team mode, capturing gives points. In individual, only having hexes counts.
         if (currentGame.sessionType === 'team') {
             playerToUpdate.score += 1;
             currentGame.teams[playerTeamIndex].score += 1;
@@ -556,13 +534,6 @@ export default function GamePage() {
         }
         
         currentGrid[squareIndex].coloredBy = coloredByName;
-        
-        // Recalculate score for individual mode
-        if (currentGame.sessionType === 'individual') {
-            const coloredCount = currentGrid.filter(sq => sq.coloredBy === authUser.uid).length;
-            playerToUpdate.score = coloredCount;
-            currentGame.teams[playerTeamIndex].score = coloredCount;
-        }
 
         const isGridFull = currentGrid.every((s) => s.coloredBy !== null);
         
@@ -613,9 +584,7 @@ export default function GamePage() {
         
         const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
         const isTimeUp = playerStartTime && (Date.now() > playerStartTime + game.timer * 1000);
-        const allQuestionsAnswered = game.questions.length > 0 && (currentPlayer.answeredQuestions.length >= game.questions.length) && currentPlayer.coloringCredits === 0;
-
-        if (isTimeUp || allQuestionsAnswered) {
+        if (isTimeUp) {
              return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
         }
 
