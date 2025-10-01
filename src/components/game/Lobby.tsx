@@ -74,7 +74,12 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
         <p className="text-muted-foreground mt-2">You are on <span className="font-bold text-primary">{currentPlayer.teamName}</span>.</p>
         
         <p className="mt-8 text-lg">
-            {isAdmin ? "You are the admin. Start the game when you're ready!" : "Waiting for the admin to start the game..."}
+            {status === 'starting' 
+              ? 'The game is starting...'
+              : isAdmin 
+              ? "You are the admin. Start the game when you're ready!" 
+              : "Waiting for the admin to start the game..."
+            }
         </p>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8">
@@ -82,9 +87,9 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
         </div>
 
         {isAdmin && (
-          <Button onClick={onStartGame} size="lg" className="font-display tracking-wider">
-            <Swords className="mr-2 h-5 w-5" />
-            Start Game
+          <Button onClick={onStartGame} size="lg" className="font-display tracking-wider" disabled={status === 'starting'}>
+            {status === 'starting' ? <Loader2 className="mr-2 animate-spin" /> : <Swords className="mr-2 h-5 w-5" />}
+            {status === 'starting' ? 'Starting...' : 'Start Game'}
           </Button>
         )}
       </div>
