@@ -24,7 +24,7 @@ export interface Player {
   teamName: string;
   answeredQuestions: string[]; // Array of question strings they've already answered
   coloringCredits: number;
-  score: number; // Individual player score
+  score: number; // For teams, points. For individuals, number of hexes.
   customData?: Record<string, string>; // For individual mode custom fields
   gameStartedAt?: Timestamp; // For individual mode start time
 }
@@ -64,6 +64,7 @@ export interface Game {
     adminId: string; // UID of the user who created the game
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];
+    parentSessionId?: string; // For individual games, the ID of the main session
 }
 
 export interface MatchmakingTicket {

@@ -632,7 +632,7 @@ export default function GamePage() {
     }
   };
 
-  const handleJoinIndividual = async (
+ const handleJoinIndividual = async (
     customData: Record<string, string>,
     name: string
   ) => {
@@ -640,98 +640,78 @@ export default function GamePage() {
     setIsJoining(true);
 
     try {
-      const gameRef = doc(db, "games", GAME_ID);
+      // 1. Generate a unique ID for the new player-specific game
+      const newGameId = `${GAME_ID}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
+      const newGameRef = doc(db, "games", newGameId);
+      const templateGameRef = doc(db, "games", GAME_ID);
 
-      const currentDoc = await getDoc(gameRef);
-      const currentGame = currentDoc.data() as Game;
-      if (
-        (!currentGame.questions ||
-          currentGame.questions.length === 0) &&
-        (!currentGame.teams[0] ||
-          currentGame.teams[0].players.length === 0)
-      ) {
+      let templateGameData = game;
+
+      // Ensure questions are ready in the template
+      if (!templateGameData.questions || templateGameData.questions.length === 0) {
         const result = await generateQuestionsAction({
-          topic: game.topic || "General Knowledge",
+          topic: templateGameData.topic || "General Knowledge",
           numberOfQuestions: 20,
         });
         if (result.questions) {
-          await updateDoc(gameRef, { questions: result.questions });
+          templateGameData.questions = result.questions;
+          // Optionally update the template game with questions for future players
+          await updateDoc(templateGameRef, { questions: result.questions });
         } else {
           throw new Error("AI failed to generate questions.");
         }
       }
 
-      await runTransaction(db, async (transaction) => {
-        const freshGameDoc = await transaction.get(gameRef);
-        if (!freshGameDoc.exists())
-          throw new Error("Game does not exist!");
-        const freshGame = freshGameDoc.data() as Game;
+      // 2. Create the new player object
+      const newPlayer: Player = {
+        id: authUser.uid,
+        playerId: customData["ID Number"] || uuidv4(),
+        name: name,
+        teamName: "Team", // A generic name for the single team in this solo game
+        answeredQuestions: [],
+        coloringCredits: 0,
+        score: 0,
+        customData: customData,
+        gameStartedAt: serverTimestamp() as Timestamp,
+      };
 
-        if (freshGame.sessionType !== "individual")
-          throw new Error("This is not an individual challenge.");
+      // 3. Create the new game object, copying from the template
+      const newGame: Omit<Game, "id"> = {
+        ...templateGameData,
+        title: `${templateGameData.title} - ${name}`,
+        status: "playing",
+        parentSessionId: GAME_ID, // Link back to the main individual session
+        teams: [
+          {
+            name: "Team",
+            score: 0,
+            players: [newPlayer],
+            capacity: 1,
+            color: templateGameData.teams[0]?.color || "#888888",
+            icon: templateGameData.teams[0]?.icon || "",
+          },
+        ],
+        grid: templateGameData.grid.map(g => ({ ...g, coloredBy: null })), // Reset grid
+        gameStartedAt: serverTimestamp(),
+      };
 
-        const isAlreadyPlaying =
-          freshGame.teams?.[0]?.players.some(
-            (p) => p.id === authUser.uid
-          );
-        if (isAlreadyPlaying) {
-          toast({
-            title: "Already Joined",
-            description:
-              "You have already started this challenge.",
-            variant: "destructive",
-          });
-          return;
-        }
+      // 4. Save the new game to Firestore
+      await setDoc(newGameRef, newGame);
+      
+      // 5. Redirect the player to their new personal game
+      router.replace(`/game/${newGameId}`);
 
-        const newPlayer: Player = {
-          id: authUser.uid,
-          playerId: customData["ID Number"] || uuidv4(),
-          name: name,
-          teamName: "Participants",
-          answeredQuestions: [],
-          coloringCredits: 0,
-          score: 0,
-          customData: customData,
-          gameStartedAt: Timestamp.now(),
-        };
-
-        const updatedTeams = freshGame.teams?.[0]
-          ? [...freshGame.teams]
-          : [
-              {
-                name: "Participants",
-                score: 0,
-                players: [],
-                capacity: 999,
-                color: "#888888",
-                icon: "",
-              },
-            ];
-        updatedTeams[0].players.push(newPlayer);
-
-        transaction.update(gameRef, {
-          teams: updatedTeams,
-          status: "playing",
-        });
-      });
-      setView("question");
-      setCurrentQuestion(null);
     } catch (error: any) {
-      console.error(
-        "Error joining individual challenge: ",
-        error
-      );
+      console.error("Error joining individual challenge: ", error);
       toast({
         title: "Could Not Join",
-        description:
-          error.message || "An unexpected error occurred.",
+        description: error.message || "An unexpected error occurred.",
         variant: "destructive",
       });
-    } finally {
       setIsJoining(false);
     }
   };
+
 
   const handleStartGame = async () => {
     if (!game || !isAdmin) {
@@ -817,8 +797,7 @@ export default function GamePage() {
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate =
           updatedTeams[teamIndex].players[playerIndex];
-        const teamToUpdate = updatedTeams[teamIndex];
-
+        
         playerToUpdate.answeredQuestions = [
           ...(playerToUpdate.answeredQuestions || []),
           question.question,
@@ -826,10 +805,6 @@ export default function GamePage() {
 
         if (isCorrect) {
           playerToUpdate.coloringCredits += 1;
-          playerToUpdate.score += 1;
-          if (currentGame.sessionType !== "individual") {
-            teamToUpdate.score += 1;
-          }
         } else if (currentGame.sessionType === "individual") {
           const playerGridSquares = currentGame.grid
             .map((sq, i) => ({ ...sq, originalIndex: i }))
@@ -845,6 +820,7 @@ export default function GamePage() {
           }
         }
 
+        // Score is now based on colored hexes, so we don't update it here.
         transaction.update(gameRef, { teams: updatedTeams });
       });
     } catch (error) {
@@ -899,8 +875,7 @@ export default function GamePage() {
         playerToUpdate.coloringCredits -= 1;
 
         if (currentGame.sessionType === "team") {
-          playerToUpdate.score += 1;
-          currentGame.teams[playerTeamIndex].score += 1;
+          // Team score is also based on colored hexes now.
           if (currentGrid[squareIndex].coloredBy) {
             const originalOwnerTeamIndex = currentGame.teams.findIndex(
               (t) => t.name === currentGrid[squareIndex].coloredBy
@@ -912,9 +887,16 @@ export default function GamePage() {
               );
             }
           }
+          currentGame.teams[playerTeamIndex].score +=1;
         }
 
         currentGrid[squareIndex].coloredBy = coloredByName;
+
+        // Player's score is their hex count.
+        if (currentGame.sessionType === "individual") {
+          const hexCount = currentGrid.filter(sq => sq.coloredBy === authUser.uid).length;
+          playerToUpdate.score = hexCount;
+        }
 
         const isGridFull = currentGrid.every(
           (s) => s.coloredBy !== null
@@ -926,7 +908,8 @@ export default function GamePage() {
           status: isGridFull ? "finished" : currentGame.status,
         });
       });
-      setCurrentQuestion(getNextQuestion());
+      // Do not get next question here, wait for useEffect to handle it.
+      setView("question");
     } catch (error: any) {
       console.error("Failed to color square: ", error);
       toast({
@@ -938,7 +921,7 @@ export default function GamePage() {
   };
 
   const handleTimeout = async () => {
-    if (game?.status === "playing" && isAdmin) {
+    if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual')) {
       await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
       toast({
         title: "Time's Up!",
@@ -979,7 +962,8 @@ export default function GamePage() {
     }
 
     if (game.sessionType === "individual") {
-      if (!currentPlayer) {
+       // This is the template lobby
+      if (!currentPlayer && !game.parentSessionId) {
         return (
           <IndividualLobby
             game={game}
@@ -988,87 +972,13 @@ export default function GamePage() {
           />
         );
       }
-
-      const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
-      const isTimeUp =
-        playerStartTime && game.timer
-          ? Date.now() > playerStartTime + game.timer * 1000
-          : false;
-      const allQuestionsAnswered =
-        !getNextQuestion() && game.questions.length > 0;
-
-      if (
-        isTimeUp ||
-        (allQuestionsAnswered && currentPlayer.coloringCredits === 0)
-      ) {
-        return (
-          <ResultsScreen
-            teams={game.teams}
-            isAdmin={false}
-            onPlayAgain={() => {}}
-            individualPlayerId={currentPlayer.id}
-          />
-        );
+      // This is a player's actual game
+      if (!currentPlayer && game.parentSessionId) {
+          return <div className="flex items-center justify-center h-full">Error: Could not find player data in this game.</div>
       }
-
-      const playerTeam = game.teams.find(
-        (t) => t.name === currentPlayer?.teamName
-      );
-      if (!playerTeam)
-        return <p>Error: Player data could not be found.</p>;
-
-      if (isJoining) {
-        return (
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="mt-4 text-4xl font-bold font-display">
-              Starting Challenge...
-            </h1>
-          </div>
-        );
-      }
-
-      if (view === "grid") {
-        return (
-          <ColorGridScreen
-            grid={game.grid}
-            teams={game.teams}
-            onColorSquare={handleColorSquare}
-            teamColoring={playerTeam.color}
-            credits={currentPlayer.coloringCredits}
-            onSkip={handleSkipColoring}
-            sessionType="individual"
-            playerId={currentPlayer.id}
-          />
-        );
-      }
-
-      if (!currentQuestion) {
-        return (
-          <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="mt-4 text-4xl font-bold font-display">
-              Preparing your first question...
-            </h1>
-          </div>
-        );
-      }
-
-      return (
-        <GameScreen
-          teams={game.teams}
-          currentPlayer={currentPlayer}
-          question={currentQuestion}
-          onAnswer={handleAnswer}
-          onNextQuestion={handleNextQuestion}
-          duration={game.timer}
-          onTimeout={handleTimeout}
-          gameStartedAt={currentPlayer.gameStartedAt}
-        />
-      );
     }
 
-    if (
+     if (
       game.status === "lobby" ||
       game.status === "starting" ||
       ((game.status === "playing" || game.status === "finished") &&
@@ -1078,6 +988,11 @@ export default function GamePage() {
         (game.status === "playing" || game.status === "finished") &&
         !currentPlayer
       ) {
+         if (game.sessionType === 'individual' && game.parentSessionId) {
+             // This is a finished individual game, go to leaderboard
+             router.replace(`/leaderboard/${game.parentSessionId}?player_id=${authUser.uid}`);
+             return <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />;
+         }
         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <h1 className="text-4xl font-bold font-display">
@@ -1110,6 +1025,15 @@ export default function GamePage() {
           return (
             <p>Error: Your team or player data could not be found.</p>
           );
+        
+        const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
+        const isTimeUp = playerStartTime && game.timer ? Date.now() > playerStartTime + game.timer * 1000 : false;
+        const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
+
+        if (game.sessionType === 'individual' && (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0))) {
+            if(game.status === 'playing') handleTimeout(); // Mark game as finished
+            return <ResultsScreen teams={game.teams} onPlayAgain={() => {}} isAdmin={isAdmin} individualPlayerId={currentPlayer.id} parentSessionId={game.parentSessionId} />
+        }
 
         if (view === "grid") {
           return (
@@ -1120,18 +1044,23 @@ export default function GamePage() {
               teamColoring={playerTeam.color}
               credits={currentPlayer.coloringCredits}
               onSkip={handleSkipColoring}
-              sessionType="team"
+              sessionType={game.sessionType}
+              playerId={currentPlayer.id}
             />
           );
         }
         if (!currentQuestion) {
+           if (currentPlayer.coloringCredits > 0) {
+                setView('grid');
+                return null;
+            }
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
               <h1 className="text-4xl font-bold font-display">
                 You've answered all questions!
               </h1>
               <p className="mt-2 text-muted-foreground">
-                Waiting for the game to end...
+                Great job! See your final score when time is up.
               </p>
             </div>
           );
@@ -1154,6 +1083,8 @@ export default function GamePage() {
             teams={game.teams}
             onPlayAgain={() => {}}
             isAdmin={isAdmin}
+            individualPlayerId={game.sessionType === 'individual' ? currentPlayer?.id : undefined}
+            parentSessionId={game.parentSessionId}
           />
         );
       default:

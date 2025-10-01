@@ -15,29 +15,28 @@ type ResultsScreenProps = {
   onPlayAgain: () => void;
   isAdmin: boolean;
   individualPlayerId?: string;
+  parentSessionId?: string;
 };
 
-export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
+export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId, parentSessionId }: ResultsScreenProps) {
   const router = useRouter();
   
   useEffect(() => {
-    if (individualPlayerId) {
-      const gameId = teams[0]?.players.find(p => p.id === individualPlayerId)?.teamName === 'Participants' ? teams[0].name : null;
-      const game = teams.length > 0 ? teams[0] : null;
-
-      const sessionGameId = game?.players[0]?.customData?.gameId;
-      
+    if (individualPlayerId && parentSessionId) {
       const timer = setTimeout(() => {
-        router.push(`/leaderboard/${teams[0].name}`);
-      }, 5000);
+        router.push(`/leaderboard/${parentSessionId}?player_id=${individualPlayerId}`);
+      }, 3000); // 3-second delay
 
       return () => clearTimeout(timer);
     }
-  }, [individualPlayerId, teams, router]);
+  }, [individualPlayerId, parentSessionId, router]);
 
   if (individualPlayerId) {
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
     if (!player) return <div className="text-center">Could not load your results.</div>;
+    
+    // In individual mode, score is the number of hexes.
+    const finalScore = player.score;
 
     return (
        <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
@@ -48,11 +47,11 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
             </CardDescription>
             <Card className="my-12 shadow-lg w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-display text-primary">{player.name}</CardTitle>
+                    <CardTitle className="text-2xl font-display text-primary">Your Score</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-6xl font-bold text-primary">{player.score}</p>
-                    <p className="text-muted-foreground">total points</p>
+                    <p className="text-6xl font-bold text-primary">{finalScore}</p>
+                    <p className="text-muted-foreground">colored lands</p>
                 </CardContent>
             </Card>
             <p className="text-muted-foreground">Redirecting to the leaderboard...</p>
