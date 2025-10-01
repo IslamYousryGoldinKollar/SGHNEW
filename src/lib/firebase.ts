@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
@@ -18,7 +19,7 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const rtdb = getDatabase(app);
 const auth = getAuth(app);
-const storage = getStorage(app);
+const storage = getStorage(app, "gs://studio-7831135066-b7ebf.appspot.com");
 
 
 // To enable admin auth, you need to create a user in the Firebase Console 
