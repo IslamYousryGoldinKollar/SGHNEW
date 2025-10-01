@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import type { Game, GridSquare } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import ShareSessionModal from "@/components/admin/ShareSessionModal";
+
 
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -22,6 +24,7 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [sessions, setSessions] = useState<Game[]>([]);
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+  const [sharingSession, setSharingSession] = useState<Game | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -70,6 +73,7 @@ export default function AdminDashboard() {
 
             const newGame: Omit<Game, 'id'> = {
                 title: "Trivia Titans",
+                description: "A live trivia game for the whole team. Join in on the fun!",
                 status: "lobby",
                 adminId: user.uid,
                 teams: [
@@ -157,15 +161,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleShare = (gameId: string) => {
-    const joinUrl = `${window.location.origin}/game/${gameId}`;
-    window.open(joinUrl, '_blank');
-    toast({
-      title: "Session Link Opened",
-      description: "The session join link has been opened in a new tab.",
-    });
-  };
-
   if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -175,6 +170,8 @@ export default function AdminDashboard() {
   }
 
   return (
+    <>
+    <ShareSessionModal session={sharingSession} onClose={() => setSharingSession(null)} />
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-4xl font-bold font-display">Admin Dashboard</h1>
@@ -239,7 +236,7 @@ export default function AdminDashboard() {
                                  <Edit className="mr-2 h-4 w-4"/>
                                  Edit
                              </Button>
-                             <Button className="w-full" variant="default" onClick={() => handleShare(session.id)}>
+                             <Button className="w-full" variant="default" onClick={() => setSharingSession(session)}>
                                  <Share2 className="mr-2 h-4 w-4"/>
                                  Share
                              </Button>
@@ -261,5 +258,6 @@ export default function AdminDashboard() {
         )}
       </div>
     </div>
+    </>
   );
 }

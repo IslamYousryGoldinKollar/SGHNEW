@@ -1,8 +1,8 @@
-
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getDatabase } from "firebase/database";
 import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   projectId: "studio-7831135066-b7ebf",
@@ -10,6 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAzmZ4p8Rpx8kusWuP3v8PnQyc0Ao_cU7Q",
   authDomain: "studio-7831135066-b7ebf.firebaseapp.com",
   messagingSenderId: "427859065555",
+  storageBucket: "studio-7831135066-b7ebf.appspot.com",
 };
 
 // Initialize Firebase
@@ -17,6 +18,8 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const rtdb = getDatabase(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
+
 
 // To enable admin auth, you need to create a user in the Firebase Console 
 // with the email 'admin@trivia.com' and any password.
@@ -26,4 +29,4 @@ if (typeof window !== "undefined" && window.location.hostname === "localhost") {
 }
 
 
-export { app, db, rtdb, auth };
+export { app, db, rtdb, auth, storage };
