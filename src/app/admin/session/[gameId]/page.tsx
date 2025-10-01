@@ -7,7 +7,7 @@ import { useForm, useFieldArray, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
-import { doc, onSnapshot, updateDoc } from "firebase/firestore";
+import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
 import type { Game, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +26,6 @@ const themes: {value: GameTheme, label: string}[] = [
     { value: 'team-alpha', label: 'Team Alpha' },
     { value: 'team-bravo', label: 'Team Bravo' },
 ];
-
-const ADMIN_UIDS = ["GLdvOzQWorMcsmOpcwvqqZcpCIN2", "40J7xdA4thUfcFf9vGvxUpTfSAD3", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -157,7 +155,8 @@ export default function SessionConfigPage() {
     const unsubscribe = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
         const gameData = docSnap.data() as Game;
-        const isOwner = gameData.adminId === user.uid || ADMIN_UIDS.includes(user.uid);
+        // Strict ownership check
+        const isOwner = gameData.adminId === user.uid;
 
         if (isOwner) {
             setIsAuthorized(true);
@@ -176,7 +175,9 @@ export default function SessionConfigPage() {
             setIsAuthorized(false);
         }
       } else {
-        setIsAuthorized(false);
+        // Game does not exist
+        toast({ title: "Not Found", description: "This game session does not exist.", variant: "destructive" });
+        router.push('/admin');
       }
       setLoading(false);
     });
@@ -231,6 +232,14 @@ export default function SessionConfigPage() {
     try {
         const gameRef = doc(db, "games", gameId);
         
+        // Ensure the current user still owns this game before updating.
+        const gameDoc = await getDoc(gameRef);
+        if (gameDoc.exists() && gameDoc.data().adminId !== user?.uid) {
+            toast({ title: "Authorization Error", description: "You are no longer authorized to edit this session.", variant: "destructive" });
+            router.push('/admin');
+            return;
+        }
+
         const teams = data.teams.map(t => ({
           ...t,
           score: game?.teams.find(originalTeam => originalTeam.name === t.name)?.score || 0,
@@ -273,7 +282,7 @@ export default function SessionConfigPage() {
                     <CardTitle className="text-destructive">Access Denied</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <p>You are not authorized to edit this session. Please contact the session creator or an administrator.</p>
+                    <p>You are not authorized to edit this session. Please contact the session creator.</p>
                     <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
                 </CardContent>
             </Card>
@@ -361,7 +370,7 @@ export default function SessionConfigPage() {
                                      <FormItem><FormLabel>Capacity</FormLabel><FormControl><Input type="number" {...field} className="w-24"/></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.color`} render={({ field }) => (
-                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10 w-16" /></FormControl><FormMessage /></FormItem>
+                                     <FormItem><FormLabel>Color</FormLabel><FormControl><Input type="color" {...field} className="p-1 h-10 w-16" /></FormControl><FormMessage /></FormMessage>
                                 )} />
                                 <FormField control={form.control} name={`teams.${index}.icon`} render={({ field }) => (
                                      <FormItem><FormLabel>Icon URL</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -414,3 +423,5 @@ export default function SessionConfigPage() {
     </div>
   );
 }
+
+    

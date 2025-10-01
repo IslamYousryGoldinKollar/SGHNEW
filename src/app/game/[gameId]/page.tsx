@@ -29,7 +29,6 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-const ADMIN_UIDS = ["GLdvOzQWorMcsmOpcwvqqZcpCIN2", "40J7xdA4thUfcFf9vGvxUpTfSAD3", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 export default function GamePage() {
   const params = useParams();
@@ -82,10 +81,10 @@ export default function GamePage() {
         setGame(gameData);
 
         if (authUser) {
-          const isUserAdmin =
-            gameData.adminId === authUser.uid ||
-            ADMIN_UIDS.includes(authUser.uid);
+          // Admin check is now based on strict ownership
+          const isUserAdmin = gameData.adminId === authUser.uid;
           setIsAdmin(isUserAdmin);
+          
           const player =
             gameData.teams
               ?.flatMap((t) => t.players)
@@ -499,7 +498,7 @@ export default function GamePage() {
       );
     }
     
-    if (game.status === 'playing' && !currentPlayer) {
+    if ((game.status === 'playing' || game.status === 'finished') && !currentPlayer) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
@@ -511,7 +510,7 @@ export default function GamePage() {
       );
     }
 
-    if (game.status === 'lobby' || (game.status === 'starting' && currentPlayer)) {
+    if (game.status === 'lobby' || (game.status === 'starting' && !currentPlayer)) {
       return (
         <Lobby
           game={game}
@@ -535,29 +534,17 @@ export default function GamePage() {
             <p className="mt-2 text-muted-foreground">Get ready for battle!</p>
           </div>
         );
-      case "lobby":
-        return (
-          <Lobby
-            game={game}
-            onJoinTeam={handleJoinTeam}
-            onStartGame={handleStartGame}
-            currentPlayer={currentPlayer}
-            isAdmin={isAdmin}
-          />
-        );
       case "playing":
         if (!currentPlayer) {
-          return (
-            <div className="flex flex-col items-center justify-center flex-1 text-center">
-              <h1 className="text-4xl font-bold font-display">
-                The Game Has Started!
-              </h1>
-              <p className="mt-2 text-muted-foreground">
-                A game is currently being played. You can join the next round
-                once this one is finished.
-              </p>
-            </div>
-          );
+           return (
+              <Lobby
+                game={game}
+                onJoinTeam={handleJoinTeam}
+                onStartGame={handleStartGame}
+                currentPlayer={currentPlayer}
+                isAdmin={isAdmin}
+              />
+           );
         }
 
         const playerTeam = game.teams.find(
@@ -623,3 +610,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    

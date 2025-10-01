@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/lib/firebase";
-import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, deleteDoc, setDoc, serverTimestamp, getDoc, query, where } from "firebase/firestore";
 import { Loader2, Plus, Eye, Edit, Trash2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -15,7 +15,6 @@ import type { Game, GridSquare } from "@/lib/types";
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
 const GRID_SIZE = 22; // Based on the number of hexagons in the SVG
-const ADMIN_UIDS = ["GLdvOzQWorMcsmOpcwvqqZcpCIN2", "40J7xdA4thUfcFf9vGvxUpTfSAD3", "DqPp28DfHAPTibRoMXNoPtj67Mt1"];
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -31,7 +30,9 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (user) {
-      const q = collection(db, "games");
+      // Query for games where the current user is the admin.
+      const q = query(collection(db, "games"), where("adminId", "==", user.uid));
+      
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const sessionsData: Game[] = [];
         querySnapshot.forEach((doc) => {
@@ -43,6 +44,7 @@ export default function AdminDashboard() {
           console.error("Error fetching sessions: ", error);
           setIsLoadingSessions(false);
       });
+
       return () => unsubscribe();
     }
   }, [user]);
@@ -137,8 +139,6 @@ export default function AdminDashboard() {
     );
   }
 
-  const isGlobalAdmin = ADMIN_UIDS.includes(user.uid);
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
@@ -160,13 +160,14 @@ export default function AdminDashboard() {
       </Card>
       
       <div className="mt-12">
-        <h2 className="text-3xl font-bold font-display mb-4">Current Sessions</h2>
+        <h2 className="text-3xl font-bold font-display mb-4">Your Sessions</h2>
         {isLoadingSessions ? (
             <Loader2 className="animate-spin"/>
         ) : sessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sessions.map(session => {
-                  const isOwner = user.uid === session.adminId || isGlobalAdmin;
+                  // Since we query by adminId, the user is always the owner.
+                  const isOwner = true; 
                   return (
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
