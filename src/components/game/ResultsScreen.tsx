@@ -134,3 +134,5 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
     </div>
   );
 }
+
+    
