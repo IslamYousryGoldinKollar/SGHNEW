@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -20,6 +21,7 @@ import {
   where,
   limit,
   writeBatch,
+  deleteDoc,
 } from "firebase/firestore";
 import {
   signInAnonymously,
@@ -373,7 +375,7 @@ export default function GamePage() {
                   coloringCredits: 0,
                   score: 0,
                   customData: customData,
-                  gameStartedAt: serverTimestamp() as Timestamp,
+                  gameStartedAt: Timestamp.now(),
               };
 
               const updatedTeams = currentGame.teams?.[0] ? [...currentGame.teams] : [{ name: "Participants", score: 0, players: [], capacity: 999, color: '#888888', icon: '' }];
@@ -635,3 +637,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
