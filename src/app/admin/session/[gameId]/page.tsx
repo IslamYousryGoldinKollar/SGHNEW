@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -253,6 +254,13 @@ export default function SessionConfigPage() {
     return () => unsubscribe();
   }, [gameId, user, authLoading, form, router, toast]);
 
+    useEffect(() => {
+    if (sessionType === 'individual' && fieldFields.length === 0) {
+      appendField({ id: uuidv4(), label: "Full Name", type: "text" });
+      appendField({ id: uuidv4(), label: "ID Number", type: "text" });
+    }
+  }, [sessionType, fieldFields, appendField]);
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -343,10 +351,12 @@ export default function SessionConfigPage() {
           players: game?.teams.find((originalTeam) => originalTeam.name === t.name)?.players || [],
         }));
       } else {
+        // For individual, maintain the single 'Participants' team structure
+        // Keep existing players and their scores, but don't add new configuration data
         teamsUpdate = [
           {
             name: "Participants",
-            score: 0,
+            score: 0, // Score for the "team" itself is not relevant
             players: game?.teams?.[0]?.players || [],
             capacity: 999,
             color: "#888888",
@@ -509,7 +519,13 @@ export default function SessionConfigPage() {
                       <FormItem>
                         <FormControl>
                           <RadioGroup
-                            onValueChange={field.onChange}
+                            onValueChange={(value) => {
+                                field.onChange(value);
+                                // if switching away from individual, clear the fields
+                                if (value !== 'individual') {
+                                    form.setValue('requiredPlayerFields', []);
+                                }
+                            }}
                             defaultValue={field.value}
                             className="grid grid-cols-1 md:grid-cols-3 gap-4"
                           >
@@ -779,3 +795,5 @@ export default function SessionConfigPage() {
     </div>
   );
 }
+
+    

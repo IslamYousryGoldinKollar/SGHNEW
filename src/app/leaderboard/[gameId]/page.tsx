@@ -49,6 +49,8 @@ export default function LeaderboardPage() {
         return <div className="flex h-screen w-full items-center justify-center"><h1>Session not found.</h1></div>;
     }
 
+    const nameField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
+
     return (
         <div className="container mx-auto px-4 py-8">
             <Button variant="outline" onClick={() => router.push(`/admin/`)} className="mb-8">
@@ -71,7 +73,8 @@ export default function LeaderboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[50px]">Rank</TableHead>
-                                {game.requiredPlayerFields.map(field => (
+                                <TableHead>Name</TableHead>
+                                {game.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
                                      <TableHead key={field.id}>{field.label}</TableHead>
                                 ))}
                                 <TableHead className="text-right">Score</TableHead>
@@ -82,7 +85,8 @@ export default function LeaderboardPage() {
                                 players.map((player, index) => (
                                     <TableRow key={player.id}>
                                         <TableCell className="font-medium text-lg">{index + 1}</TableCell>
-                                        {game.requiredPlayerFields.map(field => (
+                                        <TableCell>{player.name}</TableCell>
+                                        {game.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
                                             <TableCell key={field.id}>{player.customData?.[field.id] || 'N/A'}</TableCell>
                                         ))}
                                         <TableCell className="text-right font-bold font-mono text-lg">{player.score}</TableCell>
@@ -102,3 +106,5 @@ export default function LeaderboardPage() {
         </div>
     )
 }
+
+    

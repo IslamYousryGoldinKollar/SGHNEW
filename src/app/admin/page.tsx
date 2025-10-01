@@ -62,8 +62,20 @@ export default function AdminDashboard() {
     
     try {
         await runTransaction(db, async (transaction) => {
-            const newPin = generatePin();
-            const gameRef = doc(db, "games", newPin);
+            let newPin;
+            let gameRef;
+            let pinExists = true;
+
+            // Loop to ensure the PIN is unique
+            while (pinExists) {
+                newPin = generatePin();
+                gameRef = doc(db, "games", newPin);
+                const gameDoc = await transaction.get(gameRef);
+                pinExists = gameDoc.exists();
+            }
+            if (!gameRef) throw new Error("Failed to generate a unique session PIN.");
+
+
             const adminRef = doc(db, "admins", user.uid);
 
             // 1. All READS must happen before any writes.
@@ -160,8 +172,16 @@ export default function AdminDashboard() {
       }
 
       const originalGameData = originalGameSnap.data() as Omit<Game, 'id'>;
-      const newPin = generatePin();
-      const newGameRef = doc(db, "games", newPin);
+      let newPin;
+      let newGameRef;
+      let pinExists = true;
+
+      while(pinExists) {
+        newPin = generatePin();
+        newGameRef = doc(db, "games", newPin);
+        const gameDoc = await getDoc(newGameRef);
+        pinExists = gameDoc.exists();
+      }
       
       const duplicatedGame: Omit<Game, 'id'> = {
         ...originalGameData,
@@ -321,3 +341,5 @@ service firebase.storage {
     </>
   );
 }
+
+    

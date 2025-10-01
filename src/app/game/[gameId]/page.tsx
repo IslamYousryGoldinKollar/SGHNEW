@@ -44,23 +44,36 @@ import { v4 as uuidv4 } from 'uuid';
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
-const IndividualLobby = ({ game, onJoin, isJoining }: { game: Game, onJoin: (formData: Record<string, string>) => void, isJoining: boolean }) => {
+const IndividualLobby = ({ game, onJoin, isJoining }: { game: Game, onJoin: (formData: Record<string, string>, name: string) => void, isJoining: boolean }) => {
     const [formData, setFormData] = useState<Record<string, string>>({});
+    const [playerName, setPlayerName] = useState("");
     const [error, setError] = useState('');
+    const nameFieldId = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'))?.id;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const allFieldsFilled = game.requiredPlayerFields.every(field => formData[field.id] && formData[field.id].trim() !== '');
-        if (!allFieldsFilled) {
+        if (!playerName.trim()) {
+            setError('Please fill out your name.');
+            return;
+        }
+        const otherFields = game.requiredPlayerFields.filter(f => f.id !== nameFieldId);
+        const allOtherFieldsFilled = otherFields.every(field => formData[field.id] && formData[field.id].trim() !== '');
+
+        if (!allOtherFieldsFilled) {
             setError('Please fill out all fields.');
             return;
         }
+
         setError('');
-        onJoin(formData);
+        onJoin(formData, playerName);
     }
 
     const handleChange = (fieldId: string, value: string) => {
-        setFormData(prev => ({...prev, [fieldId]: value}));
+        if (fieldId === nameFieldId) {
+            setPlayerName(value);
+        } else {
+            setFormData(prev => ({...prev, [fieldId]: value}));
+        }
     }
 
     return (
@@ -76,7 +89,18 @@ const IndividualLobby = ({ game, onJoin, isJoining }: { game: Game, onJoin: (for
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {game.requiredPlayerFields.map(field => (
+                         <div className="space-y-2">
+                            <Label htmlFor="player-name-field">Full Name</Label>
+                            <Input
+                                id="player-name-field"
+                                type="text"
+                                value={playerName}
+                                onChange={(e) => setPlayerName(e.target.value)}
+                                required
+                                className="text-lg p-6 w-full"
+                            />
+                        </div>
+                        {game.requiredPlayerFields.filter(f => f.label.toLowerCase() !== 'full name').map(field => (
                             <div key={field.id} className="space-y-2">
                                 <Label htmlFor={field.id}>{field.label}</Label>
                                 <Input
@@ -354,30 +378,33 @@ export default function GamePage() {
   };
 
   // Handler for individual mode
-  const handleJoinIndividual = async (customData: Record<string, string>) => {
+  const handleJoinIndividual = async (customData: Record<string, string>, name: string) => {
       if (!game || !authUser) return;
       setIsJoining(true);
 
       try {
+          const gameRef = doc(db, "games", GAME_ID);
+
           // Check if questions need to be generated (first player joining)
-          if ((!game.questions || game.questions.length === 0) && (!game.teams[0] || game.teams[0].players.length === 0)) {
+          const currentDoc = await getDoc(gameRef);
+          const currentGame = currentDoc.data() as Game;
+          if ((!currentGame.questions || currentGame.questions.length === 0) && (!currentGame.teams[0] || currentGame.teams[0].players.length === 0)) {
               const result = await generateQuestionsAction({ topic: game.topic || "General Knowledge", numberOfQuestions: 20 });
               if (result.questions) {
-                  await updateDoc(doc(db, "games", GAME_ID), { questions: result.questions });
+                  await updateDoc(gameRef, { questions: result.questions });
               } else {
                   throw new Error("AI failed to generate questions.");
               }
           }
           
           await runTransaction(db, async (transaction) => {
-              const gameRef = doc(db, "games", GAME_ID);
-              const gameDoc = await transaction.get(gameRef);
-              if (!gameDoc.exists()) throw new Error("Game does not exist!");
-              const currentGame = gameDoc.data() as Game;
+              const freshGameDoc = await transaction.get(gameRef);
+              if (!freshGameDoc.exists()) throw new Error("Game does not exist!");
+              const freshGame = freshGameDoc.data() as Game;
 
-              if (currentGame.sessionType !== 'individual') throw new Error("This is not an individual challenge.");
+              if (freshGame.sessionType !== 'individual') throw new Error("This is not an individual challenge.");
 
-              const isAlreadyPlaying = currentGame.teams?.[0]?.players.some(p => p.id === authUser.uid);
+              const isAlreadyPlaying = freshGame.teams?.[0]?.players.some(p => p.id === authUser.uid);
               if (isAlreadyPlaying) {
                   toast({ title: "Already Joined", description: "You have already started this challenge.", variant: "destructive" });
                   return;
@@ -386,7 +413,7 @@ export default function GamePage() {
               const newPlayer: Player = {
                   id: authUser.uid,
                   playerId: customData['ID Number'] || uuidv4(),
-                  name: customData['Full Name'] || 'Anonymous', 
+                  name: name,
                   teamName: "Participants",
                   answeredQuestions: [],
                   coloringCredits: 0,
@@ -395,7 +422,7 @@ export default function GamePage() {
                   gameStartedAt: Timestamp.now(),
               };
 
-              const updatedTeams = currentGame.teams?.[0] ? [...currentGame.teams] : [{ name: "Participants", score: 0, players: [], capacity: 999, color: '#888888', icon: '' }];
+              const updatedTeams = freshGame.teams?.[0] ? [...freshGame.teams] : [{ name: "Participants", score: 0, players: [], capacity: 999, color: '#888888', icon: '' }];
               updatedTeams[0].players.push(newPlayer);
 
               transaction.update(gameRef, { teams: updatedTeams, status: 'playing' });
@@ -442,14 +469,15 @@ export default function GamePage() {
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== "playing") return;
     
-    // Individual game over conditions
+    const nextQ = getNextQuestion();
+
     if (game.sessionType === 'individual') {
         const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
         if (!playerStartTime) return; 
         const isTimeUp = Date.now() > playerStartTime + game.timer * 1000;
-        const allQuestionsAnswered = (currentPlayer.answeredQuestions?.length || 0) >= game.questions.length;
+        const allQuestionsAnswered = !nextQ && game.questions.length > 0;
         
-        if (isTimeUp || allQuestionsAnswered) {
+        if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
             // End the game for this player (state is handled by ResultsScreen)
             return;
         }
@@ -458,11 +486,6 @@ export default function GamePage() {
     if (currentPlayer.coloringCredits > 0) {
         setView("grid");
     } else {
-        const nextQ = getNextQuestion();
-        if (!nextQ && game.sessionType === 'individual' && game.questions.length > 0) {
-            // All questions answered, end the game for this individual player
-            return;
-        }
         if (!currentQuestion || currentQuestion.question !== nextQ?.question) {
             setCurrentQuestion(nextQ);
         }
@@ -500,10 +523,10 @@ export default function GamePage() {
           }
         } else if (currentGame.sessionType === 'individual') {
           // Remove a random colored hex for incorrect answers in solo mode
-          const coloredByPlayer = currentGame.grid.map((sq, i) => ({...sq, originalIndex: i})).filter(sq => sq.coloredBy === authUser.uid);
-          if (coloredByPlayer.length > 0) {
-            const randomIndex = Math.floor(Math.random() * coloredByPlayer.length);
-            const hexToClear = coloredByPlayer[randomIndex];
+          const playerGridSquares = currentGame.grid.map((sq, i) => ({...sq, originalIndex: i})).filter(sq => sq.coloredBy === authUser.uid);
+          if (playerGridSquares.length > 0) {
+            const randomIndex = Math.floor(Math.random() * playerGridSquares.length);
+            const hexToClear = playerGridSquares[randomIndex];
             currentGame.grid[hexToClear.originalIndex].coloredBy = null;
             transaction.update(gameRef, { grid: currentGame.grid });
           }
@@ -607,7 +630,7 @@ export default function GamePage() {
         
         const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
         const isTimeUp = playerStartTime && (Date.now() > playerStartTime + game.timer * 1000);
-        const allQuestionsAnswered = (game.questions && currentPlayer.answeredQuestions) ? currentPlayer.answeredQuestions.length >= game.questions.length : false;
+        const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
         
         if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
              return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
@@ -631,10 +654,7 @@ export default function GamePage() {
 
         if (!currentQuestion) {
             return (
-                <div className="flex flex-col items-center justify-center flex-1 text-center">
-                    <h1 className="text-4xl font-bold font-display">You've answered all available questions!</h1>
-                    <p className="mt-2 text-muted-foreground">Great job! See your final score when time is up.</p>
-                </div>
+                 <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>
             );
         }
 
@@ -685,3 +705,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
