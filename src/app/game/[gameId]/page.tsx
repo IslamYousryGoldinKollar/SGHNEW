@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -569,8 +568,9 @@ export default function GamePage() {
         const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
         const isTimeUp = playerStartTime && (Date.now() > playerStartTime + game.timer * 1000);
         const isGridFull = game.grid.every(s => s.coloredBy !== null);
+        const allQuestionsAnswered = currentPlayer.answeredQuestions.length >= game.questions.length;
 
-        if (isTimeUp || isGridFull) {
+        if (isTimeUp || isGridFull || allQuestionsAnswered) {
              return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
         }
 
@@ -582,10 +582,12 @@ export default function GamePage() {
         }
 
         if (!currentQuestion) {
+            // This case should now be handled by the allQuestionsAnswered check above,
+            // but we keep it as a fallback.
             return (
                 <div className="flex flex-col items-center justify-center flex-1 text-center">
                     <h1 className="text-4xl font-bold font-display">You've answered all available questions!</h1>
-                    <p className="mt-2 text-muted-foreground">Great job! See your final score when time is up.</p>
+                    <p className="mt-2 text-muted-foreground">Great job! Here are your results.</p>
                 </div>
             );
         }
