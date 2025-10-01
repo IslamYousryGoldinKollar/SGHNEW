@@ -613,10 +613,9 @@ export default function GamePage() {
         
         const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
         const isTimeUp = playerStartTime && (Date.now() > playerStartTime + game.timer * 1000);
-        const isGridFull = game.grid.every(s => s.coloredBy === currentPlayer.id);
         const allQuestionsAnswered = game.questions.length > 0 && (currentPlayer.answeredQuestions.length >= game.questions.length) && currentPlayer.coloringCredits === 0;
 
-        if (isTimeUp || isGridFull || allQuestionsAnswered) {
+        if (isTimeUp || allQuestionsAnswered) {
              return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
         }
 

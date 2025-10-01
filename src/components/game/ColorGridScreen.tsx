@@ -30,6 +30,7 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
 
     // Prevent confetti if the hex is already owned by the current colorer.
     if (!square || square.coloredBy === colorerIdentifier) {
+      onColorSquare(squareId);
       return;
     }
     

@@ -401,13 +401,3 @@ export default function DisplayPage() {
     );
 
     }
-
-
-    
-
-    
-
-
-
-
-
