@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import type { Game } from "@/lib/types";
-import { db, storage } from "@/lib/firebase";
+import { db, storage, auth } from "@/lib/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { Button } from "@/components/ui/button";
@@ -28,6 +30,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const [user] = useAuthState(auth);
 
   const joinUrl = session ? `${window.location.origin}/game/${session.id}` : "";
 
@@ -62,36 +65,30 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
 
     setIsUploading(true);
     try {
       // If there's an old thumbnail, delete it first
-      if (session.thumbnailUrl) {
+      if (thumbnailUrl) {
           try {
-              // Firebase storage URLs can be in two formats:
-              // 1. gs://<bucket>/<path-to-file>
-              // 2. https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<path-to-file>?alt=media&token=<token>
-              // We need to extract the path to the file.
-              const filePath = decodeURIComponent(session.thumbnailUrl.split('/o/')[1].split('?')[0]);
-              const oldImageRef = ref(storage, filePath);
+              const oldImageRef = ref(storage, thumbnailUrl);
               await deleteObject(oldImageRef);
           } catch (deleteError: any) {
-              // It's okay if the old file doesn't exist.
               if (deleteError.code !== 'storage/object-not-found') {
                   console.warn("Could not delete old thumbnail:", deleteError);
               }
           }
       }
 
-      const imageRef = ref(storage, `game-thumbnails/${session.id}/${file.name}`);
+      const imageRef = ref(storage, `game-thumbnails/${user.uid}/${file.name}`);
       const snapshot = await uploadBytes(imageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
       setThumbnailUrl(downloadURL);
       toast({ title: "Thumbnail uploaded!", description: "Save your changes to apply." });
     } catch (error) {
       console.error("Error uploading thumbnail:", error);
-      toast({ title: "Upload Failed", description: "Could not upload the image.", variant: "destructive" });
+      toast({ title: "Upload Failed", description: "Could not upload the image. Your storage rules might need an update.", variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -99,8 +96,21 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
 
   const handleRemoveThumbnail = async () => {
      if (!thumbnailUrl) return;
-     setThumbnailUrl(null);
-     toast({ title: "Thumbnail removed", description: "Save your changes to apply." });
+
+      try {
+        const imageRef = ref(storage, thumbnailUrl);
+        await deleteObject(imageRef);
+        setThumbnailUrl(null);
+        toast({ title: "Thumbnail removed", description: "Save your changes to apply." });
+      } catch (error: any) {
+         if (error.code === 'storage/object-not-found') {
+            setThumbnailUrl(null);
+            toast({ title: "Thumbnail removed", description: "Save your changes to apply." });
+        } else {
+            console.error("Error removing thumbnail:", error);
+            toast({ title: "Error", description: "Could not remove thumbnail.", variant: "destructive" });
+        }
+      }
   }
 
   const handleCopyUrl = () => {
