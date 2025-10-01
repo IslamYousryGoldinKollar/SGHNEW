@@ -68,15 +68,20 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
     try {
       // If there's an old thumbnail, delete it first
       if (session.thumbnailUrl) {
-        try {
-          const oldImageRef = ref(storage, session.thumbnailUrl);
-          await deleteObject(oldImageRef);
-        } catch (deleteError: any) {
-          // If the old file doesn't exist, that's fine.
-          if (deleteError.code !== 'storage/object-not-found') {
-             console.warn("Could not delete old thumbnail:", deleteError);
+          try {
+              // Firebase storage URLs can be in two formats:
+              // 1. gs://<bucket>/<path-to-file>
+              // 2. https://firebasestorage.googleapis.com/v0/b/<bucket>/o/<path-to-file>?alt=media&token=<token>
+              // We need to extract the path to the file.
+              const filePath = decodeURIComponent(session.thumbnailUrl.split('/o/')[1].split('?')[0]);
+              const oldImageRef = ref(storage, filePath);
+              await deleteObject(oldImageRef);
+          } catch (deleteError: any) {
+              // It's okay if the old file doesn't exist.
+              if (deleteError.code !== 'storage/object-not-found') {
+                  console.warn("Could not delete old thumbnail:", deleteError);
+              }
           }
-        }
       }
 
       const imageRef = ref(storage, `game-thumbnails/${session.id}/${file.name}`);
