@@ -39,137 +39,190 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
-// A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 6).toUpperCase();
 
-const IndividualLobby = ({ game, onJoin, isJoining }: { game: Game, onJoin: (formData: Record<string, string>, name: string) => void, isJoining: boolean }) => {
-    const [formData, setFormData] = useState<Record<string, string>>({});
-    const [playerName, setPlayerName] = useState("");
-    const [error, setError] = useState('');
-    const nameFieldId = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'))?.id;
+const IndividualLobby = ({
+  game,
+  onJoin,
+  isJoining,
+}: {
+  game: Game;
+  onJoin: (formData: Record<string, string>, name: string) => void;
+  isJoining: boolean;
+}) => {
+  const [formData, setFormData] = useState<Record<string, string>>({});
+  const [playerName, setPlayerName] = useState("");
+  const [error, setError] = useState("");
+  const nameFieldId = game.requiredPlayerFields.find((f) => f.label.toLowerCase().includes("name"))?.id;
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!playerName.trim()) {
-            setError('Please fill out your name.');
-            return;
-        }
-        const otherFields = game.requiredPlayerFields.filter(f => f.id !== nameFieldId);
-        const allOtherFieldsFilled = otherFields.every(field => formData[field.id] && formData[field.id].trim() !== '');
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!playerName.trim()) {
+      setError("Please fill out your name.");
+      return;
+    }
+    const otherFields = game.requiredPlayerFields.filter((f) => f.id !== nameFieldId);
+    const allOtherFieldsFilled = otherFields.every(
+      (field) => formData[field.id] && formData[field.id].trim() !== ""
+    );
 
-        if (!allOtherFieldsFilled) {
-            setError('Please fill out all fields.');
-            return;
-        }
-
-        setError('');
-        onJoin(formData, playerName);
+    if (!allOtherFieldsFilled) {
+      setError("Please fill out all fields.");
+      return;
     }
 
-    const handleChange = (fieldId: string, value: string) => {
-        if (fieldId === nameFieldId) {
-            setPlayerName(value);
-        } else {
-            setFormData(prev => ({...prev, [fieldId]: value}));
-        }
-    }
+    setError("");
+    onJoin(formData, playerName);
+  };
 
-    return (
-        <div className="flex flex-col items-center justify-center flex-1">
-            <div className="text-center">
-                <h1 className="text-5xl font-bold font-display">{game.title}</h1>
-                <p className="text-muted-foreground mt-2 max-w-xl">Enter your details to start the challenge. You will have {Math.floor(game.timer / 60)} minutes to answer questions and capture territory.</p>
+  const handleChange = (fieldId: string, value: string) => {
+    if (fieldId === nameFieldId) {
+      setPlayerName(value);
+    } else {
+      setFormData((prev) => ({ ...prev, [fieldId]: value }));
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center flex-1">
+      <div className="text-center">
+        <h1 className="text-5xl font-bold font-display">{game.title}</h1>
+        <p className="text-muted-foreground mt-2 max-w-xl">
+          Enter your details to start the challenge. You will have {Math.floor(game.timer / 60)} minutes to answer
+          questions and capture territory.
+        </p>
+      </div>
+
+      <Card className="my-8 w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Your Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="player-name-field">Full Name</Label>
+              <Input
+                id="player-name-field"
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                required
+                className="text-lg p-6 w-full"
+              />
             </div>
-
-            <Card className="my-8 w-full max-w-md">
-                <CardHeader>
-                    <CardTitle>Your Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                         <div className="space-y-2">
-                            <Label htmlFor="player-name-field">Full Name</Label>
-                            <Input
-                                id="player-name-field"
-                                type="text"
-                                value={playerName}
-                                onChange={(e) => setPlayerName(e.target.value)}
-                                required
-                                className="text-lg p-6 w-full"
-                            />
-                        </div>
-                        {game.requiredPlayerFields.filter(f => f.label.toLowerCase() !== 'full name').map(field => (
-                            <div key={field.id} className="space-y-2">
-                                <Label htmlFor={field.id}>{field.label}</Label>
-                                <Input
-                                    id={field.id}
-                                    type={field.type}
-                                    value={formData[field.id] || ''}
-                                    onChange={(e) => handleChange(field.id, e.target.value)}
-                                    required
-                                    className="text-lg p-6 w-full"
-                                />
-                            </div>
-                        ))}
-                        {error && <p className="text-destructive text-sm">{error}</p>}
-                        <Button type="submit" size="lg" className="w-full" disabled={isJoining}>
-                            {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Start Challenge'}
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
-    )
-}
-
-const MatchmakingLobby = ({ onJoinQueue, isJoining, onCancel, ticket }: { onJoinQueue: (name: string, id:string) => void, isJoining: boolean, onCancel: () => void, ticket: MatchmakingTicket | null }) => {
-    const [playerName, setPlayerName] = useState("");
-    const [idNumber, setIdNumber] = useState("");
-
-    const handleJoin = () => {
-        if (!playerName.trim() || !idNumber.trim()) {
-            alert("Please enter your name and ID.");
-            return;
-        }
-        onJoinQueue(playerName.trim(), idNumber.trim());
-    }
-
-    if (ticket && ticket.status === 'waiting') {
-        return (
-            <div className="flex flex-col items-center justify-center flex-1 text-center">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                <h1 className="text-4xl font-bold mt-4 font-display">Waiting for an opponent...</h1>
-                <p className="text-muted-foreground mt-2">You are in the queue, {ticket.playerName}. A match will begin automatically.</p>
-                <Button variant="outline" className="mt-8" onClick={onCancel}>Cancel</Button>
-            </div>
-        )
-    }
-
-    return (
-        <div className="flex flex-col items-center justify-center flex-1">
-            <div className="text-center">
-                <Swords className="h-16 w-16 text-primary mx-auto mb-4" />
-                <h1 className="text-5xl font-bold font-display">1v1 Matchmaking</h1>
-                <p className="text-muted-foreground mt-2 max-w-xl">Enter your name and ID to find a worthy opponent. The battle begins soon!</p>
-            </div>
-             <div className="my-8 w-full max-w-md space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="playerName" className="sr-only">Full Name</Label>
-                    <Input id="playerName" type="text" placeholder="Enter your full name" value={playerName} onChange={(e) => setPlayerName(e.target.value)} className="text-lg p-6 w-full text-center" />
+            {game.requiredPlayerFields
+              .filter((f) => f.label.toLowerCase() !== "full name")
+              .map((field) => (
+                <div key={field.id} className="space-y-2">
+                  <Label htmlFor={field.id}>{field.label}</Label>
+                  <Input
+                    id={field.id}
+                    type={field.type}
+                    value={formData[field.id] || ""}
+                    onChange={(e) => handleChange(field.id, e.target.value)}
+                    required
+                    className="text-lg p-6 w-full"
+                  />
                 </div>
-                <div className="space-y-2">
-                    <Label htmlFor="idNumber" className="sr-only">ID Number</Label>
-                    <Input id="idNumber" type="text" placeholder="Enter your ID number" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} className="text-lg p-6 w-full text-center" />
-                </div>
-                <Button size="lg" className="w-full" onClick={handleJoin} disabled={isJoining || !playerName.trim() || !idNumber.trim()}>
-                    {isJoining ? <Loader2 className="animate-spin" /> : "Find Match"}
-                </Button>
-            </div>
+              ))}
+            {error && <p className="text-destructive text-sm">{error}</p>}
+            <Button type="submit" size="lg" className="w-full" disabled={isJoining}>
+              {isJoining ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Start Challenge"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+const MatchmakingLobby = ({
+  onJoinQueue,
+  isJoining,
+  onCancel,
+  ticket,
+}: {
+  onJoinQueue: (name: string, id: string) => void;
+  isJoining: boolean;
+  onCancel: () => void;
+  ticket: MatchmakingTicket | null;
+}) => {
+  const [playerName, setPlayerName] = useState("");
+  const [idNumber, setIdNumber] = useState("");
+
+  const handleJoin = () => {
+    if (!playerName.trim() || !idNumber.trim()) {
+      alert("Please enter your name and ID.");
+      return;
+    }
+    onJoinQueue(playerName.trim(), idNumber.trim());
+  };
+
+  if (ticket && ticket.status === "waiting") {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 text-center">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        <h1 className="text-4xl font-bold mt-4 font-display">Waiting for an opponent...</h1>
+        <p className="text-muted-foreground mt-2">
+          You are in the queue, {ticket.playerName}. A match will begin automatically.
+        </p>
+        <Button variant="outline" className="mt-8" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center flex-1">
+      <div className="text-center">
+        <Swords className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h1 className="text-5xl font-bold font-display">1v1 Matchmaking</h1>
+        <p className="text-muted-foreground mt-2 max-w-xl">
+          Enter your name and ID to find a worthy opponent. The battle begins soon!
+        </p>
+      </div>
+      <div className="my-8 w-full max-w-md space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="playerName" className="sr-only">
+            Full Name
+          </Label>
+          <Input
+            id="playerName"
+            type="text"
+            placeholder="Enter your full name"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            className="text-lg p-6 w-full text-center"
+          />
         </div>
-    )
-}
+        <div className="space-y-2">
+          <Label htmlFor="idNumber" className="sr-only">
+            ID Number
+          </Label>
+          <Input
+            id="idNumber"
+            type="text"
+            placeholder="Enter your ID number"
+            value={idNumber}
+            onChange={(e) => setIdNumber(e.target.value)}
+            className="text-lg p-6 w-full text-center"
+          />
+        </div>
+        <Button
+          size="lg"
+          className="w-full"
+          onClick={handleJoin}
+          disabled={isJoining || !playerName.trim() || !idNumber.trim()}
+        >
+          {isJoining ? <Loader2 className="animate-spin" /> : "Find Match"}
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export default function GamePage() {
   const params = useParams();
@@ -186,7 +239,6 @@ export default function GamePage() {
   const [ticket, setTicket] = useState<MatchmakingTicket | null>(null);
   const [isJoining, setIsJoining] = useState(false);
 
-
   useEffect(() => {
     if (game?.theme) {
       document.documentElement.setAttribute("data-theme", game.theme);
@@ -195,7 +247,6 @@ export default function GamePage() {
     }
   }, [game?.theme]);
 
-  // Authenticate user
   useEffect(() => {
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -214,7 +265,6 @@ export default function GamePage() {
     return () => unsubAuth();
   }, [toast]);
 
-  // Listen to game document and player state
   useEffect(() => {
     if (!GAME_ID || !authUser) return;
     const gameRef = doc(db, "games", GAME_ID);
@@ -224,13 +274,13 @@ export default function GamePage() {
       if (docSnap.exists()) {
         const gameData = { id: docSnap.id, ...docSnap.data() } as Game;
         setGame(gameData);
-        
+
         const isUserAdmin = gameData.adminId === authUser.uid;
         setIsAdmin(isUserAdmin);
-        
-        const player = gameData.teams?.flatMap((t) => t.players).find((p) => p.id === authUser.uid) || null;
-        setCurrentPlayer(player);
 
+        const player =
+          gameData.teams?.flatMap((t) => t.players).find((p) => p.id === authUser.uid) || null;
+        setCurrentPlayer(player);
       } else {
         toast({
           title: "Game not found",
@@ -246,222 +296,152 @@ export default function GamePage() {
     return () => unsubGame();
   }, [GAME_ID, authUser, toast]);
 
-    // Matchmaking Logic
-    useEffect(() => {
-        if (!game || game.sessionType !== 'matchmaking' || !authUser) return;
+  useEffect(() => {
+    if (!game || game.sessionType !== "matchmaking" || !authUser) return;
 
-        // Listen to player's own ticket
-        const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
-        const unsubTicket = onSnapshot(ticketRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const ticketData = docSnap.data() as MatchmakingTicket;
-                setTicket(ticketData);
-                if (ticketData.status === 'matched' && ticketData.gameId) {
-                    router.replace(`/game/${ticketData.gameId}`);
-                }
-            } else {
-                setTicket(null);
-            }
-        });
-
-        // Find a match if we are a waiting player (but not an admin, to avoid loops)
-        if (ticket?.status === 'waiting' && !isAdmin) {
-             const q = query(
-                collection(db, "matchmakingTickets"),
-                where("status", "==", "waiting"),
-                where("matchmakingSessionId", "==", game.id),
-                where("playerId", "!=", authUser.uid),
-                limit(1)
-            );
-            const unsubQueue = onSnapshot(q, async (snapshot) => {
-                 if (snapshot.docs.length > 0) {
-                     const player1Ticket = ticket;
-                     const player2TicketDoc = snapshot.docs[0];
-                     const player2Ticket = player2TicketDoc.data() as MatchmakingTicket;
-
-                     // One player (the one with the smaller UID) will create the game
-                     // This prevents both players from trying to create a game simultaneously
-                     if (player1Ticket.playerId < player2Ticket.playerId) {
-                         const batch = writeBatch(db);
-                         
-                         const newGameId = generatePin();
-                         const newGameRef = doc(db, "games", newGameId);
-                         
-                         const newGame: Omit<Game, 'id'> = {
-                             ...game,
-                             id: newGameId,
-                             title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
-                             status: "playing",
-                             sessionType: "team",
-                             teams: [
-                                 { name: player1Ticket.playerName, score: 0, players: [{id: player1Ticket.playerId, playerId: player1Ticket.playerId, name: player1Ticket.playerName, teamName: player1Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#FF6347", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258" },
-                                 { name: player2Ticket.playerName, score: 0, players: [{id: player2Ticket.playerId, playerId: player2Ticket.playerId, name: player2Ticket.playerName, teamName: player2Ticket.playerName, answeredQuestions: [], coloringCredits: 0, score: 0 }], capacity: 1, color: "#4682B4", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd" },
-                             ],
-                             gameStartedAt: serverTimestamp(),
-                             adminId: game.adminId // maintain original admin
-                         };
-                         batch.set(newGameRef, newGame);
-
-                         batch.update(doc(db, "matchmakingTickets", player1Ticket.playerId), { status: 'matched', gameId: newGameId });
-                         batch.update(doc(db, "matchmakingTickets", player2Ticket.playerId), { status: 'matched', gameId: newGameId });
-                         
-                         await batch.commit();
-                     }
-                 }
-            });
-            return () => unsubQueue();
+    const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+    const unsubTicket = onSnapshot(ticketRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const ticketData = docSnap.data() as MatchmakingTicket;
+        setTicket(ticketData);
+        if (ticketData.status === "matched" && ticketData.gameId) {
+          router.replace(`/game/${ticketData.gameId}`);
         }
-
-        return () => unsubTicket();
-
-    }, [game, authUser, isAdmin, router, ticket]);
-
-
-  const handleJoinQueue = async (playerName: string, playerId: string) => {
-      if (!game || !authUser) return;
-      setIsJoining(true);
-      try {
-          const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
-          const newTicket: MatchmakingTicket = {
-              id: authUser.uid,
-              playerId: authUser.uid,
-              playerName: playerName,
-              status: 'waiting',
-              createdAt: serverTimestamp() as Timestamp,
-              matchmakingSessionId: game.id,
-          };
-          await setDoc(ticketRef, newTicket);
-      } catch (error) {
-          console.error("Error joining queue:", error);
-          toast({ title: "Error", description: "Could not join the matchmaking queue.", variant: "destructive" });
-      } finally {
-          setIsJoining(false);
+      } else {
+        setTicket(null);
       }
-  };
+    });
 
-  const handleCancelQueue = async () => {
-    if(!authUser) return;
-    try {
-        const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
-        await deleteDoc(ticketRef);
-    } catch (error) {
-        console.error("Error cancelling queue:", error);
-        toast({ title: "Error", description: "Could not cancel matchmaking.", variant: "destructive" });
-    }
-  }
+    if (ticket?.status === "waiting" && !isAdmin) {
+      const q = query(
+        collection(db, "matchmakingTickets"),
+        where("status", "==", "waiting"),
+        where("matchmakingSessionId", "==", game.id),
+        where("playerId", "!=", authUser.uid),
+        limit(1)
+      );
+      const unsubQueue = onSnapshot(q, async (snapshot) => {
+        if (snapshot.docs.length > 0) {
+          const player1Ticket = ticket;
+          const player2TicketDoc = snapshot.docs[0];
+          const player2Ticket = player2TicketDoc.data() as MatchmakingTicket;
 
-  // Handler for team mode
-  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
-    if (!playerName.trim()) { toast({ title: "Invalid Name", description: "Please enter your name.", variant: "destructive" }); return; }
-    if (!game || !authUser) return;
+          if (player1Ticket.playerId < player2Ticket.playerId) {
+            const batch = writeBatch(db);
 
-    try {
-      await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", GAME_ID);
-        const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw new Error("Game does not exist!");
-        const currentGame = gameDoc.data() as Game;
+            const newGameId = generatePin();
+            const newGameRef = doc(db, "games", newGameId);
 
-        if (currentGame.sessionType !== 'team') throw new Error("This is not a team game.");
-
-        const isAlreadyInAnyTeam = currentGame.teams.some((t) => t.players.some((p) => p.id === authUser.uid));
-        if (isAlreadyInAnyTeam) { toast({ title: "Already in a team", description: "You have already joined a team.", variant: "destructive" }); return; }
-        
-        const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
-        if (teamIndex === -1) throw new Error("Team not found!");
-        if (currentGame.teams[teamIndex].players.length >= currentGame.teams[teamIndex].capacity) throw new Error(`Sorry, ${teamName} is full.`);
-
-        const newPlayer: Player = { id: authUser.uid, playerId, name: playerName, teamName, answeredQuestions: [], coloringCredits: 0, score: 0 };
-        const updatedTeams = [...currentGame.teams];
-        updatedTeams[teamIndex].players.push(newPlayer);
-        transaction.update(gameRef, { teams: updatedTeams });
-      });
-    } catch (error: any) {
-      console.error("Error joining team: ", error);
-      toast({ title: "Could Not Join", description: error.message || "An unexpected error occurred.", variant: "destructive" });
-    }
-  };
-
-  // Handler for individual mode
-  const handleJoinIndividual = async (customData: Record<string, string>, name: string) => {
-      if (!game || !authUser) return;
-      setIsJoining(true);
-
-      try {
-          const gameRef = doc(db, "games", GAME_ID);
-
-          // Check if questions need to be generated (first player joining)
-          const currentDoc = await getDoc(gameRef);
-          const currentGame = currentDoc.data() as Game;
-          if ((!currentGame.questions || currentGame.questions.length === 0) && (!currentGame.teams[0] || currentGame.teams[0].players.length === 0)) {
-              const result = await generateQuestionsAction({ topic: game.topic || "General Knowledge", numberOfQuestions: 20 });
-              if (result.questions) {
-                  await updateDoc(gameRef, { questions: result.questions });
-              } else {
-                  throw new Error("AI failed to generate questions.");
-              }
-          }
-          
-          await runTransaction(db, async (transaction) => {
-              const freshGameDoc = await transaction.get(gameRef);
-              if (!freshGameDoc.exists()) throw new Error("Game does not exist!");
-              const freshGame = freshGameDoc.data() as Game;
-
-              if (freshGame.sessionType !== 'individual') throw new Error("This is not an individual challenge.");
-
-              const isAlreadyPlaying = freshGame.teams?.[0]?.players.some(p => p.id === authUser.uid);
-              if (isAlreadyPlaying) {
-                  toast({ title: "Already Joined", description: "You have already started this challenge.", variant: "destructive" });
-                  return;
-              }
-              
-              const newPlayer: Player = {
-                  id: authUser.uid,
-                  playerId: customData['ID Number'] || uuidv4(),
-                  name: name,
-                  teamName: "Participants",
-                  answeredQuestions: [],
-                  coloringCredits: 0,
+            const newGame: Omit<Game, "id"> = {
+              ...game,
+              id: newGameId,
+              title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
+              status: "playing",
+              sessionType: "team",
+              teams: [
+                {
+                  name: player1Ticket.playerName,
                   score: 0,
-                  customData: customData,
-                  gameStartedAt: Timestamp.now(),
-              };
+                  players: [
+                    {
+                      id: player1Ticket.playerId,
+                      playerId: player1Ticket.playerId,
+                      name: player1Ticket.playerName,
+                      teamName: player1Ticket.playerName,
+                      answeredQuestions: [],
+                      coloringCredits: 0,
+                      score: 0,
+                    },
+                  ],
+                  capacity: 1,
+                  color: "#FF6347",
+                  icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258",
+                },
+                {
+                  name: player2Ticket.playerName,
+                  score: 0,
+                  players: [
+                    {
+                      id: player2Ticket.playerId,
+                      playerId: player2Ticket.playerId,
+                      name: player2Ticket.playerName,
+                      teamName: player2Ticket.playerName,
+                      answeredQuestions: [],
+                      coloringCredits: 0,
+                      score: 0,
+                    },
+                  ],
+                  capacity: 1,
+                  color: "#4682B4",
+                  icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd",
+                },
+              ],
+              gameStartedAt: serverTimestamp(),
+              adminId: game.adminId,
+            };
+            batch.set(newGameRef, newGame);
 
-              const updatedTeams = freshGame.teams?.[0] ? [...freshGame.teams] : [{ name: "Participants", score: 0, players: [], capacity: 999, color: '#888888', icon: '' }];
-              updatedTeams[0].players.push(newPlayer);
+            batch.update(doc(db, "matchmakingTickets", player1Ticket.playerId), {
+              status: "matched",
+              gameId: newGameId,
+            });
+            batch.update(doc(db, "matchmakingTickets", player2Ticket.playerId), {
+              status: "matched",
+              gameId: newGameId,
+            });
 
-              transaction.update(gameRef, { teams: updatedTeams, status: 'playing' });
-          });
-      } catch (error: any) {
-          console.error("Error joining individual challenge: ", error);
-          toast({ title: "Could Not Join", description: error.message || "An unexpected error occurred.", variant: "destructive" });
-      } finally {
-        setIsJoining(false);
-      }
-  }
-
-
-  const handleStartGame = async () => {
-    if (!game || !isAdmin) { toast({ title: "Not Authorized", description: "Only the admin can start.", variant: "destructive" }); return; }
-    if (game.teams.reduce((sum, t) => sum + t.players.length, 0) === 0) { toast({ title: "No players!", description: "At least one player must join.", variant: "destructive" }); return; }
-    
-    const gameRef = doc(db, "games", GAME_ID);
-    await updateDoc(gameRef, { status: "starting" });
-
-    try {
-      let questionsToUse: Question[] = game.questions || [];
-      if (questionsToUse.length === 0) {
-        const result = await generateQuestionsAction({ topic: game.topic || "General Knowledge", numberOfQuestions: 20 });
-        if (result.questions) { questionsToUse = result.questions; } else { throw new Error("AI failed to generate questions."); }
-      }
-      await updateDoc(gameRef, { questions: questionsToUse, status: "playing", gameStartedAt: serverTimestamp() });
-    } catch (error) {
-      console.error(error);
-      toast({ title: "Error Starting Game", description: "Could not prepare questions.", variant: "destructive" });
-      await updateDoc(gameRef, { status: "lobby" });
+            await batch.commit();
+          }
+        }
+      });
+      return () => unsubQueue();
     }
-  };
-  
+
+    return () => unsubTicket();
+  }, [game, authUser, isAdmin, router, ticket]);
+
+  useEffect(() => {
+    if (!game || !currentPlayer) return;
+
+    const isSoloMode = game.sessionType === "individual";
+    const canProceed = isSoloMode
+      ? ["lobby", "starting", "playing"].includes(game.status)
+      : game.status === "playing";
+
+    if (!canProceed) return;
+
+    const nextQ = getNextQuestion();
+    if (isSoloMode) {
+      const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
+      const isTimeUp =
+        playerStartTime && game.timer
+          ? Date.now() > playerStartTime + game.timer * 1000
+          : false;
+      const allQuestionsAnswered = !nextQ && game.questions.length > 0;
+
+      if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
+        setCurrentQuestion(null);
+        setView("question");
+        return;
+      }
+    } else if (game.status !== "playing") {
+      return;
+    }
+
+    if (currentPlayer.coloringCredits > 0) {
+      setView("grid");
+      return;
+    }
+
+    if (nextQ) {
+      setCurrentQuestion((prev) => (prev?.question === nextQ.question ? prev : nextQ));
+      setView("question");
+    } else {
+      setCurrentQuestion(null);
+      setView("question");
+    }
+  }, [game, currentPlayer, getNextQuestion]);
+
   const getNextQuestion = useCallback(() => {
     if (!game || !currentPlayer) return null;
     const answered = currentPlayer.answeredQuestions || [];
@@ -471,37 +451,235 @@ export default function GamePage() {
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
-  useEffect(() => {
-    if (!game || !currentPlayer || game.status !== "playing") return;
-    
-    const nextQ = getNextQuestion();
+  const handleJoinQueue = async (playerName: string, playerId: string) => {
+    if (!game || !authUser) return;
+    setIsJoining(true);
+    try {
+      const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+      const newTicket: MatchmakingTicket = {
+        id: authUser.uid,
+        playerId: authUser.uid,
+        playerName: playerName,
+        status: "waiting",
+        createdAt: serverTimestamp() as Timestamp,
+        matchmakingSessionId: game.id,
+      };
+      await setDoc(ticketRef, newTicket);
+    } catch (error) {
+      console.error("Error joining queue:", error);
+      toast({
+        title: "Error",
+        description: "Could not join the matchmaking queue.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
-    if (game.sessionType === 'individual') {
-        const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
-        if (!playerStartTime) return; 
-        const isTimeUp = Date.now() > playerStartTime + game.timer * 1000;
-        const allQuestionsAnswered = !nextQ && game.questions.length > 0;
-        
-        if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
-            // End the game for this player (state is handled by ResultsScreen)
-            return;
+  const handleCancelQueue = async () => {
+    if (!authUser) return;
+    const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
+    await deleteDoc(ticketRef);
+  };
+
+  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
+    if (!playerName.trim()) {
+      toast({
+        title: "Invalid Name",
+        description: "Please enter your name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!game || !authUser) return;
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const gameRef = doc(db, "games", GAME_ID);
+        const gameDoc = await transaction.get(gameRef);
+        if (!gameDoc.exists()) throw new Error("Game does not exist!");
+        const currentGame = gameDoc.data() as Game;
+
+        if (currentGame.sessionType !== "team") throw new Error("This is not a team game.");
+
+        const isAlreadyInAnyTeam = currentGame.teams.some((t) =>
+          t.players.some((p) => p.id === authUser.uid)
+        );
+        if (isAlreadyInAnyTeam) {
+          toast({
+            title: "Already in a team",
+            description: "You have already joined a team.",
+            variant: "destructive",
+          });
+          return;
         }
+
+        const teamIndex = currentGame.teams.findIndex((t) => t.name === teamName);
+        if (teamIndex === -1) throw new Error("Team not found!");
+        if (currentGame.teams[teamIndex].players.length >= currentGame.teams[teamIndex].capacity)
+          throw new Error(`Sorry, ${teamName} is full.`);
+
+        const newPlayer: Player = {
+          id: authUser.uid,
+          playerId,
+          name: playerName,
+          teamName,
+          answeredQuestions: [],
+          coloringCredits: 0,
+          score: 0,
+        };
+        const updatedTeams = [...currentGame.teams];
+        updatedTeams[teamIndex].players.push(newPlayer);
+        transaction.update(gameRef, { teams: updatedTeams });
+      });
+    } catch (error: any) {
+      console.error("Error joining team: ", error);
+      toast({
+        title: "Could Not Join",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleJoinIndividual = async (customData: Record<string, string>, name: string) => {
+    if (!game || !authUser) return;
+    setIsJoining(true);
+
+    try {
+      const gameRef = doc(db, "games", GAME_ID);
+
+      const currentDoc = await getDoc(gameRef);
+      const currentGame = currentDoc.data() as Game;
+      if (
+        (!currentGame.questions || currentGame.questions.length === 0) &&
+        (!currentGame.teams[0] || currentGame.teams[0].players.length === 0)
+      ) {
+        const result = await generateQuestionsAction({
+          topic: game.topic || "General Knowledge",
+          numberOfQuestions: 20,
+        });
+        if (result.questions) {
+          await updateDoc(gameRef, { questions: result.questions });
+        } else {
+          throw new Error("AI failed to generate questions.");
+        }
+      }
+
+      await runTransaction(db, async (transaction) => {
+        const freshGameDoc = await transaction.get(gameRef);
+        if (!freshGameDoc.exists()) throw new Error("Game does not exist!");
+        const freshGame = freshGameDoc.data() as Game;
+
+        if (freshGame.sessionType !== "individual") throw new Error("This is not an individual challenge.");
+
+        const isAlreadyPlaying = freshGame.teams?.[0]?.players.some((p) => p.id === authUser.uid);
+        if (isAlreadyPlaying) {
+          toast({
+            title: "Already Joined",
+            description: "You have already started this challenge.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const newPlayer: Player = {
+          id: authUser.uid,
+          playerId: customData["ID Number"] || uuidv4(),
+          name: name,
+          teamName: "Participants",
+          answeredQuestions: [],
+          coloringCredits: 0,
+          score: 0,
+          customData: customData,
+          gameStartedAt: Timestamp.now(),
+        };
+
+        const updatedTeams = freshGame.teams?.[0]
+          ? [...freshGame.teams]
+          : [
+              {
+                name: "Participants",
+                score: 0,
+                players: [],
+                capacity: 999,
+                color: "#888888",
+                icon: "",
+              },
+            ];
+        updatedTeams[0].players.push(newPlayer);
+
+        transaction.update(gameRef, { teams: updatedTeams, status: "playing" });
+      });
+      setView("question");
+      setCurrentQuestion(null);
+    } catch (error: any) {
+      console.error("Error joining individual challenge: ", error);
+      toast({
+        title: "Could Not Join",
+        description: error.message || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  const handleStartGame = async () => {
+    if (!game || !isAdmin) {
+      toast({
+        title: "Not Authorized",
+        description: "Only the admin can start.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (game.teams.reduce((sum, t) => sum + t.players.length, 0) === 0) {
+      toast({
+        title: "No players!",
+        description: "At least one player must join.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    if (currentPlayer.coloringCredits > 0) {
-        setView("grid");
-    } else {
-        if (!currentQuestion || currentQuestion.question !== nextQ?.question) {
-            setCurrentQuestion(nextQ);
+    const gameRef = doc(db, "games", GAME_ID);
+    await updateDoc(gameRef, { status: "starting" });
+
+    try {
+      let questionsToUse: Question[] = game.questions || [];
+      if (questionsToUse.length === 0) {
+        const result = await generateQuestionsAction({
+          topic: game.topic || "General Knowledge",
+          numberOfQuestions: 20,
+        });
+        if (result.questions) {
+          questionsToUse = result.questions;
+        } else {
+          throw new Error("AI failed to generate questions.");
         }
-        setView("question");
+      }
+      await updateDoc(gameRef, {
+        questions: questionsToUse,
+        status: "playing",
+        gameStartedAt: serverTimestamp(),
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error Starting Game",
+        description: "Could not prepare questions.",
+        variant: "destructive",
+      });
+      await updateDoc(gameRef, { status: "lobby" });
     }
-  }, [game, currentPlayer, currentQuestion, getNextQuestion]);
+  };
 
   const handleAnswer = async (question: Question, answer: string) => {
     if (!game || !currentPlayer || !authUser) return;
     const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
-    
+
     try {
       await runTransaction(db, async (transaction) => {
         const gameRef = doc(db, "games", GAME_ID);
@@ -517,18 +695,22 @@ export default function GamePage() {
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
         const teamToUpdate = updatedTeams[teamIndex];
-        
-        playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
-        
+
+        playerToUpdate.answeredQuestions = [
+          ...(playerToUpdate.answeredQuestions || []),
+          question.question,
+        ];
+
         if (isCorrect) {
           playerToUpdate.coloringCredits += 1;
           playerToUpdate.score += 1;
-          if(currentGame.sessionType !== 'individual') {
-            teamToUpdate.score += 1; 
+          if (currentGame.sessionType !== "individual") {
+            teamToUpdate.score += 1;
           }
-        } else if (currentGame.sessionType === 'individual') {
-          // Remove a random colored hex for incorrect answers in solo mode
-          const playerGridSquares = currentGame.grid.map((sq, i) => ({...sq, originalIndex: i})).filter(sq => sq.coloredBy === authUser.uid);
+        } else if (currentGame.sessionType === "individual") {
+          const playerGridSquares = currentGame.grid
+            .map((sq, i) => ({ ...sq, originalIndex: i }))
+            .filter((sq) => sq.coloredBy === authUser.uid);
           if (playerGridSquares.length > 0) {
             const randomIndex = Math.floor(Math.random() * playerGridSquares.length);
             const hexToClear = playerGridSquares[randomIndex];
@@ -536,11 +718,11 @@ export default function GamePage() {
             transaction.update(gameRef, { grid: currentGame.grid });
           }
         }
-        
+
         transaction.update(gameRef, { teams: updatedTeams });
       });
     } catch (error) {
-        console.error("Error handling answer:", error);
+      console.error("Error handling answer:", error);
     }
   };
 
@@ -553,52 +735,63 @@ export default function GamePage() {
         const gameRef = doc(db, "games", GAME_ID);
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
-        let currentGame = gameDoc.data() as Game;
-        
-        const playerTeamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
-        if(playerTeamIndex === -1) throw new Error("Could not find player's team.");
-        const playerIndex = currentGame.teams[playerTeamIndex].players.findIndex(p => p.id === currentPlayer.id);
+        const currentGame = gameDoc.data() as Game;
+
+        const playerTeamIndex = currentGame.teams.findIndex((t) => t.name === currentPlayer.teamName);
+        if (playerTeamIndex === -1) throw new Error("Could not find player's team.");
+        const playerIndex = currentGame.teams[playerTeamIndex].players.findIndex(
+          (p) => p.id === currentPlayer.id
+        );
         if (playerIndex === -1) throw new Error("Could not find player data.");
-        
+
         let currentGrid = currentGame.grid;
-        
+
         const playerToUpdate = currentGame.teams[playerTeamIndex].players[playerIndex];
         if (playerToUpdate.coloringCredits <= 0) throw new Error("You have no coloring credits.");
-        
+
         const squareIndex = currentGrid.findIndex((s) => s.id === squareId);
         if (squareIndex === -1) throw new Error("Square not found.");
-        
-        const coloredByName = currentGame.sessionType === 'individual' ? authUser.uid : currentPlayer.teamName;
-        if (currentGrid[squareIndex].coloredBy === coloredByName) return; // Can't color own square
+
+        const coloredByName =
+          currentGame.sessionType === "individual" ? authUser.uid : currentPlayer.teamName;
+        if (currentGrid[squareIndex].coloredBy === coloredByName) return;
 
         playerToUpdate.coloringCredits -= 1;
-        
-        if (currentGame.sessionType === 'team') {
-            playerToUpdate.score += 1;
-            currentGame.teams[playerTeamIndex].score += 1;
-            if (currentGrid[squareIndex].coloredBy) { // A square is being captured
-                const originalOwnerTeamIndex = currentGame.teams.findIndex(t => t.name === currentGrid[squareIndex].coloredBy);
-                if (originalOwnerTeamIndex !== -1) {
-                    currentGame.teams[originalOwnerTeamIndex].score = Math.max(0, currentGame.teams[originalOwnerTeamIndex].score - 1);
-                }
+
+        if (currentGame.sessionType === "team") {
+          playerToUpdate.score += 1;
+          currentGame.teams[playerTeamIndex].score += 1;
+          if (currentGrid[squareIndex].coloredBy) {
+            const originalOwnerTeamIndex = currentGame.teams.findIndex(
+              (t) => t.name === currentGrid[squareIndex].coloredBy
+            );
+            if (originalOwnerTeamIndex !== -1) {
+              currentGame.teams[originalOwnerTeamIndex].score = Math.max(
+                0,
+                currentGame.teams[originalOwnerTeamIndex].score - 1
+              );
             }
+          }
         }
-        
+
         currentGrid[squareIndex].coloredBy = coloredByName;
 
         const isGridFull = currentGrid.every((s) => s.coloredBy !== null);
-        
+
         transaction.update(gameRef, {
           grid: currentGrid,
           teams: currentGame.teams,
           status: isGridFull ? "finished" : currentGame.status,
         });
       });
-      // After coloring, immediately try to get the next question.
       setCurrentQuestion(getNextQuestion());
     } catch (error: any) {
       console.error("Failed to color square: ", error);
-      toast({ title: "Error Coloring Square", description: error.message, variant: "destructive" });
+      toast({
+        title: "Error Coloring Square",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -623,60 +816,115 @@ export default function GamePage() {
         </div>
       );
     }
-    
-    if (game.sessionType === 'matchmaking' && game.status === 'lobby') {
-        return <MatchmakingLobby onJoinQueue={handleJoinQueue} isJoining={isJoining} onCancel={handleCancelQueue} ticket={ticket} />;
+
+    if (game.sessionType === "matchmaking" && game.status === "lobby") {
+      return (
+        <MatchmakingLobby
+          onJoinQueue={handleJoinQueue}
+          isJoining={isJoining}
+          onCancel={handleCancelQueue}
+          ticket={ticket}
+        />
+      );
     }
 
-    if (game.sessionType === 'individual') {
-        if (!currentPlayer) {
-            return <IndividualLobby game={game} onJoin={handleJoinIndividual} isJoining={isJoining} />;
-        }
-        
-        const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
-        const isTimeUp = playerStartTime && (Date.now() > playerStartTime + game.timer * 1000);
-        const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
-        
-        if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
-             return <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>;
-        }
+    if (game.sessionType === "individual") {
+      if (!currentPlayer) {
+        return <IndividualLobby game={game} onJoin={handleJoinIndividual} isJoining={isJoining} />;
+      }
 
-        const playerTeam = game.teams.find(t => t.name === currentPlayer?.teamName);
-        if (!playerTeam) return <p>Error: Player data could not be found.</p>;
+      const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
+      const isTimeUp =
+        playerStartTime && game.timer
+          ? Date.now() > playerStartTime + game.timer * 1000
+          : false;
+      const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
 
-        if (isJoining) { // Show loading indicator while joining logic runs
-            return (
-                <div className="flex flex-col items-center justify-center flex-1 text-center">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                    <h1 className="mt-4 text-4xl font-bold font-display">Starting Challenge...</h1>
-                </div>
-            );
-        }
+      if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
+        return (
+          <ResultsScreen
+            teams={game.teams}
+            isAdmin={false}
+            onPlayAgain={() => {}}
+            individualPlayerId={currentPlayer.id}
+          />
+        );
+      }
 
-        if (view === "grid") {
-            return <ColorGridScreen grid={game.grid} teams={game.teams} onColorSquare={handleColorSquare} teamColoring={playerTeam.color} credits={currentPlayer.coloringCredits} onSkip={handleSkipColoring} sessionType='individual' playerId={currentPlayer.id} />;
-        }
+      const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
+      if (!playerTeam) return <p>Error: Player data could not be found.</p>;
 
-        if (!currentQuestion) {
-            return (
-                 <ResultsScreen teams={game.teams} isAdmin={false} onPlayAgain={() => {}} individualPlayerId={currentPlayer.id}/>
-            );
-        }
-
-        return <GameScreen teams={game.teams} currentPlayer={currentPlayer} question={currentQuestion} onAnswer={handleAnswer} onNextQuestion={handleNextQuestion} duration={game.timer} onTimeout={handleTimeout} gameStartedAt={currentPlayer.gameStartedAt}/>;
-    }
-
-    // Team Mode Logic (and private 1v1 rooms)
-    if (game.status === 'lobby' || game.status === 'starting' || ((game.status === 'playing' || game.status === 'finished') && !currentPlayer)) {
-      if ((game.status === 'playing' || game.status === 'finished') && !currentPlayer) {
+      if (isJoining) {
         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
-            <p className="mt-2 text-muted-foreground">A game is currently being played. You can join the next round.</p>
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h1 className="mt-4 text-4xl font-bold font-display">Starting Challenge...</h1>
           </div>
         );
       }
-      return <Lobby game={game} onJoinTeam={handleJoinTeam} onStartGame={handleStartGame} currentPlayer={currentPlayer} isAdmin={isAdmin} />;
+
+      if (view === "grid") {
+        return (
+          <ColorGridScreen
+            grid={game.grid}
+            teams={game.teams}
+            onColorSquare={handleColorSquare}
+            teamColoring={playerTeam.color}
+            credits={currentPlayer.coloringCredits}
+            onSkip={handleSkipColoring}
+            sessionType="individual"
+            playerId={currentPlayer.id}
+          />
+        );
+      }
+
+      if (!currentQuestion) {
+        return (
+          <div className="flex flex-col items-center justify-center flex-1 text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h1 className="mt-4 text-4xl font-bold font-display">Preparing your first question...</h1>
+          </div>
+        );
+      }
+
+      return (
+        <GameScreen
+          teams={game.teams}
+          currentPlayer={currentPlayer}
+          question={currentQuestion}
+          onAnswer={handleAnswer}
+          onNextQuestion={handleNextQuestion}
+          duration={game.timer}
+          onTimeout={handleTimeout}
+          gameStartedAt={currentPlayer.gameStartedAt}
+        />
+      );
+    }
+
+    if (
+      game.status === "lobby" ||
+      game.status === "starting" ||
+      ((game.status === "playing" || game.status === "finished") && !currentPlayer)
+    ) {
+      if ((game.status === "playing" || game.status === "finished") && !currentPlayer) {
+        return (
+          <div className="flex flex-col items-center justify-center flex-1 text-center">
+            <h1 className="text-4xl font-bold font-display">Game in Progress</h1>
+            <p className="mt-2 text-muted-foreground">
+              A game is currently being played. You can join the next round.
+            </p>
+          </div>
+        );
+      }
+      return (
+        <Lobby
+          game={game}
+          onJoinTeam={handleJoinTeam}
+          onStartGame={handleStartGame}
+          currentPlayer={currentPlayer}
+          isAdmin={isAdmin}
+        />
+      );
     }
 
     switch (game.status) {
@@ -686,7 +934,17 @@ export default function GamePage() {
         if (!playerTeam) return <p>Error: Your team or player data could not be found.</p>;
 
         if (view === "grid") {
-          return <ColorGridScreen grid={game.grid} teams={game.teams} onColorSquare={handleColorSquare} teamColoring={playerTeam.color} credits={currentPlayer.coloringCredits} onSkip={handleSkipColoring} sessionType='team' />;
+          return (
+            <ColorGridScreen
+              grid={game.grid}
+              teams={game.teams}
+              onColorSquare={handleColorSquare}
+              teamColoring={playerTeam.color}
+              credits={currentPlayer.coloringCredits}
+              onSkip={handleSkipColoring}
+              sessionType="team"
+            />
+          );
         }
         if (!currentQuestion) {
           return (
@@ -696,7 +954,18 @@ export default function GamePage() {
             </div>
           );
         }
-        return <GameScreen teams={game.teams} currentPlayer={currentPlayer} question={currentQuestion} onAnswer={handleAnswer} onNextQuestion={handleNextQuestion} duration={game.timer || 300} onTimeout={handleTimeout} gameStartedAt={game.gameStartedAt} />;
+        return (
+          <GameScreen
+            teams={game.teams}
+            currentPlayer={currentPlayer}
+            question={currentQuestion}
+            onAnswer={handleAnswer}
+            onNextQuestion={handleNextQuestion}
+            duration={game.timer || 300}
+            onTimeout={handleTimeout}
+            gameStartedAt={game.gameStartedAt}
+          />
+        );
       case "finished":
         return <ResultsScreen teams={game.teams} onPlayAgain={() => {}} isAdmin={isAdmin} />;
       default:
@@ -704,9 +973,5 @@ export default function GamePage() {
     }
   };
 
-  return (
-    <div className="container mx-auto flex flex-1 flex-col px-4 py-8">
-      {renderContent()}
-    </div>
-  );
+  return <div className="container mx-auto flex flex-1 flex-col px-4 py-8">{renderContent()}</div>;
 }
