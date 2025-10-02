@@ -263,7 +263,7 @@ const MatchmakingLobby = ({
 export default function GamePage() {
   const params = useParams();
   const router = useRouter();
-  const GAME_ID = (params.gameId as string).toUpperCase();
+  const gameId = params.gameId as string;
   const [game, setGame] = useState<Game | null>(null);
   const [loading, setLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -307,9 +307,9 @@ export default function GamePage() {
   }, [toast]);
 
   useEffect(() => {
-    if (!GAME_ID || !authUser) return;
+    if (!gameId || !authUser) return;
     setLoading(true);
-    const gameRef = doc(db, "games", GAME_ID);
+    const gameRef = doc(db, "games", gameId);
 
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
       if (docSnap.exists()) {
@@ -339,7 +339,7 @@ export default function GamePage() {
     });
 
     return () => unsubGame();
-  }, [GAME_ID, authUser]);
+  }, [gameId, authUser]);
 
   useEffect(() => {
     if (!game || game.sessionType !== "matchmaking" || !authUser)
@@ -577,7 +577,7 @@ export default function GamePage() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", GAME_ID);
+        const gameRef = doc(db, "games", gameId);
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
@@ -640,9 +640,9 @@ export default function GamePage() {
 
     try {
       // 1. Generate a unique ID for the new player-specific game
-      const newGameId = `${GAME_ID}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
+      const newGameId = `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
       const newGameRef = doc(db, "games", newGameId);
-      const templateGameRef = doc(db, "games", GAME_ID);
+      const templateGameRef = doc(db, "games", gameId);
 
       let templateGameData = game;
 
@@ -678,7 +678,7 @@ export default function GamePage() {
         ...templateGameData,
         title: `${templateGameData.title} - ${name}`,
         status: "playing",
-        parentSessionId: GAME_ID,
+        parentSessionId: gameId,
         teams: [
           {
             name: "Team",
@@ -734,7 +734,7 @@ export default function GamePage() {
       return;
     }
 
-    const gameRef = doc(db, "games", GAME_ID);
+    const gameRef = doc(db, "games", gameId);
     await updateDoc(gameRef, { status: "starting" });
 
     try {
@@ -777,7 +777,7 @@ export default function GamePage() {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", GAME_ID);
+        const gameRef = doc(db, "games", gameId);
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
@@ -833,7 +833,7 @@ export default function GamePage() {
     if (!game || !currentPlayer || !authUser) return;
     try {
       await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", GAME_ID);
+        const gameRef = doc(db, "games", gameId);
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game does not exist!");
         const currentGame = gameDoc.data() as Game;
@@ -920,7 +920,7 @@ export default function GamePage() {
 
   const handleTimeout = async () => {
     if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual')) {
-      await updateDoc(doc(db, "games", GAME_ID), { status: "finished" });
+      await updateDoc(doc(db, "games", gameId), { status: "finished" });
       toast({
         title: "Time's Up!",
         description: `The game timer has expired.`,
@@ -934,7 +934,7 @@ export default function GamePage() {
   };
 
   const renderContent = () => {
-    if (loading || !authUser) {
+    if (loading) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -998,7 +998,7 @@ export default function GamePage() {
       ) {
          if (game.sessionType === 'individual' && game.parentSessionId) {
              // This is a finished individual game, go to leaderboard
-             router.replace(`/leaderboard/${game.parentSessionId}?player_id=${authUser.uid}`);
+             router.replace(`/leaderboard/${game.parentSessionId}?player_id=${authUser?.uid}`);
              return <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />;
          }
         return (
