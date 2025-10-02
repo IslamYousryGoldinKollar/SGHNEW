@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
@@ -17,7 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Copy, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
