@@ -275,7 +275,6 @@ export default function GamePage() {
   const [view, setView] = useState<"question" | "grid">("question");
   const [ticket, setTicket] = useState<MatchmakingTicket | null>(null);
   const [isJoining, setIsJoining] = useState(false);
-  const [initialLoad, setInitialLoad] = useState(true);
 
 
   useEffect(() => {
@@ -309,6 +308,7 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!GAME_ID || !authUser) return;
+    setLoading(true);
     const gameRef = doc(db, "games", GAME_ID);
 
     const unsubGame = onSnapshot(gameRef, (docSnap) => {
@@ -328,23 +328,18 @@ export default function GamePage() {
             .find((p) => p.id === authUser.uid) || null;
         setCurrentPlayer(player);
         setLoading(false);
-        setInitialLoad(false);
       } else {
-        if (!initialLoad) {
-            toast({
-            title: "Game not found",
-            description: "This game session does not exist.",
-            variant: "destructive",
-            });
-            setGame(null);
-            setCurrentPlayer(null);
-            setLoading(false);
-        }
+        setGame(null);
+        setCurrentPlayer(null);
+        setLoading(false);
       }
+    }, (error) => {
+        console.error("Error fetching game:", error);
+        setLoading(false);
     });
 
     return () => unsubGame();
-  }, [GAME_ID, authUser, toast, initialLoad]);
+  }, [GAME_ID, authUser]);
 
   useEffect(() => {
     if (!game || game.sessionType !== "matchmaking" || !authUser)
@@ -430,7 +425,7 @@ export default function GamePage() {
                   icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd",
                 },
               ],
-              gameStartedAt: serverTimestamp(),
+              gameStartedAt: serverTimestamp() as Timestamp,
               adminId: game.adminId,
             };
             batch.set(newGameRef, newGame);
@@ -939,7 +934,7 @@ export default function GamePage() {
   };
 
   const renderContent = () => {
-    if (loading || !authUser || (!game && !initialLoad)) {
+    if (loading || !authUser) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -951,7 +946,6 @@ export default function GamePage() {
     }
     
     if (!game) {
-        // This case handles when the game is truly not found after the initial load attempt.
         return (
              <div className="flex flex-col items-center justify-center flex-1 text-center">
                 <h1 className="text-4xl font-bold font-display text-destructive">Session Not Found</h1>
@@ -1112,5 +1106,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
