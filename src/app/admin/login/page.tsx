@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { SUPER_ADMIN_UIDS } from "@/lib/constants";
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState("");
@@ -33,6 +34,17 @@ export default function AdminLoginPage() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      
+      const isSuperAdmin = SUPER_ADMIN_UIDS.includes(user.uid);
+
+      if (isSuperAdmin) {
+        toast({
+          title: "Super Admin Login Successful",
+          description: "Redirecting to the super admin dashboard...",
+        });
+        router.push("/superadmin");
+        return;
+      }
 
       // Check admin status in Firestore
       const adminRef = doc(db, "admins", user.uid);
