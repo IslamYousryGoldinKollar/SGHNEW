@@ -102,9 +102,10 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
 
     setIsUploading(true);
     try {
-      if (thumbnailUrl) {
-        await deleteThumbnailFromStorage(thumbnailUrl);
-      }
+      // We are no longer deleting the old thumbnail to simplify the logic
+      // if (thumbnailUrl) {
+      //   await deleteThumbnailFromStorage(thumbnailUrl);
+      // }
 
       const fileName = `${Date.now()}-${file.name}`;
       const imageRef = ref(storage, `game-thumbnails/${user.uid}/${session.id}/${fileName}`);
@@ -283,5 +284,3 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
     </Dialog>
   );
 }
-
-    
