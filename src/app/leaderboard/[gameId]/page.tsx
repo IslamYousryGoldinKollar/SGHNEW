@@ -30,7 +30,7 @@ export default function LeaderboardPage() {
         if (!parentGameId) return;
 
         // Fetch the parent game to get its title and config
-        const parentGameRef = doc(db, "games", parentGameId.toUpperCase());
+        const parentGameRef = doc(db, "games", parentGameId);
         const unsubParent = onSnapshot(parentGameRef, (doc) => {
              if (doc.exists()) {
                 const gameData = { id: doc.id, ...doc.data() } as Game;
@@ -48,15 +48,16 @@ export default function LeaderboardPage() {
         // Query for all individual games spawned from this parent session
         const gamesQuery = query(
             collection(db, "games"), 
-            where("parentSessionId", "==", parentGameId.toUpperCase())
+            where("parentSessionId", "==", parentGameId)
         );
 
         const unsubGames = onSnapshot(gamesQuery, async (querySnapshot) => {
             const allPlayers: LeaderboardPlayer[] = [];
             for (const gameDoc of querySnapshot.docs) {
                 const game = gameDoc.data() as Game;
-                if (game.players.length > 0) {
-                    const player = game.players[0];
+                if (game.teams && game.teams.length > 0 && game.teams[0].players.length > 0) {
+                    const player = game.teams[0].players[0];
+                    // Score is the count of hexes colored by the player
                     const hexCount = game.grid.filter(sq => sq.coloredBy === player.id).length;
                     allPlayers.push({
                         ...player,
@@ -136,7 +137,7 @@ export default function LeaderboardPage() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={parentGame.requiredPlayerFields.length + 3} className="text-center">
+                                    <TableCell colSpan={parentGame.requiredPlayerFields.length + 2} className="text-center">
                                         No participants have completed the challenge yet.
                                     </TableCell>
                                 </TableRow>
@@ -145,7 +146,7 @@ export default function LeaderboardPage() {
                              {!isCurrentPlayerInTop10 && currentPlayerRowData && (
                                 <>
                                     <TableRow>
-                                        <TableCell colSpan={parentGame.requiredPlayerFields.length + 3} className="text-center text-muted-foreground py-2">...</TableCell>
+                                        <TableCell colSpan={parentGame.requiredPlayerFields.length + 2} className="text-center text-muted-foreground py-2">...</TableCell>
                                     </TableRow>
                                     <TableRow key={currentPlayerRowData.id} className="bg-accent/30 border-y-2 border-accent">
                                         <TableCell className="font-medium text-lg">{currentPlayerRank + 1}</TableCell>
@@ -164,5 +165,3 @@ export default function LeaderboardPage() {
         </div>
     )
 }
-
-    
