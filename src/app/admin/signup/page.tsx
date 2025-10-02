@@ -66,9 +66,15 @@ export default function AdminSignupPage() {
 
     } catch (error: any) {
       console.error("Admin signup error:", error);
+      let description = "An unexpected error occurred.";
+      if (error.code === 'auth/email-already-in-use') {
+        description = "This email is already registered. Please log in instead.";
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         title: "Signup Failed",
-        description: error.message || "An unexpected error occurred.",
+        description: description,
         variant: "destructive",
       });
     } finally {
