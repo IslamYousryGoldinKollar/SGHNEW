@@ -116,8 +116,7 @@ export default function LeaderboardPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[50px]">Rank</TableHead>
-                                <TableHead>Name</TableHead>
-                                {parentGame.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
+                                {parentGame.requiredPlayerFields.map(field => (
                                      <TableHead key={field.id}>{field.label}</TableHead>
                                 ))}
                                 <TableHead className="text-right">Score</TableHead>
@@ -128,9 +127,8 @@ export default function LeaderboardPage() {
                                 top10Players.map((player, index) => (
                                     <TableRow key={`${player.id}-${player.playerId}-${index}`} className={cn(player.id === currentPlayerId && "bg-primary/20")}>
                                         <TableCell className="font-medium text-lg">{index + 1}</TableCell>
-                                        <TableCell>{player.name}</TableCell>
-                                        {parentGame.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
-                                            <TableCell key={field.id}>{player.customData?.[field.label] || 'N/A'}</TableCell>
+                                        {parentGame.requiredPlayerFields.map(field => (
+                                            <TableCell key={field.id}>{player.customData?.[field.id] || player.name || 'N/A'}</TableCell>
                                         ))}
                                         <TableCell className="text-right font-bold font-mono text-lg">{player.finalScore}</TableCell>
                                     </TableRow>
@@ -150,9 +148,8 @@ export default function LeaderboardPage() {
                                     </TableRow>
                                     <TableRow key={`${currentPlayerRowData.id}-${currentPlayerRowData.playerId}-rank`} className="bg-accent/30 border-y-2 border-accent">
                                         <TableCell className="font-medium text-lg">{currentPlayerRank + 1}</TableCell>
-                                        <TableCell>{currentPlayerRowData.name}</TableCell>
-                                        {parentGame.requiredPlayerFields.filter(f => f.id !== nameField?.id).map(field => (
-                                            <TableCell key={field.id}>{currentPlayerRowData.customData?.[field.label] || 'N/A'}</TableCell>
+                                        {parentGame.requiredPlayerFields.map(field => (
+                                            <TableCell key={field.id}>{currentPlayerRowData.customData?.[field.id] || currentPlayerRowData.name || 'N/A'}</TableCell>
                                         ))}
                                         <TableCell className="text-right font-bold font-mono text-lg">{currentPlayerRowData.finalScore}</TableCell>
                                     </TableRow>
