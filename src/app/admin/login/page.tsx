@@ -51,21 +51,49 @@ export default function AdminLoginPage() {
       const adminDoc = await getDoc(adminRef);
 
       if (!adminDoc.exists()) {
-        throw new Error("You are not registered as an admin.");
+        await auth.signOut();
+        toast({
+          title: "Login Failed",
+          description: "You are not registered as an admin.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
 
       const adminData = adminDoc.data() as AdminUser;
       
       if (adminData.status === 'pending') {
-        throw new Error("Your account is pending approval by a super admin.");
+        await auth.signOut();
+        toast({
+          title: "Account Pending",
+          description: "Your account is pending approval by a super admin.",
+          variant: "default",
+        });
+        setIsLoading(false);
+        return;
       }
       
       if (adminData.status === 'disabled') {
-        throw new Error("Your account has been disabled.");
+        await auth.signOut();
+        toast({
+          title: "Account Disabled",
+          description: "Your account has been disabled. Please contact support.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
 
       if (adminData.status === 'expired' || (adminData.expiresAt && adminData.expiresAt.toMillis() < Date.now())) {
-        throw new Error("Your admin access has expired. Please contact support.");
+        await auth.signOut();
+        toast({
+          title: "Access Expired",
+          description: "Your admin access has expired. Please contact support.",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
       }
 
       toast({
@@ -77,7 +105,7 @@ export default function AdminLoginPage() {
     } catch (error: any) {
       console.error("Admin login error:", error);
       let description = "Invalid credentials or unauthorized access.";
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         description = "The email or password you entered is incorrect. Please try again.";
       } else if (error.message) {
         description = error.message;
@@ -101,9 +129,9 @@ export default function AdminLoginPage() {
         </CardHeader>
         <CardContent className="space-y-4">
            {showSuccessMessage && (
-            <Alert variant="default" className="bg-green-50 border-green-200">
-                <AlertTitle className="text-green-800">Registration Successful!</AlertTitle>
-                <AlertDescription className="text-green-700">
+            <Alert variant="default" className="bg-green-50 border-green-200 dark:bg-green-900/30 dark:border-green-800">
+                <AlertTitle className="text-green-800 dark:text-green-300">Registration Successful!</AlertTitle>
+                <AlertDescription className="text-green-700 dark:text-green-400">
                     Your account has been created. Please wait for a super admin to approve your access.
                 </AlertDescription>
             </Alert>
