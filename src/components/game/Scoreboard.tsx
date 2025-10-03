@@ -16,14 +16,16 @@ export default function Scoreboard({ team }: ScoreboardProps) {
           <span className="text-2xl font-bold" style={{ color: team.color }}>{team.score} PTS</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-3 md:p-6 pt-0 hidden sm:block">
-        <h3 className="font-semibold mb-2 flex items-center gap-2 text-muted-foreground text-xs"><Users className="h-4 w-4" /> Players</h3>
-        <ul className="space-y-1 text-xs">
-          {team.players.map((player) => (
-            <li key={player.id} className="truncate">{player.name}</li>
-          ))}
-        </ul>
-      </CardContent>
+      {team.players.length > 1 && (
+        <CardContent className="p-3 md:p-6 pt-0 hidden sm:block">
+          <h3 className="font-semibold mb-2 flex items-center gap-2 text-muted-foreground text-xs"><Users className="h-4 w-4" /> Players</h3>
+          <ul className="space-y-1 text-xs">
+            {team.players.map((player) => (
+              <li key={player.id} className="truncate">{player.name}</li>
+            ))}
+          </ul>
+        </CardContent>
+      )}
     </Card>
   );
 }

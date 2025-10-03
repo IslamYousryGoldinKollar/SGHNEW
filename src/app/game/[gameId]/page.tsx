@@ -345,11 +345,13 @@ export default function GamePage() {
 
     const nextQ = getNextQuestion();
     if (isSoloMode) {
-      const playerStartTime = currentPlayer.gameStartedAt?.toMillis();
+      // For individual and 1v1 games, the timer is based on the gameStartedAt field.
+      const gameStartTime = game.gameStartedAt?.toMillis();
       const isTimeUp =
-        playerStartTime && game.timer
-          ? Date.now() > playerStartTime + game.timer * 1000
+        gameStartTime && game.timer
+          ? Date.now() > gameStartTime + game.timer * 1000
           : false;
+
       const allQuestionsAnswered =
         !nextQ && game.questions.length > 0;
 
@@ -590,7 +592,7 @@ export default function GamePage() {
 
       const idNumberField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('id number'));
       const nameField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
-      const playerId = idNumberField ? customData[idNumberField.id] : uuidv4();
+      const playerId = idNumberField ? customData[idNumberField.id] || uuidv4() : uuidv4();
       const playerName = nameField ? name : customData[Object.keys(customData)[0]];
 
       // 2. Create the new player object
@@ -603,7 +605,6 @@ export default function GamePage() {
         coloringCredits: 0,
         score: 0,
         customData: customData,
-        gameStartedAt: Timestamp.now(),
       };
 
       // 3. Create the new game object, copying from the template
@@ -968,8 +969,8 @@ export default function GamePage() {
         
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
-        const playerStartTime = (isIndividualMode ? currentPlayer.gameStartedAt : game.gameStartedAt)?.toMillis();
-        const isTimeUp = playerStartTime && game.timer ? Date.now() > playerStartTime + game.timer * 1000 : false;
+        const gameStartTime = game.gameStartedAt?.toMillis();
+        const isTimeUp = gameStartTime && game.timer ? Date.now() > gameStartTime + game.timer * 1000 : false;
         const allQuestionsAnswered = !getNextQuestion() && game.questions.length > 0;
 
         if (isTimeUp || (allQuestionsAnswered && currentPlayer.coloringCredits === 0)) {
@@ -1016,7 +1017,7 @@ export default function GamePage() {
             onNextQuestion={handleNextQuestion}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
-            gameStartedAt={isIndividualMode ? currentPlayer.gameStartedAt : game.gameStartedAt}
+            gameStartedAt={game.gameStartedAt}
             isIndividualMode={isIndividualMode}
           />
         );
@@ -1042,5 +1043,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
