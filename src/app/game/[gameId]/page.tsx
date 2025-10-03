@@ -63,9 +63,9 @@ const IndividualLobby = ({
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
-  const nameFieldId = game.requiredPlayerFields.find((f) =>
+  const nameField = game.requiredPlayerFields.find((f) =>
     f.label.toLowerCase().includes("name")
-  )?.id;
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +74,7 @@ const IndividualLobby = ({
       return;
     }
     const otherFields = game.requiredPlayerFields.filter(
-      (f) => f.id !== nameFieldId
+      (f) => f.label.toLowerCase() !== "full name"
     );
     const allOtherFieldsFilled = otherFields.every(
       (field) =>
@@ -91,12 +91,14 @@ const IndividualLobby = ({
   };
 
   const handleChange = (fieldId: string, value: string) => {
-    if (fieldId === nameFieldId) {
+    if (nameField && fieldId === nameField.id) {
       setPlayerName(value);
     } else {
       setFormData((prev) => ({ ...prev, [fieldId]: value }));
     }
   };
+
+  const nameInputId = nameField?.id || 'player-name-field';
 
   return (
     <div className="flex flex-col items-center justify-center flex-1">
@@ -115,26 +117,14 @@ const IndividualLobby = ({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="player-name-field">Full Name</Label>
-              <Input
-                id="player-name-field"
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-                required
-                className="text-lg p-6 w-full"
-              />
-            </div>
             {game.requiredPlayerFields
-              .filter((f) => f.label.toLowerCase() !== "full name")
               .map((field) => (
                 <div key={field.id} className="space-y-2">
                   <Label htmlFor={field.id}>{field.label}</Label>
                   <Input
                     id={field.id}
                     type={field.type}
-                    value={formData[field.id] || ""}
+                    value={nameField && field.id === nameField.id ? playerName : formData[field.id] || ""}
                     onChange={(e) =>
                       handleChange(field.id, e.target.value)
                     }
@@ -345,7 +335,7 @@ export default function GamePage() {
   useEffect(() => {
     if (!game || !currentPlayer) return;
 
-    const isSoloMode = game.sessionType === "individual" || game.parentSessionId;
+    const isSoloMode = game.sessionType === "individual" || !!game.parentSessionId;
     const canProceed = isSoloMode
       ? ["lobby", "starting", "playing"].includes(game.status)
       : game.status === "playing";
@@ -598,13 +588,15 @@ export default function GamePage() {
       }
 
       const idNumberField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('id number'));
+      const nameField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
       const playerId = idNumberField ? customData[idNumberField.id] : uuidv4();
+      const playerName = nameField ? customData[nameField.id] : name;
 
       // 2. Create the new player object
       const newPlayer: Player = {
         id: authUser.uid,
         playerId: playerId,
-        name: name,
+        name: playerName,
         teamName: "Team", 
         answeredQuestions: [],
         coloringCredits: 0,
@@ -616,7 +608,7 @@ export default function GamePage() {
       // 3. Create the new game object, copying from the template
       const newGame: Omit<Game, "id"> = {
         ...templateGameData,
-        title: `${templateGameData.title} - ${name}`,
+        title: `${templateGameData.title} - ${playerName}`,
         status: "playing",
         parentSessionId: gameId,
         teams: [
@@ -746,7 +738,7 @@ export default function GamePage() {
         } else if (currentGame.sessionType === "individual" || currentGame.parentSessionId) { // Penalty applies in 1v1 too
           const playerGridSquares = currentGame.grid
             .map((sq, i) => ({ ...sq, originalIndex: i }))
-            .filter((sq) => sq.coloredBy === (currentGame.parentSessionId ? playerToUpdate.teamName : authUser.uid));
+            .filter((sq) => sq.coloredBy === playerToUpdate.teamName);
 
           if (playerGridSquares.length > 0) {
             const randomIndex = Math.floor(
@@ -802,9 +794,7 @@ export default function GamePage() {
         if (squareIndex === -1)
           throw new Error("Square not found.");
 
-        const coloredByName = (game.sessionType === "individual" || game.parentSessionId)
-            ? currentPlayer.teamName
-            : currentPlayer.teamName;
+        const coloredByName = playerToUpdate.teamName;
 
         if (currentGrid[squareIndex].coloredBy === coloredByName)
           return;
@@ -850,7 +840,7 @@ export default function GamePage() {
   };
 
   const handleTimeout = async () => {
-    if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || game.parentSessionId)) {
+    if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
       await updateDoc(doc(db, "games", gameId), { status: "finished" });
       toast({
         title: "Time's Up!",
@@ -897,23 +887,19 @@ export default function GamePage() {
           isJoining={isJoining}
         />
       );
+    } else if (game.sessionType === "individual" && !currentPlayer && !game.parentSessionId) {
+      return (
+        <IndividualLobby
+          game={game}
+          onJoin={handleJoinIndividual}
+          isJoining={isJoining}
+        />
+      );
     }
 
-    if (game.sessionType === "individual") {
-       // This is the template lobby
-      if (!currentPlayer && !game.parentSessionId) {
-        return (
-          <IndividualLobby
-            game={game}
-            onJoin={handleJoinIndividual}
-            isJoining={isJoining}
-          />
-        );
-      }
-      // This is a player's actual game
-      if (!currentPlayer && game.parentSessionId) {
-          return <div className="flex items-center justify-center h-full">Error: Could not find player data in this game.</div>
-      }
+    // This is a player's actual game
+    if (!currentPlayer && game.parentSessionId) {
+        return <div className="flex items-center justify-center h-full">Error: Could not find player data in this game.</div>
     }
     
     // Waiting lobby for 1v1 games
@@ -925,7 +911,7 @@ export default function GamePage() {
               Waiting for an opponent...
             </h1>
             <p className="text-muted-foreground mt-2">
-              You are in the lobby, {currentPlayer.name}. A match will begin automatically.
+              You are in the queue, {currentPlayer.name}. A match will begin automatically.
             </p>
         </div>
       )
@@ -971,7 +957,7 @@ export default function GamePage() {
     switch (game.status) {
       case "playing":
         if (!currentPlayer) return <p>Joining game...</p>;
-        const playerTeam = game.teams.find(
+        const playerTeam = teams.find(
           (t) => t.name === currentPlayer?.teamName
         );
         if (!playerTeam)
@@ -979,7 +965,7 @@ export default function GamePage() {
             <p>Error: Your team or player data could not be found.</p>
           );
         
-        const isIndividualMode = game.sessionType === 'individual' || game.parentSessionId;
+        const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
         const playerStartTime = (isIndividualMode ? currentPlayer.gameStartedAt : game.gameStartedAt)?.toMillis();
         const isTimeUp = playerStartTime && game.timer ? Date.now() > playerStartTime + game.timer * 1000 : false;
