@@ -47,18 +47,23 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
 
-    const getTeamColor = (coloredBy: string | null) => {
+    const getFillColor = (coloredBy: string | null): string => {
         if (!coloredBy) return 'transparent';
-        
-        if (sessionType === 'individual') {
-             // In individual mode, find the 'Participants' team for the base color.
-             const team = teams.find(t => t.name === "Participants");
-             return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
-        }
 
         const team = teams.find(t => t.name === coloredBy);
-        return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
-    };
+        if (team) {
+            return hexToRgba(team.color);
+        }
+        
+        // Fallback for individual mode where coloredBy might be a player ID
+        if (sessionType === 'individual') {
+             const player = teams.flatMap(t => t.players).find(p => p.id === coloredBy);
+             const playerTeam = teams.find(t => t.name === player?.teamName);
+             return playerTeam ? hexToRgba(playerTeam.color) : 'rgba(51, 51, 51, 0.7)';
+        }
+        
+        return 'rgba(51, 51, 51, 0.7)';
+    }
 
     const isClickable = !!onHexClick;
     
@@ -99,23 +104,6 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
             </svg>
         </div>
     );
-
-    function getFillColor(coloredBy: string | null) {
-        if (!coloredBy) return 'transparent';
-
-        if (sessionType === 'team') {
-            const team = teams.find(t => t.name === coloredBy);
-            return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
-        }
-
-        if (sessionType === 'individual') {
-            const player = teams.flatMap(t => t.players).find(p => p.id === coloredBy);
-            const team = teams.find(t => t.name === player?.teamName);
-            return team ? hexToRgba(team.color) : 'rgba(51, 51, 51, 0.7)';
-        }
-        
-        return 'transparent';
-    }
 });
 
 HexMap.displayName = 'HexMap';

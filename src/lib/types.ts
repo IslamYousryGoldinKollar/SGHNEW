@@ -66,17 +66,6 @@ export interface Game {
     parentSessionId?: string | null;
 }
 
-export interface MatchmakingTicket {
-    id: string; // Ticket ID (document ID)
-    playerId: string; // Firebase Auth UID
-    playerName: string;
-    status: 'waiting' | 'matched';
-    createdAt: Timestamp;
-    gameId?: string; // The ID of the private game room once matched
-    matchmakingSessionId: string; // The ID of the parent matchmaking session
-}
-
-
 // Represents a tenant/admin user in the system
 export interface AdminUser {
     id: string; // Document ID, same as Firebase UID

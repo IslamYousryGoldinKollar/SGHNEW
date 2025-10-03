@@ -9,18 +9,34 @@ import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
 
 type ResultsScreenProps = {
   teams: Team[];
   onPlayAgain: () => void;
   isAdmin: boolean;
   individualPlayerId?: string;
-  parentSessionId?: string;
+  parentSessionId?: string | null;
+  gameId?: string;
 };
 
-export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId, parentSessionId }: ResultsScreenProps) {
+export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualPlayerId, parentSessionId, gameId }: ResultsScreenProps) {
   const router = useRouter();
   
+  useEffect(() => {
+    // If it's a finished 1v1 game, delete the game document after a short delay
+    // to give players time to see the results.
+    if (parentSessionId && gameId) {
+        const timer = setTimeout(() => {
+            deleteDoc(doc(db, "games", gameId));
+            if(parentSessionId) router.push(`/game/${parentSessionId}`);
+        }, 5000); // 5-second delay before deleting
+        return () => clearTimeout(timer);
+    }
+  }, [parentSessionId, gameId, router]);
+
   useEffect(() => {
     if (individualPlayerId && parentSessionId) {
       const timer = setTimeout(() => {
@@ -36,7 +52,7 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
     if (!player) return <div className="text-center">Could not load your results.</div>;
     
     // In individual mode, score is the number of hexes.
-    const finalScore = player.score;
+    const finalScore = teams[0].players[0].score;
 
     return (
        <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
@@ -93,7 +109,7 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
       {winningTeams.length > 0 ? (
         <>
           <h1 className="text-5xl font-bold mt-4 font-display">
-            {isTie ? "It's a Tie!" : `Team ${winningTeams[0].name} Wins!`}
+            {isTie ? "It's a Tie!" : `${winningTeams.length > 1 ? 'Winners!' : winningTeams[0].name + ' Wins!'}`}
           </h1>
           <CardDescription className="text-2xl pt-4">
             Congratulations to the Trivia Titans!
@@ -126,26 +142,15 @@ export default function ResultsScreen({ teams, onPlayAgain, isAdmin, individualP
           </Card>
         ))}
       </div>
-
-      <h2 className="text-3xl font-bold font-display mb-4">Player Leaderboard</h2>
-      <Card className="w-full max-w-2xl">
-          <CardContent className="p-4">
-              <ul className="space-y-2">
-                  {sortedPlayers.map((player, index) => (
-                      <li key={player.id} className="flex justify-between items-center p-2 rounded-md bg-secondary/30">
-                          <span className="font-semibold">{index + 1}. {player.name} <span className="text-xs text-muted-foreground">(ID: {player.playerId})</span></span>
-                          <span className="font-bold font-mono text-lg">{player.score} pts</span>
-                      </li>
-                  ))}
-              </ul>
-          </CardContent>
-      </Card>
-
-
-      {isAdmin && (
+      
+      {isAdmin && !parentSessionId && (
         <Button onClick={onPlayAgain} size="lg" className="mt-12">
           Play Again
         </Button>
+      )}
+
+      {parentSessionId && (
+         <p className="text-muted-foreground mt-8 animate-pulse">Returning to matchmaking lobby...</p>
       )}
     </div>
   );

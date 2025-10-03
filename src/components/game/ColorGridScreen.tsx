@@ -15,7 +15,7 @@ type ColorGridScreenProps = {
   credits: number;
   onSkip: () => void;
   sessionType: SessionType;
-  playerId?: string; // The ID of the player in individual mode
+  playerId?: string; // The ID of the player in individual mode or teamName in 1v1
 };
 
 export default function ColorGridScreen({ grid, teams, onColorSquare, teamColoring, credits, onSkip, sessionType, playerId }: ColorGridScreenProps) {
@@ -23,10 +23,8 @@ export default function ColorGridScreen({ grid, teams, onColorSquare, teamColori
   const handleHexClick = (squareId: number, event: React.MouseEvent<SVGPathElement>) => {
     const square = grid.find(s => s.id === squareId);
     
-    // Determine the identifier for the current colorer.
-    const colorerIdentifier = sessionType === 'team' 
-      ? teams.find(t => t.color === teamColoring)?.name 
-      : playerId;
+    // The identifier for the current colorer.
+    const colorerIdentifier = playerId;
 
     // Prevent confetti if the hex is already owned by the current colorer.
     if (!square || square.coloredBy === colorerIdentifier) {
