@@ -28,6 +28,7 @@ import {
   writeBatch,
   deleteDoc,
   setDoc,
+  orderBy,
 } from "firebase/firestore";
 import {
   signInAnonymously,
@@ -342,7 +343,7 @@ export default function GamePage() {
   }, [gameId, authUser]);
 
   useEffect(() => {
-    if (!game || game.sessionType !== "matchmaking" || !authUser)
+    if (!game || game.sessionType !== "matchmaking" || !authUser || isAdmin)
       return;
 
     const ticketRef = doc(db, "matchmakingTickets", authUser.uid);
@@ -350,6 +351,7 @@ export default function GamePage() {
       if (docSnap.exists()) {
         const ticketData = docSnap.data() as MatchmakingTicket;
         setTicket(ticketData);
+        // If our ticket is updated to matched, redirect to the new game
         if (ticketData.status === "matched" && ticketData.gameId) {
           router.replace(`/game/${ticketData.gameId}`);
         }
@@ -358,103 +360,109 @@ export default function GamePage() {
       }
     });
 
-    if (ticket?.status === "waiting" && !isAdmin) {
+    // This listener is for the CURRENT player to find an opponent
+    if (ticket?.status === "waiting") {
+      // Find one other player who is also waiting and joined *before* us.
+      // The player who joins second is responsible for creating the match.
       const q = query(
         collection(db, "matchmakingTickets"),
         where("status", "==", "waiting"),
         where("matchmakingSessionId", "==", game.id),
-        where("playerId", "!=", authUser.uid),
+        where("createdAt", "<", ticket.createdAt),
+        orderBy("createdAt", "desc"),
         limit(1)
       );
+
       const unsubQueue = onSnapshot(q, async (snapshot) => {
         if (snapshot.docs.length > 0) {
-          const player1Ticket = ticket;
-          const player2TicketDoc = snapshot.docs[0];
-          const player2Ticket =
-            player2TicketDoc.data() as MatchmakingTicket;
+          // An opponent was found! Let's create the match.
+          const player1TicketDoc = snapshot.docs[0];
+          const player1Ticket =
+            player1TicketDoc.data() as MatchmakingTicket;
+          const player2Ticket = ticket; // This is the current user's ticket
 
-          if (
-            player1Ticket.playerId < player2Ticket.playerId
-          ) {
-            const batch = writeBatch(db);
-
-            const newGameId = generatePin();
-            const newGameRef = doc(db, "games", newGameId);
-
-            const newGame: Omit<Game, "id"> = {
-              ...game,
-              id: newGameId,
-              title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
-              status: "playing",
-              sessionType: "team",
-              teams: [
-                {
-                  name: player1Ticket.playerName,
-                  score: 0,
-                  players: [
-                    {
-                      id: player1Ticket.playerId,
-                      playerId: player1Ticket.playerId,
-                      name: player1Ticket.playerName,
-                      teamName: player1Ticket.playerName,
-                      answeredQuestions: [],
-                      coloringCredits: 0,
-                      score: 0,
-                    },
-                  ],
-                  capacity: 1,
-                  color: "#FF6347",
-                  icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258",
-                },
-                {
-                  name: player2Ticket.playerName,
-                  score: 0,
-                  players: [
-                    {
-                      id: player2Ticket.playerId,
-                      playerId: player2Ticket.playerId,
-                      name: player2Ticket.playerName,
-                      teamName: player2Ticket.playerName,
-                      answeredQuestions: [],
-                      coloringCredits: 0,
-                      score: 0,
-                    },
-                  ],
-                  capacity: 1,
-                  color: "#4682B4",
-                  icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd",
-                },
-              ],
-              gameStartedAt: serverTimestamp() as Timestamp,
-              adminId: game.adminId,
-            };
-            batch.set(newGameRef, newGame);
-
-            batch.update(
-              doc(
-                db,
-                "matchmakingTickets",
-                player1Ticket.playerId
-              ),
-              {
-                status: "matched",
-                gameId: newGameId,
-              }
-            );
-            batch.update(
-              doc(
-                db,
-                "matchmakingTickets",
-                player2Ticket.playerId
-              ),
-              {
-                status: "matched",
-                gameId: newGameId,
-              }
-            );
-
-            await batch.commit();
+          // Prevent double-matching
+          if (player1Ticket.status !== 'waiting' || player2Ticket.status !== 'waiting') {
+            return;
           }
+          
+          unsubQueue(); // Stop listening immediately to prevent race conditions
+
+          const batch = writeBatch(db);
+          
+          // 1. Mark both tickets as matched
+          batch.update(doc(db, "matchmakingTickets", player1Ticket.id), { status: "matched" });
+          batch.update(doc(db, "matchmakingTickets", player2Ticket.id), { status: "matched" });
+
+          // Commit ticket changes first to "claim" the match
+          try {
+            await batch.commit();
+          } catch(e) {
+            // If this fails, it likely means the other player was already matched.
+            // The current player can just go back to waiting. The listeners will pick up a new opponent.
+            console.log("Failed to claim match, another player may have been faster. Waiting again.");
+            return;
+          }
+
+          // 2. Create the new game and update tickets with the game ID
+          const newGameId = generatePin();
+          const newGameRef = doc(db, "games", newGameId);
+          const finalBatch = writeBatch(db);
+
+          const newGame: Omit<Game, "id"> = {
+            ...game,
+            id: newGameId,
+            title: `1v1: ${player1Ticket.playerName} vs ${player2Ticket.playerName}`,
+            status: "playing",
+            sessionType: "team", // 1v1 is a special case of team play
+            parentSessionId: game.id,
+            teams: [
+              {
+                name: player1Ticket.playerName,
+                score: 0,
+                players: [
+                  {
+                    id: player1Ticket.playerId,
+                    playerId: player1Ticket.playerId,
+                    name: player1Ticket.playerName,
+                    teamName: player1Ticket.playerName,
+                    answeredQuestions: [],
+                    coloringCredits: 0,
+                    score: 0,
+                  },
+                ],
+                capacity: 1,
+                color: "#FF6347",
+                icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fred.png?alt=media&token=8dee418c-6d1d-4558-84d2-51909b71a258",
+              },
+              {
+                name: player2Ticket.playerName,
+                score: 0,
+                players: [
+                  {
+                    id: player2Ticket.playerId,
+                    playerId: player2Ticket.playerId,
+                    name: player2Ticket.playerName,
+                    teamName: player2Ticket.playerName,
+                    answeredQuestions: [],
+                    coloringCredits: 0,
+                    score: 0,
+                  },
+                ],
+                capacity: 1,
+                color: "#4682B4",
+                icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue.png?alt=media&token=0cd4ea1b-4005-4101-950f-a04500d708dd",
+              },
+            ],
+            gameStartedAt: serverTimestamp() as Timestamp,
+            adminId: game.adminId,
+          };
+          finalBatch.set(newGameRef, newGame);
+
+          finalBatch.update(doc(db, "matchmakingTickets", player1Ticket.id), { gameId: newGameId });
+          finalBatch.update(doc(db, "matchmakingTickets", player2Ticket.id), { gameId: newGameId });
+
+          await finalBatch.commit();
         }
       });
       return () => unsubQueue();
