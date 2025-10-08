@@ -340,6 +340,17 @@ export default function GamePage() {
   
   const getNextQuestion = useCallback(() => {
     if (!game || !currentPlayer) return null;
+    
+    // For Land Rush and 1v1, use a sequential question order for fairness
+    if (game.sessionType === 'land-rush' || game.parentSessionId) {
+      const answeredCount = currentPlayer.answeredQuestions?.length || 0;
+      if (answeredCount < game.questions.length) {
+        return game.questions[answeredCount];
+      }
+      return null; // No more questions
+    }
+    
+    // Original random logic for other modes
     const answered = currentPlayer.answeredQuestions || [];
     const availableQuestions = game.questions.filter(
       (q) => !answered.includes(q.question)
@@ -756,6 +767,7 @@ export default function GamePage() {
           playerToUpdate.coloringCredits += 1;
         } else {
            if (currentGame.sessionType === "land-rush") {
+              updatedTeams[teamIndex].score -= 25;
               const playerOwnedTiles = currentGame.grid.filter(sq => sq.coloredBy === playerToUpdate.id && !sq.specialType);
               if (playerOwnedTiles.length > 0) {
                 const tileToLose = playerOwnedTiles[Math.floor(Math.random() * playerOwnedTiles.length)];
@@ -844,10 +856,10 @@ export default function GamePage() {
             const x = squareId % gridSize;
             const y = Math.floor(squareId / gridSize);
             const neighbors = [
-                y > 0 ? y * gridSize + x - gridSize : -1, // Up
-                y < gridSize - 1 ? y * gridSize + x + gridSize : -1, // Down
-                x > 0 ? y * gridSize + x - 1 : -1, // Left
-                x < gridSize - 1 ? y * gridSize + x + 1 : -1, // Right
+                y > 0 ? (y - 1) * gridSize + x : -1, // Up
+                y < gridSize - 1 ? (y + 1) * gridSize + x : -1, // Down
+                x > 0 ? y * gridSize + (x - 1) : -1, // Left
+                x < gridSize - 1 ? y * gridSize + (x + 1) : -1, // Right
             ].filter(id => id !== -1);
             
             let hasAdjacent = false;

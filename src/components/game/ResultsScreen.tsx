@@ -165,9 +165,6 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
          </div>
          
          <div className="flex gap-4">
-             <Button size="lg" variant="outline" disabled>
-                 <RotateCw className="mr-2"/> Rematch
-             </Button>
              <Button size="lg" onClick={() => router.push('/')}>
                  <X className="mr-2"/> Exit to Menu
              </Button>
