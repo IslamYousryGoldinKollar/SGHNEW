@@ -320,6 +320,12 @@ export default function GamePage() {
     return () => unsubGame();
   }, [gameId, authUser, toast, router]);
 
+  const handleTimeout = useCallback(async () => {
+    if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
+    await updateDoc(doc(db, "games", gameId), { status: "finished" });
+    }
+  }, [game, isAdmin, gameId]);
+
   const getNextQuestion = useCallback(() => {
     if (!game || !currentPlayer) return null;
     const answered = currentPlayer.answeredQuestions || [];
@@ -332,12 +338,6 @@ export default function GamePage() {
     );
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
-
-    const handleTimeout = useCallback(async () => {
-        if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
-        await updateDoc(doc(db, "games", gameId), { status: "finished" });
-        }
-    }, [game, isAdmin, gameId]);
 
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
@@ -362,7 +362,7 @@ export default function GamePage() {
         handleTimeout(); // End the game
       }
     }
-  }, [game, currentPlayer, getNextQuestion]);
+  }, [game, currentPlayer, getNextQuestion, handleTimeout]);
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -1015,5 +1015,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    
