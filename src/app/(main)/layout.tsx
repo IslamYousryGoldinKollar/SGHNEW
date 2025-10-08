@@ -1,17 +1,9 @@
-
-import Header from "@/components/layout/Header";
+import MainLayoutClient from './main-layout-client';
 
 export default function MainLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  return (
-    <>
-      <Header />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-    </>
-  );
+}) {
+  return <MainLayoutClient>{children}</MainLayoutClient>;
 }
