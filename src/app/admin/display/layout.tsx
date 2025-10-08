@@ -9,7 +9,7 @@ import { db } from "@/lib/firebase";
 import type { Game, GameTheme } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Particles from "@/components/ui/particles";
-import "../../../dynamic-theme.css";
+import "../../dynamic-theme.css";
 
 // Note: We can't export metadata from a client component. 
 // This should be handled in a parent server component if needed.
@@ -19,6 +19,7 @@ import "../../../dynamic-theme.css";
 // };
 
 function hexToHsl(hex: string): string {
+    if (!hex) return "0 0% 0%";
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     if (!result) return "0 0% 0%";
     
@@ -70,19 +71,24 @@ export default function DisplayLayout({
     }, [gameId]);
 
      useEffect(() => {
-        if (typeof theme === 'object') {
+        if (typeof theme === 'object' && theme?.background) {
             setDynamicStyle({
                 '--dynamic-background-hsl': hexToHsl(theme.background),
                 '--dynamic-card-hsl': hexToHsl(theme.card),
                 '--dynamic-accent-hsl': hexToHsl(theme.accent),
                 '--dynamic-foreground-hsl': hexToHsl(theme.foreground),
+                '--dynamic-card-foreground-hsl': hexToHsl(theme.cardForeground),
             } as React.CSSProperties);
             setThemeClass('dynamic-theme');
             document.documentElement.removeAttribute('data-theme');
-        } else {
+        } else if (typeof theme === 'string') {
             setDynamicStyle({});
             setThemeClass('');
             document.documentElement.setAttribute('data-theme', theme);
+        } else {
+            setDynamicStyle({});
+            setThemeClass('');
+            document.documentElement.removeAttribute('data-theme');
         }
     }, [theme]);
 
