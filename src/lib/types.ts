@@ -45,7 +45,7 @@ export interface Team {
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
-export type SessionType = "team" | "individual" | "matchmaking";
+export type SessionType = "team" | "individual" | "matchmaking" | "land-rush";
 
 export type CustomTheme = {
   background: string;

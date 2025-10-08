@@ -1,11 +1,12 @@
 
-import type { Team, Player, Question, EmojiEvent } from "@/lib/types";
+import type { Team, Player, Question, EmojiEvent, SessionType } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
 import EmojiBar from "./EmojiBar";
 import EmojiDisplay from "./EmojiDisplay";
+import LandRushBoard from "./LandRushBoard";
 
 type GameScreenProps = {
   teams: Team[];
@@ -19,6 +20,9 @@ type GameScreenProps = {
   isIndividualMode: boolean;
   onSendEmoji: (emoji: string) => void;
   emojiEvents: EmojiEvent[] | undefined;
+  sessionType?: SessionType;
+  grid: any[];
+  onTileClick: (tileId: number) => void;
 };
 
 export default function GameScreen({
@@ -33,13 +37,54 @@ export default function GameScreen({
   isIndividualMode,
   onSendEmoji,
   emojiEvents,
+  sessionType,
+  grid,
+  onTileClick,
 }: GameScreenProps) {
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
   
-  const is1v1 = isIndividualMode && teams.length === 2;
+  const is1v1 = (isIndividualMode || sessionType === 'land-rush') && teams.length === 2;
   const opponentTeam = is1v1 ? teams.find(t => t.name !== currentPlayer.teamName) : null;
+  
+  if (sessionType === 'land-rush') {
+    return (
+       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 relative h-full">
+         <div className="lg:col-span-2 order-2 lg:order-1 flex flex-col">
+            {question ? (
+              <QuestionCard 
+                key={question.question} 
+                question={question} 
+                onAnswer={onAnswer} 
+                onNextQuestion={onNextQuestion}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p>Loading next question...</p>
+              </div>
+            )}
+         </div>
+         <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-col gap-4">
+            <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
+             <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+              <Scoreboard team={playerTeam} />
+              {opponentTeam && <Scoreboard team={opponentTeam} />}
+            </div>
+             <LandRushBoard 
+                grid={grid}
+                teams={teams}
+                onTileClick={onTileClick}
+                credits={currentPlayer.coloringCredits}
+                currentPlayerId={currentPlayer.id}
+             />
+             <div className="mt-auto">
+                <EmojiBar onSendEmoji={onSendEmoji} />
+             </div>
+         </aside>
+       </div>
+    )
+  }
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative">

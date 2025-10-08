@@ -18,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 // A simple random PIN generator
 const generatePin = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-const GRID_SIZE = 22; // Based on the number of hexagons in the SVG
+const TEAM_GRID_SIZE = 22; // For Team Battle
+const LAND_RUSH_GRID_SIZE = 100; // For 1v1 Land Rush
 
 export default function AdminDashboard() {
   const [user, loading, error] = useAuthState(auth);
@@ -79,7 +80,7 @@ export default function AdminDashboard() {
             const adminDoc = await transaction.get(adminRef);
 
             // 2. Prepare all data and logic.
-            const initialGrid: GridSquare[] = Array.from({ length: GRID_SIZE }, (_, i) => ({
+            const initialGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({
                 id: i,
                 coloredBy: null,
             }));
@@ -168,12 +169,14 @@ export default function AdminDashboard() {
         pinExists = gameDoc.exists();
       }
       
+      const gridSize = originalGameData.sessionType === 'land-rush' ? LAND_RUSH_GRID_SIZE : TEAM_GRID_SIZE;
+      
       const duplicatedGame: Omit<Game, 'id'> = {
         ...originalGameData,
         status: "lobby",
         adminId: user.uid, // Belongs to the user who duplicates it
         teams: originalGameData.teams.map((team: any) => ({ ...team, score: 0, players: [] })),
-        grid: Array.from({ length: GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null })),
+        grid: Array.from({ length: gridSize }, (_, i) => ({ id: i, coloredBy: null })),
         createdAt: serverTimestamp() as any,
         gameStartedAt: null,
       };
