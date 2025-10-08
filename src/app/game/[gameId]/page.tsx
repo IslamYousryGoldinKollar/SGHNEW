@@ -252,11 +252,10 @@ export default function GamePage() {
   // When a 1v1 countdown finishes, update status to 'playing'
   const handleCountdownFinish = useCallback(async () => {
     if (game?.status === 'starting') {
-        // The status update is now handled by the side effect in the main useEffect
-        // This function just updates the local state to change the view.
-        setGame(prev => prev ? ({ ...prev, status: 'playing' }) : null);
+        const gameRef = doc(db, "games", gameId);
+        await updateDoc(gameRef, { status: "playing" });
     }
-  }, [game]);
+  }, [game?.status, gameId]);
 
 
   useEffect(() => {
@@ -301,15 +300,7 @@ export default function GamePage() {
           ...docSnap.data(),
         } as Game;
         
-
-        // If the game has started and the user isn't in it, they can't join.
-        // This check is especially for matchmaking sub-games.
-        const isPlayerInGame = gameData.teams?.flatMap(t => t.players).some(p => p.id === authUser.uid);
-        if ((gameData.status === 'playing' || gameData.status === 'starting') && !isPlayerInGame && gameData.parentSessionId) {
-             toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
-             router.replace(`/game/${gameData.parentSessionId}`);
-             return;
-        }
+        setGame(gameData);
 
         const isUserAdmin = gameData.adminId === authUser.uid;
         setIsAdmin(isUserAdmin);
@@ -320,12 +311,12 @@ export default function GamePage() {
             .find((p) => p.id === authUser.uid) || null;
         setCurrentPlayer(player);
         
-        // This is a client-side check to transition from 'starting' to 'playing'
-        // for countdowns.
-        if (gameData.status === 'starting' && gameData.gameStartedAt && gameData.gameStartedAt.toMillis() < Date.now()) {
-            gameData.status = 'playing';
+        if (gameData.status === 'playing' && !player && gameData.parentSessionId) {
+             toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
+             router.replace(`/game/${gameData.parentSessionId}`);
+             return;
         }
-        setGame(gameData);
+
         setLoading(false);
       } else {
         setGame(null);
@@ -360,30 +351,46 @@ export default function GamePage() {
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
+  // Effect to determine the view (question or grid)
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
-
-    const nextQ = getNextQuestion();
 
     if (currentPlayer.coloringCredits > 0) {
       setView("grid");
       return;
     }
 
+    const nextQ = getNextQuestion();
     if (nextQ) {
       if (currentQuestion?.question !== nextQ.question) {
         setCurrentQuestion(nextQ);
       }
       setView("question");
     } else {
-      // No more questions and no credits
       setCurrentQuestion(null);
       setView("question");
-      if (game.status === 'playing') {
-        handleTimeout(); // End the game
+      // If no credits and no questions, the game might be over for this player
+    }
+  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, game?.status, getNextQuestion, currentQuestion]);
+
+
+  // Effect for game timeout
+  useEffect(() => {
+    if (game?.status === 'playing') {
+      const gameStartTime = game.gameStartedAt?.toMillis();
+      if (gameStartTime && game.timer) {
+        const endTime = gameStartTime + game.timer * 1000;
+        const now = Date.now();
+        if (now >= endTime) {
+          handleTimeout();
+        } else {
+          const timeoutId = setTimeout(handleTimeout, endTime - now);
+          return () => clearTimeout(timeoutId);
+        }
       }
     }
-  }, [game, currentPlayer, getNextQuestion, handleTimeout, currentQuestion]);
+  }, [game?.status, game?.gameStartedAt, game?.timer, handleTimeout]);
+
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -435,13 +442,12 @@ export default function GamePage() {
                     }
                 ];
                 
-                // Set game to start 5 seconds in the future
                 const startTime = new Date(Date.now() + 5000);
 
                 transaction.update(lobbyGameRef, {
                     teams: updatedTeams,
                     title: `1v1: ${opponent.name} vs ${newPlayer.name}`,
-                    status: "starting", // Set to 'starting' to trigger countdown
+                    status: "starting",
                     gameStartedAt: Timestamp.fromDate(startTime)
                 });
             });
@@ -452,7 +458,7 @@ export default function GamePage() {
             // 2b. No lobby found, create one
             const newGameId = `${game.id}-${generatePin()}`;
             const newGameRef = doc(db, "games", newGameId);
-            const templateGame = game; // Use the matchmaking session as a template
+            const templateGame = game;
 
             const newPlayer: Player = {
                 id: authUser.uid,
@@ -467,9 +473,9 @@ export default function GamePage() {
             const newGame: Omit<Game, "id"> = {
                 ...templateGame,
                 title: `1v1 Lobby - Waiting...`,
-                status: "lobby", // Player waits in the lobby
+                status: "lobby",
                 parentSessionId: game.id,
-                sessionType: 'team', // It's a 1v1 team game
+                sessionType: 'team',
                 teams: [
                     { 
                         name: `Team ${newPlayer.name}`, 
@@ -574,14 +580,12 @@ export default function GamePage() {
     setIsJoining(true);
 
     try {
-      // 1. Generate a unique ID for the new player-specific game
       const newGameId = `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
       const newGameRef = doc(db, "games", newGameId);
       const templateGameRef = doc(db, "games", gameId);
 
       let templateGameData = game;
 
-      // Ensure questions are ready in the template
       if (!templateGameData.questions || templateGameData.questions.length === 0) {
         const result = await generateQuestionsAction({
           topic: templateGameData.topic || "General Knowledge",
@@ -601,7 +605,6 @@ export default function GamePage() {
       const playerId = idNumberField ? customData[idNumberField.id] || uuidv4() : uuidv4();
       const playerName = nameField ? name : customData[Object.keys(customData)[0]];
 
-      // Create a new custom data object that uses the field label as the key
       const newCustomData: Record<string, string> = {};
       game.requiredPlayerFields.forEach(field => {
         newCustomData[field.label] = customData[field.id] || '';
@@ -611,7 +614,6 @@ export default function GamePage() {
        }
 
 
-      // 2. Create the new player object
       const newPlayer: Player = {
         id: authUser.uid,
         playerId: playerId,
@@ -623,7 +625,6 @@ export default function GamePage() {
         customData: newCustomData,
       };
 
-      // 3. Create the new game object, copying from the template
       const newGame: Omit<Game, "id"> = {
         ...templateGameData,
         title: `${templateGameData.title} - ${playerName}`,
@@ -643,10 +644,8 @@ export default function GamePage() {
         gameStartedAt: serverTimestamp() as Timestamp,
       };
 
-      // 4. Save the new game to Firestore
       await setDoc(newGameRef, newGame);
       
-      // 5. Redirect the player to their new personal game
       router.push(`/game/${newGameId}`);
 
     } catch (error: any) {
@@ -818,7 +817,6 @@ export default function GamePage() {
 
         playerToUpdate.coloringCredits -= 1;
         
-        // Handle score change when stealing a hex
         if (currentGrid[squareIndex].coloredBy) {
           const originalOwnerTeamIndex = currentGame.teams.findIndex(
             (t) => t.name === currentGrid[squareIndex].coloredBy
@@ -844,7 +842,6 @@ export default function GamePage() {
           status: isGridFull ? "finished" : currentGame.status,
         });
       });
-      // Do not get next question here, wait for useEffect to handle it.
       setView("question");
     } catch (error: any) {
       console.error("Failed to color square: ", error);
@@ -871,7 +868,6 @@ export default function GamePage() {
   };
 
   const handleSkipColoring = () => {
-    setCurrentQuestion(getNextQuestion());
     setView("question");
   };
 
@@ -907,7 +903,9 @@ export default function GamePage() {
           isJoining={isJoining}
         />
       );
-    } else if (game.sessionType === "individual" && !currentPlayer && !game.parentSessionId) {
+    }
+
+    if (game.sessionType === "individual" && !currentPlayer && !game.parentSessionId) {
       return (
         <IndividualLobby
           game={game}
@@ -917,12 +915,10 @@ export default function GamePage() {
       );
     }
 
-    // This is a player's actual game
     if (!currentPlayer && game.parentSessionId) {
         return <div className="flex items-center justify-center h-full">Error: Could not find player data in this game.</div>
     }
     
-    // Waiting lobby for 1v1 games
     if(game.parentSessionId && game.status === 'lobby' && currentPlayer) {
       return (
          <div className="flex flex-col items-center justify-center flex-1 text-center">
@@ -962,16 +958,18 @@ export default function GamePage() {
     }
     
     if (game.status === "starting") {
-      if (game.parentSessionId && currentPlayer) {
-        return <PreGameCountdown gameStartedAt={game.gameStartedAt} onFinish={handleCountdownFinish} />;
-      }
-      return (
-        <div className="flex flex-col items-center justify-center flex-1 text-center">
-          <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
-          <p className="text-muted-foreground mt-2">Get ready for battle!</p>
-        </div>
-      )
+        const gameStartTime = game.gameStartedAt?.toMillis();
+        const countdownActive = gameStartTime && gameStartTime > Date.now();
+        if (game.parentSessionId && currentPlayer && countdownActive) {
+            return <PreGameCountdown gameStartedAt={game.gameStartedAt} onFinish={handleCountdownFinish} />;
+        }
+        return (
+            <div className="flex flex-col items-center justify-center flex-1 text-center">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
+            <p className="text-muted-foreground mt-2">Get ready for battle!</p>
+            </div>
+        )
     }
 
     switch (game.status) {
@@ -987,14 +985,6 @@ export default function GamePage() {
         
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
-        const gameStartTime = game.gameStartedAt?.toMillis();
-        const isTimeUp = gameStartTime && game.timer ? Date.now() > gameStartTime + game.timer * 1000 : false;
-
-        if (isTimeUp) {
-            if(game.status === 'playing') handleTimeout();
-            return <ResultsScreen teams={game.teams} onPlayAgain={() => {}} isAdmin={isAdmin} individualPlayerId={game.sessionType === 'individual' ? currentPlayer.id : undefined} parentSessionId={game.parentSessionId} gameId={game.id} />
-        }
-
         if (view === "grid") {
           return (
             <ColorGridScreen
@@ -1062,6 +1052,5 @@ export default function GamePage() {
     </div>
   );
 }
-
 
     
