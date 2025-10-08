@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import type { Timestamp } from "firebase/firestore";
@@ -63,3 +63,5 @@ export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps
     </Card>
   );
 }
+
+    

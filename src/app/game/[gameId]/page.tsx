@@ -333,6 +333,12 @@ export default function GamePage() {
     return availableQuestions[randomIndex];
   }, [game, currentPlayer]);
 
+    const handleTimeout = useCallback(async () => {
+        if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
+        await updateDoc(doc(db, "games", gameId), { status: "finished" });
+        }
+    }, [game, isAdmin, gameId]);
+
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
 
@@ -356,7 +362,7 @@ export default function GamePage() {
         handleTimeout(); // End the game
       }
     }
-  }, [game, currentPlayer, getNextQuestion, currentQuestion]);
+  }, [game, currentPlayer, getNextQuestion]);
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -816,11 +822,7 @@ export default function GamePage() {
     }
   };
 
-  const handleTimeout = async () => {
-    if (game?.status === "playing" && (isAdmin || game.sessionType === 'individual' || !!game.parentSessionId)) {
-      await updateDoc(doc(db, "games", gameId), { status: "finished" });
-    }
-  };
+
 
   const handleSkipColoring = () => {
     setCurrentQuestion(getNextQuestion());
@@ -1013,3 +1015,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
