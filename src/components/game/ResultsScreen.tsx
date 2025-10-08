@@ -4,13 +4,14 @@
 import type { Team, Player, Game, GridSquare } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Trophy, Sparkles } from "lucide-react";
+import { Trophy, Sparkles, RotateCw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import LandRushBoard from "./LandRushBoard";
 
 
 type ResultsScreenProps = {
@@ -25,17 +26,26 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
   const router = useRouter();
   
   useEffect(() => {
-    // If it's a finished 1v1 game, redirect to the parent leaderboard after a delay.
+    // If it's a finished 1v1 game, clean it up and redirect.
     if (parentSessionId && gameId) {
-        const player = teams.flatMap(t => t.players).find(p => p.id); // Find any player to get their auth ID
+        const cleanupAndRedirect = async () => {
+          try {
+            const gameRef = doc(db, "games", gameId);
+            await deleteDoc(gameRef);
+          } catch (error) {
+            console.error("Error cleaning up game:", error);
+          } finally {
+            router.push(`/game/${parentSessionId}`);
+          }
+        };
+
         const timer = setTimeout(() => {
-            if(parentSessionId && player) {
-              router.push(`/leaderboard/${parentSessionId}?player_id=${player.id}`);
-            }
-        }, 10000); // 10-second delay
+           cleanupAndRedirect();
+        }, 15000); // 15-second delay before cleaning up and redirecting
+
         return () => clearTimeout(timer);
     }
-  }, [parentSessionId, gameId, router, teams]);
+  }, [parentSessionId, gameId, router]);
 
   useEffect(() => {
     if (individualPlayerId && parentSessionId) {
@@ -81,7 +91,6 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
     if (!player) return <div className="text-center">Could not load your results.</div>;
     
-    // In individual mode, score is the number of hexes, which is stored on the "team".
     const finalScore = teams[0].score;
 
     return (
@@ -97,7 +106,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
                 </CardHeader>
                 <CardContent>
                     <p className="text-6xl font-bold text-primary">{finalScore}</p>
-                    <p className="text-muted-foreground">colored lands</p>
+                    <p className="text-muted-foreground">points</p>
                 </CardContent>
             </Card>
             <p className="text-muted-foreground">Redirecting to the leaderboard...</p>
@@ -126,6 +135,46 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
       }, 250);
     }
   }, [winningTeams]);
+
+  if (sessionType === 'land-rush') {
+    return (
+      <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500 w-full">
+         <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
+         <h1 className="text-5xl font-bold mt-4 font-display">
+            {isTie ? "It's a Tie!" : `${winningTeams.length > 0 ? (winningTeams[0].players[0].name + ' Wins!') : 'Game Over!'}`}
+         </h1>
+         <p className="text-muted-foreground">{winReason && `Win condition: ${winReason}`}</p>
+         
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl my-8 items-center">
+            {sortedTeamsByScore.map((team, index) => (
+                <div key={team.name} className={cn("order-2", index === 0 && !isTie && "md:order-1", index === 1 && !isTie && "md:order-3")}>
+                    <Card className="shadow-lg">
+                        <CardHeader>
+                            <CardTitle className="text-2xl font-display" style={{color: team.color}}>{team.players[0].name}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-5xl font-bold" style={{color: team.color}}>{team.score}</p>
+                            <p className="text-muted-foreground">total points</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            ))}
+             <div className="w-full h-auto aspect-square max-w-sm mx-auto md:order-2">
+                <LandRushBoard grid={grid} teams={teams} onTileClick={() => {}} credits={0} currentPlayerId="" isStealing={false} />
+            </div>
+         </div>
+         
+         <div className="flex gap-4">
+             <Button size="lg" variant="outline" disabled>
+                 <RotateCw className="mr-2"/> Rematch
+             </Button>
+             <Button size="lg" onClick={() => router.push('/')}>
+                 <X className="mr-2"/> Exit to Menu
+             </Button>
+         </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
@@ -176,7 +225,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
       )}
 
       {parentSessionId && (
-         <p className="text-muted-foreground mt-8 animate-pulse">Redirecting to the leaderboard...</p>
+         <p className="text-muted-foreground mt-8 animate-pulse">Returning to lobby...</p>
       )}
     </div>
   );
