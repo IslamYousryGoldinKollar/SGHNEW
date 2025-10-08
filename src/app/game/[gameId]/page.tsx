@@ -252,7 +252,6 @@ export default function GamePage() {
   // When a 1v1 countdown finishes, update status to 'playing'
   const handleCountdownFinish = useCallback(async () => {
     if (game?.status === 'starting') {
-        const gameRef = doc(db, 'games', game.id);
         // The status update is now handled by the side effect in the main useEffect
         // This function just updates the local state to change the view.
         setGame(prev => prev ? ({ ...prev, status: 'playing' }) : null);
@@ -900,8 +899,7 @@ export default function GamePage() {
 
     if (
       game.sessionType === "matchmaking" &&
-      game.status === "lobby" &&
-      !currentPlayer
+      !currentPlayer && !game.parentSessionId
     ) {
       return (
         <MatchmakingLobby
@@ -939,21 +937,9 @@ export default function GamePage() {
       )
     }
 
-     if (
-      game.status === "lobby" ||
-      ((game.status === "playing" || game.status === "finished") &&
-        !currentPlayer)
-    ) {
-      if (
-        (game.status === "playing" || game.status === "finished") &&
-        !currentPlayer
-      ) {
-         if (game.sessionType === 'individual' && game.parentSessionId) {
-             // This is a finished individual game, go to leaderboard
-             router.replace(`/leaderboard/${game.parentSessionId}?player_id=${authUser?.uid}`);
-             return <Loader2 className="h-16 w-16 animate-spin text-primary mx-auto" />;
-         }
-        return (
+     if (game.status === "lobby" || (['playing', 'finished'].includes(game.status) && !currentPlayer && !game.parentSessionId)) {
+        if (['playing', 'finished'].includes(game.status) && !currentPlayer && !game.parentSessionId) {
+         return (
           <div className="flex flex-col items-center justify-center flex-1 text-center">
             <h1 className="text-4xl font-bold font-display">
               Game in Progress
@@ -1076,3 +1062,5 @@ export default function GamePage() {
     </div>
   );
 }
+
+    
