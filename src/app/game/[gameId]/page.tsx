@@ -9,6 +9,7 @@ import type {
   Game,
   Team,
   GridSquare,
+  EmojiEvent,
 } from "@/lib/types";
 import { generateQuestionsAction } from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
@@ -30,6 +31,7 @@ import {
   setDoc,
   orderBy,
   getDocs,
+  arrayUnion,
 } from "firebase/firestore";
 import {
   signInAnonymously,
@@ -373,7 +375,7 @@ export default function GamePage() {
         handleTimeout(); // End the game
       }
     }
-  }, [game, currentPlayer, getNextQuestion, handleTimeout, currentQuestion]);
+  }, [game, currentPlayer, getNextQuestion, handleTimeout]);
 
   const handleFindMatch = async (playerName: string, playerId: string) => {
     if (!game || !authUser) return;
@@ -844,7 +846,19 @@ export default function GamePage() {
     }
   };
 
-
+  const handleSendEmoji = async (emoji: string) => {
+    if (!game || !authUser) return;
+    const gameRef = doc(db, "games", game.id);
+    const newEmojiEvent: EmojiEvent = {
+      id: uuidv4(),
+      senderId: authUser.uid,
+      emoji,
+      timestamp: serverTimestamp() as Timestamp,
+    };
+    await updateDoc(gameRef, {
+      emojiEvents: arrayUnion(newEmojiEvent),
+    });
+  };
 
   const handleSkipColoring = () => {
     setCurrentQuestion(getNextQuestion());
@@ -1025,6 +1039,8 @@ export default function GamePage() {
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
             isIndividualMode={isIndividualMode}
+            onSendEmoji={handleSendEmoji}
+            emojiEvents={game.emojiEvents}
           />
         );
       case "finished":

@@ -1,3 +1,4 @@
+
 import type { CurateTriviaQuestionsOutput } from "@/ai/flows/ai-question-curator";
 import type { Timestamp } from "firebase/firestore";
 
@@ -51,10 +52,17 @@ export type CustomTheme = {
   card: string;
   accent: string;
   foreground: string;
+  cardForeground: string;
 };
 
 export type GameTheme = "default" | "team-alpha" | "team-bravo" | CustomTheme;
 
+export type EmojiEvent = {
+  id: string; // unique id for the event
+  senderId: string;
+  emoji: string;
+  timestamp: Timestamp;
+};
 
 export interface Game {
     id: string; // The game PIN
@@ -73,6 +81,7 @@ export interface Game {
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];
     parentSessionId?: string | null;
+    emojiEvents?: EmojiEvent[];
 }
 
 // Represents a tenant/admin user in the system
