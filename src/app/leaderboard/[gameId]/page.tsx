@@ -50,23 +50,17 @@ export default function LeaderboardPage() {
             const allPlayers: LeaderboardPlayer[] = [];
             for (const gameDoc of querySnapshot.docs) {
                 const game = gameDoc.data() as Game;
-                if (game.sessionType === 'team' && game.teams.length > 0) { // 1v1 games
+                // For both individual and 1v1 games, the score is on the team object
+                if (game.teams && game.teams.length > 0) {
                      game.teams.forEach(team => {
-                         if (team.players.length > 0) {
+                         if (team.players && team.players.length > 0) {
                              const player = team.players[0];
                              allPlayers.push({
                                  ...player,
-                                 finalScore: team.score
+                                 finalScore: team.score // The score is on the team object
                              });
                          }
                      });
-                } else if (game.sessionType === 'individual' && game.teams?.[0]?.players.length > 0) { // Individual games
-                    const player = game.teams[0].players[0];
-                    const hexCount = game.grid.filter(sq => sq.coloredBy === player.teamName).length;
-                    allPlayers.push({
-                        ...player,
-                        finalScore: hexCount
-                    });
                 }
             }
 
@@ -137,7 +131,7 @@ export default function LeaderboardPage() {
                                         {requiredFields.map(field => {
                                             let cellValue = 'N/A';
                                             if (parentGame.sessionType === 'individual') {
-                                                cellValue = player.customData?.[field.label] || player.name || 'N/A';
+                                                cellValue = player.customData?.[field.id] || player.name || 'N/A';
                                             } else {
                                                 if (field.id === 'name') cellValue = player.name;
                                                 if (field.id === 'id') cellValue = player.playerId;
@@ -165,7 +159,7 @@ export default function LeaderboardPage() {
                                         {requiredFields.map(field => {
                                             let cellValue = 'N/A';
                                             if (parentGame.sessionType === 'individual') {
-                                                cellValue = currentPlayerRowData.customData?.[field.label] || currentPlayerRowData.name || 'N/A';
+                                                cellValue = currentPlayerRowData.customData?.[field.id] || currentPlayerRowData.name || 'N/A';
                                             } else {
                                                 if (field.id === 'name') cellValue = currentPlayerRowData.name;
                                                 if (field.id === 'id') cellValue = currentPlayerRowData.playerId;

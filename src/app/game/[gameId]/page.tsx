@@ -573,8 +573,19 @@ export default function GamePage() {
 
       const idNumberField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('id number'));
       const nameField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
+      
       const playerId = idNumberField ? customData[idNumberField.id] || uuidv4() : uuidv4();
       const playerName = nameField ? name : customData[Object.keys(customData)[0]];
+
+      // Create a new custom data object that uses the field label as the key
+      const newCustomData: Record<string, string> = {};
+      game.requiredPlayerFields.forEach(field => {
+        newCustomData[field.label] = customData[field.id] || '';
+      });
+       if(nameField) {
+        newCustomData[nameField.label] = name;
+       }
+
 
       // 2. Create the new player object
       const newPlayer: Player = {
@@ -585,7 +596,7 @@ export default function GamePage() {
         answeredQuestions: [],
         coloringCredits: 0,
         score: 0,
-        customData: customData,
+        customData: newCustomData,
       };
 
       // 3. Create the new game object, copying from the template
