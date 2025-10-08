@@ -44,8 +44,17 @@ export interface Team {
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
-export type GameTheme = "default" | "team-alpha" | "team-bravo";
 export type SessionType = "team" | "individual" | "matchmaking";
+
+export type CustomTheme = {
+  background: string;
+  card: string;
+  accent: string;
+  foreground: string;
+};
+
+export type GameTheme = "default" | "team-alpha" | "team-bravo" | CustomTheme;
+
 
 export interface Game {
     id: string; // The game PIN

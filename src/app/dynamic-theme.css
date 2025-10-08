@@ -1,0 +1,23 @@
+
+@layer base {
+  .dynamic-theme {
+    --background: var(--dynamic-background-hsl);
+    --card: var(--dynamic-card-hsl);
+    --accent: var(--dynamic-accent-hsl);
+    --foreground: var(--dynamic-foreground-hsl);
+    
+    --card-foreground: var(--dynamic-foreground-hsl);
+    --popover: var(--dynamic-card-hsl);
+    --popover-foreground: var(--dynamic-foreground-hsl);
+    --primary: var(--dynamic-accent-hsl);
+    --primary-foreground: var(--dynamic-foreground-hsl);
+    --secondary: hsl(var(--dynamic-accent-hsl) / 0.1);
+    --secondary-foreground: var(--dynamic-foreground-hsl);
+    --muted: hsl(var(--dynamic-accent-hsl) / 0.15);
+    --muted-foreground: hsl(var(--dynamic-foreground-hsl) / 0.6);
+    --accent-foreground: var(--dynamic-foreground-hsl);
+    --border: hsl(var(--dynamic-accent-hsl) / 0.2);
+    --input: hsl(var(--dynamic-accent-hsl) / 0.2);
+    --ring: var(--dynamic-accent-hsl);
+  }
+}

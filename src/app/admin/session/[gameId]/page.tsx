@@ -7,25 +7,29 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
-import type { Game, GameTheme, SessionType, CustomPlayerField } from "@/lib/types";
+import type { Game, CustomTheme, CustomPlayerField } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Upload, Users, User, Swords } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload, Users, User, Swords, Palette } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { extractQuestionsFromPdfAction } from "@/lib/actions";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { v4 as uuidv4 } from "uuid";
+import { cn } from "@/lib/utils";
 
-const themes: { value: GameTheme; label: string }[] = [
-  { value: "default", label: "Default" },
-  { value: "team-alpha", label: "Team Alpha" },
-  { value: "team-bravo", label: "Team Bravo" },
-];
+const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color");
+
+const customThemeSchema = z.object({
+  background: hexColor,
+  card: hexColor,
+  accent: hexColor,
+  foreground: hexColor,
+});
 
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
@@ -36,7 +40,7 @@ const sessionSchema = z.object({
       z.object({
         name: z.string().min(1, "Team name is required."),
         capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color"),
+        color: hexColor,
         icon: z.string().url("Must be a valid URL.").or(z.literal("")),
       })
     )
@@ -67,7 +71,7 @@ const sessionSchema = z.object({
       }
     ),
   topic: z.string(),
-  theme: z.enum(["default", "team-alpha", "team-bravo"]),
+  theme: z.union([z.enum(["default", "team-alpha", "team-bravo"]), customThemeSchema]),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
@@ -153,6 +157,13 @@ function QuestionItem({
   );
 }
 
+const defaultTheme: CustomTheme = {
+  background: "#FFFFFF",
+  card: "#FFFFFF",
+  accent: "#FF4500",
+  foreground: "#0A0A0A",
+};
+
 export default function SessionConfigPage() {
   const params = useParams();
   const router = useRouter();
@@ -164,6 +175,7 @@ export default function SessionConfigPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isCustomTheme, setIsCustomTheme] = useState(false);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -180,7 +192,12 @@ export default function SessionConfigPage() {
   });
 
   const sessionType = form.watch("sessionType");
+  const themeValue = form.watch("theme");
 
+  useEffect(() => {
+    setIsCustomTheme(typeof themeValue === "object");
+  }, [themeValue]);
+  
   const { fields: teamFields, append: appendTeam, remove: removeTeam } = useFieldArray({
     control: form.control,
     name: "teams",
@@ -220,6 +237,9 @@ export default function SessionConfigPage() {
           setIsAuthorized(true);
           setGame(gameData);
           if (!form.formState.isDirty) {
+             const currentTheme = gameData.theme || "default";
+            setIsCustomTheme(typeof currentTheme === "object");
+            
             form.reset({
               title: gameData.title || "Trivia Titans",
               timer: gameData.timer,
@@ -233,7 +253,7 @@ export default function SessionConfigPage() {
               requiredPlayerFields: gameData.requiredPlayerFields || [],
               questions: gameData.questions.map((q) => ({ ...q, options: q.options || [] })),
               topic: gameData.topic,
-              theme: gameData.theme || "default",
+              theme: currentTheme,
             });
           }
         } else {
@@ -363,6 +383,8 @@ export default function SessionConfigPage() {
           },
         ];
       }
+      
+      const themeToSave = isCustomTheme ? data.theme : "default";
 
       await updateDoc(gameRef, {
         title: data.title,
@@ -372,7 +394,7 @@ export default function SessionConfigPage() {
         requiredPlayerFields: data.requiredPlayerFields,
         questions: data.questions,
         topic: data.topic,
-        theme: data.theme,
+        theme: themeToSave,
       });
 
       toast({
@@ -438,7 +460,7 @@ export default function SessionConfigPage() {
                 <CardHeader>
                   <CardTitle>General Settings</CardTitle>
                 </CardHeader>
-                <CardContent className="grid md:grid-cols-3 gap-6">
+                <CardContent className="grid md:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="title"
@@ -478,33 +500,112 @@ export default function SessionConfigPage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="theme"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Session Theme</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a theme" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {themes.map((theme) => (
-                              <SelectItem key={theme.value} value={theme.value}>
-                                {theme.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>Customize the look and feel of the game.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </CardContent>
               </Card>
+              
+               <Card>
+                <CardHeader>
+                  <CardTitle>Theme & Appearance</CardTitle>
+                   <CardDescription>Customize the look and feel of the game.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <FormField
+                      control={form.control}
+                      name="theme"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <RadioGroup
+                              onValueChange={(value) => {
+                                if (value === "custom") {
+                                  setIsCustomTheme(true);
+                                  field.onChange(defaultTheme);
+                                } else {
+                                  setIsCustomTheme(false);
+                                  field.onChange(value);
+                                }
+                              }}
+                              value={isCustomTheme ? "custom" : (field.value as string)}
+                              className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                            >
+                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", !isCustomTheme && themeValue === 'default' && 'border-primary')}>
+                                <RadioGroupItem value="default" className="sr-only" />
+                                Default
+                              </Label>
+                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", !isCustomTheme && themeValue === 'team-alpha' && 'border-primary')}>
+                                <RadioGroupItem value="team-alpha" className="sr-only" />
+                                Team Alpha
+                              </Label>
+                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", !isCustomTheme && themeValue === 'team-bravo' && 'border-primary')}>
+                                <RadioGroupItem value="team-bravo" className="sr-only" />
+                                Team Bravo
+                              </Label>
+                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", isCustomTheme && 'border-primary')}>
+                                <RadioGroupItem value="custom" className="sr-only" />
+                                <Palette className="mb-2 h-5 w-5" />
+                                Custom
+                              </Label>
+                            </RadioGroup>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                    {isCustomTheme && typeof form.getValues("theme") === "object" && (
+                        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-lg animate-in fade-in">
+                           <FormField
+                              control={form.control}
+                              name="theme.background"
+                              render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Background</FormLabel>
+                                    <FormControl>
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                    </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                             <FormField
+                              control={form.control}
+                              name="theme.card"
+                              render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Card</FormLabel>
+                                    <FormControl>
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                    </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                             <FormField
+                              control={form.control}
+                              name="theme.accent"
+                              render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Accent</FormLabel>
+                                    <FormControl>
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                    </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                             <FormField
+                              control={form.control}
+                              name="theme.foreground"
+                              render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Font</FormLabel>
+                                    <FormControl>
+                                        <Input type="color" {...field} className="p-1 h-10 w-full" />
+                                    </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                        </div>
+                    )}
+
+                </CardContent>
+              </Card>
+
 
               <Card>
                 <CardHeader>
