@@ -1,12 +1,12 @@
 
 "use client";
 
-import type { Team, Player, Game } from "@/lib/types";
+import type { Team, Player, Game, GridSquare } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Trophy, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { doc, deleteDoc } from "firebase/firestore";
@@ -21,7 +21,7 @@ type ResultsScreenProps = {
 };
 
 export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
-  const { teams, sessionType, parentSessionId, id: gameId } = game;
+  const { teams, sessionType, parentSessionId, id: gameId, grid } = game;
   const router = useRouter();
   
   useEffect(() => {
@@ -46,6 +46,36 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
       return () => clearTimeout(timer);
     }
   }, [individualPlayerId, parentSessionId, router]);
+
+  const { winningTeams, isTie, winReason } = useMemo(() => {
+    if (!teams || teams.length === 0) {
+      return { winningTeams: [], isTie: false, winReason: "" };
+    }
+    
+    const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
+    const topScore = sortedTeams[0].score;
+
+    if (sessionType === 'land-rush' && sortedTeams.length === 2 && sortedTeams[0].score === sortedTeams[1].score) {
+      // Tie-breaker logic for Land Rush
+      const p1Id = sortedTeams[0].players[0].id;
+      const p2Id = sortedTeams[1].players[0].id;
+      const p1Tiles = grid.filter(g => g.coloredBy === p1Id).length;
+      const p2Tiles = grid.filter(g => g.coloredBy === p2Id).length;
+
+      if (p1Tiles > p2Tiles) {
+        return { winningTeams: [sortedTeams[0]], isTie: false, winReason: "by land claimed (tie-breaker)" };
+      } else if (p2Tiles > p1Tiles) {
+        return { winningTeams: [sortedTeams[1]], isTie: false, winReason: "by land claimed (tie-breaker)" };
+      } else {
+        return { winningTeams: sortedTeams.slice(0, 2), isTie: true, winReason: "by score and land claimed" };
+      }
+    }
+
+    const winners = sortedTeams.filter(t => t.score === topScore && topScore > 0);
+    return { winningTeams: winners, isTie: winners.length > 1, winReason: "by score" };
+
+  }, [teams, sessionType, grid]);
+
 
   if (individualPlayerId) {
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
@@ -75,12 +105,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     )
   }
 
-  const sortedTeams = [...teams].sort((a, b) => b.score - a.score);
-  const topScore = sortedTeams.length > 0 ? sortedTeams[0].score : 0;
-  const winningTeams = sortedTeams.filter(t => t.score === topScore && topScore > 0);
-  const isTie = winningTeams.length > 1;
-
-  const sortedPlayers = [...teams.flatMap(t => t.players)].sort((a, b) => b.score - a.score);
+  const sortedTeamsByScore = [...teams].sort((a, b) => b.score - a.score);
 
   useEffect(() => {
     if (winningTeams.length > 0) {
@@ -113,6 +138,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
           </h1>
           <CardDescription className="text-2xl pt-4">
             Congratulations to the Trivia Titans!
+             {winReason && <span className="text-sm block">({winReason})</span>}
           </CardDescription>
 
           <div className="flex flex-wrap justify-center gap-4 mt-6">
@@ -130,7 +156,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-12">
-        {teams.map((team) => (
+        {sortedTeamsByScore.map((team) => (
           <Card key={team.name} className="shadow-lg">
             <CardHeader>
               <CardTitle className="text-2xl font-display" style={{color: team.color}}>{team.name}</CardTitle>

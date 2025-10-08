@@ -808,43 +808,46 @@ export default function GamePage() {
           throw new Error("Could not find player data.");
 
         let currentGrid = currentGame.grid;
+        const playerToUpdate = currentGame.teams[playerTeamIndex].players[playerIndex];
+        
+        if (playerToUpdate.coloringCredits <= 0)  throw new Error("You have no coloring credits.");
 
-        const playerToUpdate =
-          currentGame.teams[playerTeamIndex].players[playerIndex];
-        if (playerToUpdate.coloringCredits <= 0)
-          throw new Error("You have no coloring credits.");
+        const squareIndex = currentGrid.findIndex( (s) => s.id === squareId);
+        if (squareIndex === -1) throw new Error("Square not found.");
 
-        const squareIndex = currentGrid.findIndex(
-          (s) => s.id === squareId
-        );
-        if (squareIndex === -1)
-          throw new Error("Square not found.");
+        const coloredByName = playerToUpdate.id; // Land Rush is always player ID
 
-        const coloredByName = currentGame.sessionType === 'land-rush' ? playerToUpdate.id : playerToUpdate.teamName;
-
-        if (currentGrid[squareIndex].coloredBy === coloredByName)
-          return;
+        if (currentGrid[squareIndex].coloredBy === coloredByName || currentGrid[squareIndex].coloredBy !== null) return; // Already owned or not neutral
 
         playerToUpdate.coloringCredits -= 1;
         
-        // Handle takeover for non-land-rush games
-        if (currentGame.sessionType !== 'land-rush' && currentGrid[squareIndex].coloredBy) {
-          const originalOwnerTeamIndex = currentGame.teams.findIndex(
-            (t) => t.name === currentGrid[squareIndex].coloredBy
-          );
-          if (originalOwnerTeamIndex !== -1) {
-            currentGame.teams[originalOwnerTeamIndex].score = Math.max(
-              0,
-              currentGame.teams[originalOwnerTeamIndex].score - 1
-            );
-          }
+        let pointsToAdd = 50; // Base points for claiming a tile
+
+        // Check for adjacency bonus
+        const gridSize = 10;
+        const x = squareId % gridSize;
+        const y = Math.floor(squareId / gridSize);
+        const neighbors = [
+            y > 0 ? (y - 1) * gridSize + x : -1, // Up
+            y < gridSize - 1 ? (y + 1) * gridSize + x : -1, // Down
+            x > 0 ? y * gridSize + (x - 1) : -1, // Left
+            x < gridSize - 1 ? y * gridSize + (x + 1) : -1, // Right
+        ].filter(id => id !== -1);
+        
+        let hasAdjacent = false;
+        for (const neighborId of neighbors) {
+            const neighborSquare = currentGrid.find(s => s.id === neighborId);
+            if (neighborSquare && neighborSquare.coloredBy === coloredByName) {
+                hasAdjacent = true;
+                break;
+            }
         }
         
-        if (currentGame.sessionType === 'land-rush') {
-           currentGame.teams[playerTeamIndex].score += 50;
-        } else {
-           currentGame.teams[playerTeamIndex].score += 1;
+        if (hasAdjacent) {
+            pointsToAdd += 25; // Adjacency Bonus
         }
+
+        currentGame.teams[playerTeamIndex].score += pointsToAdd;
         
         currentGrid[squareIndex].coloredBy = coloredByName;
 
