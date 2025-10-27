@@ -41,7 +41,6 @@ import {
 
 import Lobby from "@/components/game/Lobby";
 import GameScreen from "@/components/game/GameScreen";
-import ColorGridScreen from "@/components/game/ColorGridScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
 import PreGameCountdown from "@/components/game/PreGameCountdown";
 import { useToast } from "@/hooks/use-toast";
@@ -51,6 +50,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError } from "@/firebase/errors";
 
 const generatePin = () =>
   Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -246,7 +247,6 @@ export default function GamePage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentQuestion, setCurrentQuestion] =
     useState<Question | null>(null);
-  const [view, setView] = useState<"question" | "grid">("question");
   const [isJoining, setIsJoining] = useState(false);
 
   useEffect(() => {
@@ -309,10 +309,21 @@ export default function GamePage() {
              router.replace(`/game/${gameData.parentSessionId}`);
              return;
         }
-
+        
+        // This is the fix for the game not starting after countdown
         if (gameData.status === 'starting' && gameData.gameStartedAt && (gameData.gameStartedAt.toMillis() < Date.now())) {
-            updateDoc(gameRef, { status: "playing" });
+            if (isUserAdmin) {
+                 updateDoc(gameRef, { status: "playing" }).catch((serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: gameRef.path,
+                        operation: 'update',
+                        requestResourceData: { status: 'playing' },
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                });
+            }
         }
+
 
         setLoading(false);
       } else {
@@ -321,55 +332,47 @@ export default function GamePage() {
         setLoading(false);
       }
     }, (error) => {
-        console.error("Error fetching game:", error);
+        const permissionError = new FirestorePermissionError({
+            path: gameRef.path,
+            operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setLoading(false);
     });
 
     return () => unsubGame();
-  }, [gameId, authUser, toast, router]);
+  }, [gameId, authUser, toast, router, isAdmin]);
 
   const handleTimeout = useCallback(async () => {
     if (!game) return;
     const is1v1 = !!game.parentSessionId;
     if (game.status === "playing" && (isAdmin || game.sessionType === 'individual' || is1v1)) {
       const gameRef = doc(db, "games", gameId);
-      await updateDoc(gameRef, { status: "finished" });
+      updateDoc(gameRef, { status: "finished" }).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: gameRef.path,
+            operation: 'update',
+            requestResourceData: { status: 'finished' },
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
     }
   }, [game, isAdmin, gameId]);
   
   const getNextQuestion = useCallback(() => {
     if (!game || !currentPlayer) return null;
-
-    const answered = currentPlayer.answeredQuestions || [];
-    const availableQuestions = game.questions.filter(
-      (q) => !answered.includes(q.question)
-    );
-    if (availableQuestions.length === 0) return null;
-    const randomIndex = Math.floor(
-      Math.random() * availableQuestions.length
-    );
-    return availableQuestions[randomIndex];
+    const answeredCount = currentPlayer.answeredQuestions?.length || 0;
+    if (answeredCount < game.questions.length) {
+      return game.questions[answeredCount];
+    }
+    return null;
   }, [game, currentPlayer]);
 
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
-
-    if (currentPlayer.coloringCredits > 0) {
-      setView("grid");
-      return;
-    }
-
     const nextQ = getNextQuestion();
-    if (nextQ) {
-      if (currentQuestion?.question !== nextQ.question) {
-        setCurrentQuestion(nextQ);
-      }
-      setView("question");
-    } else {
-      setCurrentQuestion(null);
-      setView("question");
-    }
-  }, [currentPlayer?.answeredQuestions, currentPlayer?.coloringCredits, game, getNextQuestion, currentQuestion]);
+    setCurrentQuestion(nextQ);
+  }, [currentPlayer?.answeredQuestions, game, getNextQuestion]);
 
 
   // Effect for game timeout
@@ -485,7 +488,14 @@ export default function GamePage() {
                 gameStartedAt: null,
             };
             
-            await setDoc(newGameRef, newGame);
+            await setDoc(newGameRef, newGame).catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: newGameRef.path,
+                    operation: 'create',
+                    requestResourceData: newGame,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            });
             router.push(`/game/${newGameId}`);
         }
     } catch(error: any) {
@@ -558,6 +568,13 @@ export default function GamePage() {
       });
     } catch (error: any) {
       console.error("Error joining team: ", error);
+      const gameRef = doc(db, "games", gameId);
+      const permissionError = new FirestorePermissionError({
+        path: gameRef.path,
+        operation: 'update',
+        requestResourceData: { teams: "..." } // Cannot get full data in transaction error
+      });
+      errorEmitter.emit('permission-error', permissionError);
       toast({
         title: "Could Not Join",
         description:
@@ -574,11 +591,11 @@ export default function GamePage() {
     if (!game || !authUser) return;
     setIsJoining(true);
 
-    try {
-      const newGameId = `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
-      const newGameRef = doc(db, "games", newGameId);
-      const templateGameRef = doc(db, "games", gameId);
+    const newGameRef = doc(db, "games", `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`);
+    const templateGameRef = doc(db, "games", gameId);
 
+    try {
+      
       let templateGameData = game;
 
       if (!templateGameData.questions || templateGameData.questions.length === 0) {
@@ -588,7 +605,14 @@ export default function GamePage() {
         });
         if (result.questions) {
           templateGameData.questions = result.questions;
-          await updateDoc(templateGameRef, { questions: result.questions });
+          updateDoc(templateGameRef, { questions: result.questions }).catch((serverError) => {
+              const permissionError = new FirestorePermissionError({
+                  path: templateGameRef.path,
+                  operation: 'update',
+                  requestResourceData: { questions: result.questions },
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          });
         } else {
           throw new Error("AI failed to generate questions.");
         }
@@ -639,17 +663,27 @@ export default function GamePage() {
         gameStartedAt: serverTimestamp() as Timestamp,
       };
 
-      await setDoc(newGameRef, newGame);
+      await setDoc(newGameRef, newGame).catch((serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: newGameRef.path,
+              operation: 'create',
+              requestResourceData: newGame,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          throw serverError; // re-throw to be caught by outer catch
+      });
       
-      router.push(`/game/${newGameId}`);
+      router.push(`/game/${newGameRef.id}`);
 
     } catch (error: any) {
       console.error("Error joining individual challenge: ", error);
-      toast({
-        title: "Could Not Join",
-        description: error.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      if (!(error instanceof FirestorePermissionError)) {
+          toast({
+            title: "Could Not Join",
+            description: error.message || "An unexpected error occurred.",
+            variant: "destructive",
+          });
+      }
       setIsJoining(false);
     }
   };
@@ -693,19 +727,37 @@ export default function GamePage() {
           throw new Error("AI failed to generate questions.");
         }
       }
-      await updateDoc(gameRef, {
+      const updateData = {
         questions: questionsToUse,
         status: "playing",
         gameStartedAt: serverTimestamp(),
+      };
+      await updateDoc(gameRef, updateData).catch((serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: gameRef.path,
+              operation: 'update',
+              requestResourceData: updateData,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+          throw serverError;
       });
     } catch (error) {
       console.error(error);
-      toast({
-        title: "Error Starting Game",
-        description: "Could not prepare questions.",
-        variant: "destructive",
+      if (!(error instanceof FirestorePermissionError)) {
+        toast({
+            title: "Error Starting Game",
+            description: "Could not prepare questions.",
+            variant: "destructive",
+        });
+      }
+      updateDoc(gameRef, { status: "lobby" }).catch((serverError) => {
+          const permissionError = new FirestorePermissionError({
+              path: gameRef.path,
+              operation: 'update',
+              requestResourceData: { status: 'lobby' },
+          });
+          errorEmitter.emit('permission-error', permissionError);
       });
-      await updateDoc(gameRef, { status: "lobby" });
     }
   };
 
@@ -745,99 +797,24 @@ export default function GamePage() {
         ];
 
         if (isCorrect) {
-          playerToUpdate.coloringCredits += 1;
-        } else {
-           if (currentGame.sessionType === "individual" || currentGame.parentSessionId) {
-              const playerGridSquares = currentGame.grid
-                .map((sq, i) => ({ ...sq, originalIndex: i }))
-                .filter((sq) => sq.coloredBy === playerToUpdate.teamName);
-
-              if (playerGridSquares.length > 0) {
-                const randomIndex = Math.floor(
-                  Math.random() * playerGridSquares.length
-                );
-                const hexToClear = playerGridSquares[randomIndex];
-                currentGame.grid[hexToClear.originalIndex].coloredBy =
-                  null;
-                transaction.update(gameRef, { grid: currentGame.grid });
-              }
-           }
+          updatedTeams[teamIndex].score += 1;
         }
         transaction.update(gameRef, { teams: updatedTeams });
       });
     } catch (error) {
       console.error("Error handling answer:", error);
+      const gameRef = doc(db, "games", gameId);
+      const permissionError = new FirestorePermissionError({
+        path: gameRef.path,
+        operation: 'update',
+        requestResourceData: { teams: "..." } // Cannot get full data in transaction error
+      });
+      errorEmitter.emit('permission-error', permissionError);
     }
   };
 
   const handleNextQuestion = () =>
     setCurrentQuestion(getNextQuestion());
-
-  const handleColorSquare = async (squareId: number) => {
-    if (!game || !currentPlayer || !authUser) return;
-    try {
-      await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", gameId);
-        const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw new Error("Game does not exist!");
-        const currentGame = gameDoc.data() as Game;
-
-        const playerTeamIndex = currentGame.teams.findIndex(
-          (t) => t.name === currentPlayer.teamName
-        );
-        if (playerTeamIndex === -1)
-          throw new Error("Could not find player's team.");
-        const playerIndex =
-          currentGame.teams[playerTeamIndex].players.findIndex(
-            (p) => p.id === currentPlayer.id
-          );
-        if (playerIndex === -1)
-          throw new Error("Could not find player data.");
-
-        let currentGrid = currentGame.grid;
-        const playerToUpdate = currentGame.teams[playerTeamIndex].players[playerIndex];
-        
-        if (playerToUpdate.coloringCredits <= 0)  throw new Error("You have no coloring credits.");
-
-        const squareIndex = currentGrid.findIndex( (s) => s.id === squareId);
-        if (squareIndex === -1) throw new Error("Square not found.");
-        const squareToColor = currentGrid[squareIndex];
-        const colorerIdentifier = game.sessionType === 'individual' || game.parentSessionId ? playerToUpdate.teamName : playerToUpdate.teamName;
-
-
-        if (squareToColor.coloredBy === colorerIdentifier) return; // Already owned
-
-        if (squareToColor.coloredBy) { // Steal
-            const opponentTeamIndex = currentGame.teams.findIndex(t => t.name === squareToColor.coloredBy);
-            if (opponentTeamIndex !== -1) {
-                currentGame.teams[opponentTeamIndex].score -= 1;
-            }
-        }
-
-        playerToUpdate.coloringCredits -= 1;
-        currentGame.teams[playerTeamIndex].score += 1;
-        squareToColor.coloredBy = colorerIdentifier;
-
-        const isGridFull = currentGrid.every(
-          (s) => s.coloredBy !== null
-        );
-
-        transaction.update(gameRef, {
-          grid: currentGrid,
-          teams: currentGame.teams,
-          status: isGridFull ? "finished" : currentGame.status,
-        });
-      });
-      setView("question");
-    } catch (error: any) {
-      console.error("Failed to color square: ", error);
-      toast({
-        title: "Error Coloring Square",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleSendEmoji = async (emoji: string) => {
     if (!game || !authUser) return;
@@ -850,11 +827,14 @@ export default function GamePage() {
     };
     await updateDoc(gameRef, {
       emojiEvents: arrayUnion(newEmojiEvent),
+    }).catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: gameRef.path,
+            operation: 'update',
+            requestResourceData: { emojiEvents: arrayUnion(newEmojiEvent) },
+        });
+        errorEmitter.emit('permission-error', permissionError);
     });
-  };
-
-  const handleSkipColoring = () => {
-    setView("question");
   };
 
   const renderContent = () => {
@@ -951,25 +931,7 @@ export default function GamePage() {
         
         const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
         
-        if (view === "grid") {
-          return (
-            <ColorGridScreen
-              grid={game.grid}
-              teams={game.teams}
-              onColorSquare={handleColorSquare}
-              teamColoring={playerTeam.color}
-              credits={currentPlayer.coloringCredits}
-              onSkip={handleSkipColoring}
-              sessionType={game.sessionType}
-              playerId={currentPlayer.teamName}
-            />
-          );
-        }
         if (!currentQuestion) {
-           if (currentPlayer.coloringCredits > 0) {
-                setView('grid');
-                return null;
-            }
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
               <h1 className="text-4xl font-bold font-display">

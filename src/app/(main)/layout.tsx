@@ -1,3 +1,5 @@
+
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import MainLayoutClient from './main-layout-client';
 
 export default function MainLayout({
@@ -5,5 +7,10 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <MainLayoutClient>{children}</MainLayoutClient>;
+  return (
+    <MainLayoutClient>
+      {children}
+      <FirebaseErrorListener />
+    </MainLayoutClient>
+  );
 }
