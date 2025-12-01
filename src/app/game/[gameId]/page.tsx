@@ -43,11 +43,11 @@ import GameScreen from "@/components/game/GameScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
 import PreGameCountdown from "@/components/game/PreGameCountdown";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Swords } from "lucide-react";
+import { Loader2, Swords, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
@@ -73,25 +73,25 @@ const IndividualLobby = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!playerName.trim()) {
+    
+    const nameToSubmit = nameField ? playerName : formData[Object.keys(formData)[0]];
+
+    if (!nameToSubmit || !nameToSubmit.trim()) {
       setError("Please fill out your name.");
       return;
     }
-    const otherFields = game.requiredPlayerFields.filter(
-      (f) => f.label.toLowerCase() !== "full name"
-    );
-    const allOtherFieldsFilled = otherFields.every(
-      (field) =>
-        formData[field.id] && formData[field.id].trim() !== ""
-    );
+    const allFieldsFilled = game.requiredPlayerFields.every(field => {
+        if (nameField && field.id === nameField.id) return !!playerName.trim();
+        return formData[field.id] && formData[field.id].trim() !== ""
+    });
 
-    if (!allOtherFieldsFilled) {
-      setError("Please fill out all fields.");
+    if (!allFieldsFilled) {
+      setError("Please fill out all required fields.");
       return;
     }
 
     setError("");
-    onJoin(formData, playerName);
+    onJoin(formData, nameToSubmit);
   };
 
   const handleChange = (fieldId: string, value: string) => {
@@ -102,55 +102,46 @@ const IndividualLobby = ({
     }
   };
 
-  const nameInputId = nameField?.id || 'player-name-field';
-
   return (
-    <div className="flex flex-col items-center justify-center flex-1">
-      <div className="text-center text-white drop-shadow-lg">
+    <div className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto">
+      <div className="text-center text-white drop-shadow-lg mb-8">
         <h1 className="text-5xl font-bold font-display">{game.title}</h1>
         <CardDescription className="mt-2 max-w-xl text-lg text-slate-200">
-          Enter your details to start the challenge. You will have{" "}
-          {Math.floor(game.timer / 60)} minutes to answer questions
-          and capture territory.
+          You have {Math.floor(game.timer / 60)} minutes to prove your knowledge.
         </CardDescription>
       </div>
 
-      <Card className="my-8 w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Your Information</CardTitle>
+      <Card className="w-full">
+        <CardHeader className="text-center items-center">
+            <div className="bg-primary/20 p-4 rounded-full mb-2">
+                <UserIcon className="h-8 w-8 text-primary" />
+            </div>
+          <CardTitle>Enter the Challenge</CardTitle>
+          <CardDescription>Fill in your details below to begin.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {game.requiredPlayerFields
-              .map((field) => (
+            {game.requiredPlayerFields.map((field) => (
                 <div key={field.id} className="space-y-2">
                   <Label htmlFor={field.id}>{field.label}</Label>
                   <Input
                     id={field.id}
                     type={field.type}
                     value={nameField && field.id === nameField.id ? playerName : formData[field.id] || ""}
-                    onChange={(e) =>
-                      handleChange(field.id, e.target.value)
-                    }
+                    onChange={(e) => handleChange(field.id, e.target.value)}
                     required
-                    className="text-lg p-6 w-full"
+                    className="text-lg h-12 w-full"
                   />
                 </div>
               ))}
-            {error && (
-              <p className="text-destructive text-sm">{error}</p>
-            )}
-            <Button
+            {error && <p className="text-destructive text-sm">{error}</p>}
+             <Button
               type="submit"
               size="lg"
               className="w-full"
               disabled={isJoining}
             >
-              {isJoining ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                "Start Challenge"
-              )}
+              {isJoining ? ( <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ) : ( "Start Challenge" )}
             </Button>
           </form>
         </CardContent>
