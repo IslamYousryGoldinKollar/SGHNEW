@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -133,45 +132,78 @@ export default function DisplayPage() {
             style={{
                 clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
                 background: `
-                    repeating-linear-gradient(
+                    linear-gradient(
                         0deg,
-                        #f8fafc 0px,
-                        #f8fafc 15px,
-                        #e2e8f0 15px,
-                        #e2e8f0 35px,
-                        #f1f5f9 35px,
-                        #f1f5f9 50px,
-                        #cbd5e1 50px,
-                        #cbd5e1 70px
+                        #ffffff 0%,
+                        #fafbfc 4%,
+                        #f8f9fb 9%,
+                        #ffffff 15%,
+                        #fafbfc 20%,
+                        #f5f7fa 26%,
+                        #ffffff 32%,
+                        #fafbfc 38%,
+                        #f8f9fb 44%,
+                        #ffffff 50%,
+                        #f5f7fa 56%,
+                        #fafbfc 62%,
+                        #ffffff 68%,
+                        #f8f9fb 74%,
+                        #fafbfc 80%,
+                        #ffffff 86%,
+                        #f5f7fa 92%,
+                        #fafbfc 97%,
+                        #ffffff 100%
                     )
-                `
+                `,
+                boxShadow: 'inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
             }}
         >
-            <div className="absolute top-0 left-0 h-[10px] w-full shadow-inner" style={{backgroundColor: team.color}} />
+            <div 
+                className="absolute top-0 left-0 h-[10px] w-full shadow-inner" 
+                style={{backgroundColor: team.color}} 
+            />
             
             <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                <h2 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h2>
+                <h2 className="text-4xl font-display" style={{ color: team.color }}>
+                    {team.name}
+                </h2>
                 <div className="flex items-center justify-center text-foreground pt-2">
                     <Users className="mr-2 h-5 w-5" /> 
-                    <span className="text-2xl font-semibold drop-shadow-sm">{team.players.length} / {team.capacity}</span>
+                    <span className="text-2xl font-semibold drop-shadow-sm">
+                        {team.players.length} / {team.capacity}
+                    </span>
                 </div>
                 <div className="flex-1 flex flex-col min-h-0 pt-4 w-full">
                     <ScrollArea className="flex-1">
                         <ul className="space-y-2 text-lg text-center pr-4">
                             {team.players.map(p => (
-                                <li key={p.id} className="truncate bg-secondary/30 p-2 rounded-md font-medium">{p.name}</li>
+                                <li 
+                                    key={p.id} 
+                                    className="truncate bg-secondary/30 p-2 rounded-md font-medium"
+                                >
+                                    {p.name}
+                                </li>
                             ))}
-                             {team.players.length === 0 && <li className="text-muted-foreground italic">No players yet...</li>}
+                            {team.players.length === 0 && (
+                                <li className="text-muted-foreground italic">
+                                    No players yet...
+                                </li>
+                            )}
                         </ul>
                     </ScrollArea>
                 </div>
             </div>
 
             <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-48 h-48">
-                 {team.icon ? 
-                    <Image src={team.icon} alt={`${team.name} icon`} fill className="object-contain" /> 
+                {team.icon ? 
+                    <Image 
+                        src={team.icon} 
+                        alt={`${team.name} icon`} 
+                        fill 
+                        className="object-contain" 
+                    /> 
                     : <Trophy className="w-16 h-16" style={{color: team.color}} />
-                 }
+                }
             </div>
         </div>
     );
@@ -246,11 +278,11 @@ export default function DisplayPage() {
 
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
-                 <div className="absolute left-8 top-8 z-10">
+                 <div className="absolute left-1/2 -translate-x-1/2 top-0 z-10">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
 
-                <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10">
+                <div className="absolute top-8 left-8 z-10">
                    {teamLeft && <TeamScorePod team={teamLeft} />}
                 </div>
                 
