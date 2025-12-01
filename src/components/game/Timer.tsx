@@ -47,8 +47,8 @@ export default function Timer({ duration, onTimeout, gameStartedAt }: TimerProps
   const timeColor = timeLeft <= 10 ? "text-red-500" : timeLeft <= 30 ? "text-yellow-400" : "text-white";
 
   return (
-    <div className="text-center backdrop-blur-sm p-2">
-      <p className={`text-6xl font-bold font-display transition-colors duration-500 drop-shadow-2xl ${timeColor}`}>
+    <div className="text-center backdrop-blur-sm p-1 md:p-2">
+      <p className={`text-4xl md:text-6xl font-bold font-display transition-colors duration-500 drop-shadow-2xl ${timeColor}`}>
         {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
       </p>
     </div>

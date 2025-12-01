@@ -34,33 +34,82 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
     onJoinTeam(playerName.trim(), playerId, teamName);
   }
 
-  const TeamCard = ({ team }: { team: Team }) => (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between font-display">
-          <span>{team.name}</span>
-          <span className="flex items-center text-sm text-muted-foreground">
-            <Users className="mr-2 h-4 w-4" /> {team.players.length} / {team.capacity}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 space-y-2">
-        <ScrollArea className="h-32">
-            {team.players.length > 0 ? (
-                <ul className="space-y-1 text-sm text-muted-foreground pr-4">
-                {team.players.map((p) => (
-                    <li key={p.id} className={`truncate p-1 rounded-sm ${p.id === currentPlayer?.id ? 'font-bold text-primary bg-primary/10' : ''}`}>
-                    {p.name}
-                    </li>
-                ))}
-                </ul>
-            ) : (
-                <p className="text-sm text-muted-foreground">No players have joined this team yet.</p>
-            )}
-        </ScrollArea>
-      </CardContent>
-    </Card>
-  );
+    const TeamCard = ({ team }: { team: Team }) => (
+        <div 
+            className="relative w-full h-full text-card-foreground shadow-xl flex flex-col"
+            style={{
+                clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
+                background: `
+                    linear-gradient(
+                        0deg,
+                        #ffffff 0%,
+                        #f0f2f5 8%,
+                        #ffffff 15%,
+                        #e8ecf0 23%,
+                        #ffffff 30%,
+                        #f0f2f5 38%,
+                        #ffffff 45%,
+                        #f0f2f5 52%,
+                        #e8ecf0 60%,
+                        #ffffff 68%,
+                        #f0f2f5 75%,
+                        #ffffff 83%,
+                        #f0f2f5 90%,
+                        #ffffff 100%
+                    )
+                `,
+                boxShadow: 'inset 10px -10px 40px -10px rgba(0, 0, 0, 0.1), inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
+            }}
+        >
+            <div 
+                className="absolute top-0 left-0 h-[10px] w-full shadow-inner" 
+                style={{backgroundColor: team.color}} 
+            />
+            
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <h2 className="text-4xl font-display" style={{ color: team.color }}>
+                    {team.name}
+                </h2>
+                <div className="flex items-center justify-center text-foreground pt-2">
+                    <Users className="mr-2 h-5 w-5" /> 
+                    <span className="text-2xl font-semibold drop-shadow-sm">
+                        {team.players.length} / {team.capacity}
+                    </span>
+                </div>
+                <div className="flex-1 flex flex-col min-h-0 pt-4 w-full">
+                    <ScrollArea className="flex-1">
+                        <ul className="space-y-2 text-lg text-center pr-4">
+                            {team.players.map(p => (
+                                <li 
+                                    key={p.id} 
+                                    className={`truncate bg-secondary/30 p-2 rounded-md font-medium ${p.id === currentPlayer?.id ? 'ring-2 ring-primary' : ''}`}
+                                >
+                                    {p.name}
+                                </li>
+                            ))}
+                            {team.players.length === 0 && (
+                                <li className="text-muted-foreground italic">
+                                    No players yet...
+                                </li>
+                            )}
+                        </ul>
+                    </ScrollArea>
+                </div>
+            </div>
+
+            <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-32 h-32 md:w-48 md:h-48">
+                {team.icon ? 
+                    <Image 
+                        src={team.icon} 
+                        alt={`${team.name} icon`} 
+                        fill 
+                        className="object-contain" 
+                    /> 
+                    : null
+                }
+            </div>
+        </div>
+    );
 
   if (status === 'starting' && !game.parentSessionId) {
      return (
@@ -74,9 +123,9 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
 
   if (currentPlayer) {
     return (
-      <div className="flex flex-col items-center justify-center text-center flex-1">
+      <div className="flex flex-col items-center justify-center text-center flex-1 w-full">
         <h1 className="text-4xl font-bold font-display">Welcome, {currentPlayer.name}!</h1>
-        <p className="text-muted-foreground mt-2">You are on <span className="font-bold text-primary">{currentPlayer.teamName}</span>.</p>
+        <p className="text-muted-foreground mt-2">You are on <span className="font-bold" style={{color: teams.find(t=>t.name === currentPlayer.teamName)?.color}}>{currentPlayer.teamName}</span>.</p>
         
         <p className="mt-8 text-lg">
             {status === 'starting' 
@@ -87,7 +136,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
             }
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-8 h-[60vh]">
             {teams.map((team) => <TeamCard key={team.name} team={team} />)}
         </div>
 
@@ -137,6 +186,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 onClick={() => handleJoin(team.name)} 
                 disabled={!playerName.trim() || team.players.length >= team.capacity}
                 size="lg"
+                style={{backgroundColor: team.color}}
             >
                 Join {team.name}
             </Button>
@@ -145,7 +195,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
          {!teams || teams.length === 0 && <p className="text-destructive mt-4">No teams have been configured for this game.</p>}
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl h-[60vh]">
         {teams.map(team => <TeamCard key={team.name} team={team} />)}
       </div>
     </div>

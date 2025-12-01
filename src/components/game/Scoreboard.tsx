@@ -12,13 +12,13 @@ export default function Scoreboard({ team }: ScoreboardProps) {
 
   return (
     <Card className="backdrop-blur-sm shadow-lg flex-1" style={{ borderColor: team.color }}>
-      <CardHeader className="p-3 md:p-6">
+      <CardHeader className="p-2 md:p-6">
         <CardTitle className="flex items-center justify-between font-display text-xs">
           <span className="flex items-center gap-2 truncate">
-            {isSinglePlayerTeam ? <User /> : <Shield />} 
-            {isSinglePlayerTeam ? team.players[0].name : team.name}
-            </span>
-          <span className="text-2xl font-bold" style={{ color: team.color }}>{team.score} PTS</span>
+            {isSinglePlayerTeam ? <User className="h-4 w-4" /> : <Shield className="h-4 w-4" />} 
+            <span className="hidden md:inline">{isSinglePlayerTeam ? team.players[0].name : team.name}</span>
+          </span>
+          <span className="text-xl md:text-2xl font-bold" style={{ color: team.color }}>{team.score} PTS</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3 md:p-6 pt-0 hidden sm:block">

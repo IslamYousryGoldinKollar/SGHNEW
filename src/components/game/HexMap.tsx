@@ -60,15 +60,22 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 
     const isClickable = !!onHexClick;
     
-    const mapImage = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20landtt.png?alt=media&token=023703ec-e56c-41f8-a34a-d8dd3b3bf527";
+    const desktopMapImage = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20landtt.png?alt=media&token=023703ec-e56c-41f8-a34a-d8dd3b3bf527";
+    const mobileMapImage = "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fnew%20land.png?alt=media&token=b1d9a1b9-66df-4b4a-97cc-8b9903725bd3";
+
 
     return (
         <div className="relative w-full h-full pointer-events-none">
             <div className="absolute inset-0">
                 <img
-                    src={mapImage}
+                    src={desktopMapImage}
                     alt="Game Map"
-                    className="w-full h-full object-contain"
+                    className="w-full h-full object-contain hidden md:block"
+                />
+                 <img
+                    src={mobileMapImage}
+                    alt="Game Map"
+                    className="w-full h-full object-contain md:hidden"
                 />
             </div>
             <svg viewBox="0 0 2048 2048" ref={ref} className="absolute inset-0 w-full h-full">
@@ -102,5 +109,3 @@ const HexMap = forwardRef<SVGSVGElement, HexMapProps>(({ grid, teams, onHexClick
 HexMap.displayName = 'HexMap';
 
 export default HexMap;
-
-    
