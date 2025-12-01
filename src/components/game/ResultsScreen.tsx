@@ -23,25 +23,16 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
   const router = useRouter();
   
   useEffect(() => {
-    // If it's a finished 1v1 game, redirect to parent lobby
-    if (parentSessionId && gameId) {
+    // If it's a finished individual game, redirect to the parent leaderboard
+    if (individualPlayerId && parentSessionId) {
         const timer = setTimeout(() => {
-           router.push(`/game/${parentSessionId}`);
-        }, 15000); // 15-second delay before redirecting
+           router.push(`/leaderboard/${parentSessionId}?player_id=${individualPlayerId}`);
+        }, 5000); // 5-second delay before redirecting
 
         return () => clearTimeout(timer);
     }
-  }, [parentSessionId, gameId, router]);
-
-  useEffect(() => {
-    if (individualPlayerId && parentSessionId) {
-      const timer = setTimeout(() => {
-        router.push(`/leaderboard/${parentSessionId}?player_id=${individualPlayerId}`);
-      }, 3000); // 3-second delay
-
-      return () => clearTimeout(timer);
-    }
   }, [individualPlayerId, parentSessionId, router]);
+
 
   const { winningTeams, isTie, winReason } = useMemo(() => {
     if (!teams || teams.length === 0) {
@@ -79,7 +70,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
                     <p className="text-muted-foreground">points</p>
                 </CardContent>
             </Card>
-            <p className="text-muted-foreground">Redirecting to the leaderboard...</p>
+            <p className="text-muted-foreground animate-pulse">Redirecting to the leaderboard...</p>
        </div>
     )
   }

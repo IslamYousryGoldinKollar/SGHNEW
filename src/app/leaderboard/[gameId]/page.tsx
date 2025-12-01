@@ -56,7 +56,7 @@ export default function LeaderboardPage() {
                              const player = team.players[0];
                              allPlayers.push({
                                  ...player,
-                                 finalScore: team.score // The score is on the team object
+                                 finalScore: player.score 
                              });
                          }
                      });

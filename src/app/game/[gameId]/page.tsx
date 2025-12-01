@@ -144,6 +144,7 @@ export default function GamePage() {
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const { toast } = useToast();
   const [isJoining, setIsJoining] = useState(false);
+  const [showColorGrid, setShowColorGrid] = useState(false);
 
   const isAdmin = game?.adminId === authUser?.uid;
 
@@ -410,6 +411,18 @@ export default function GamePage() {
       updateDoc(gameRef, { status: "lobby" });
     }
   };
+  
+  const handleNextQuestion = () => {
+      if (!game || !currentPlayer) return;
+
+      const answeredCount = (currentPlayer.answeredQuestions || []).length;
+      if (answeredCount < game.questions.length) {
+          setCurrentQuestion(game.questions[answeredCount]);
+      } else {
+          setCurrentQuestion(null); // No more questions
+      }
+      setShowColorGrid(false);
+  };
 
   const handleAnswer = async (question: Question, answer: string) => {
     if (!game || !currentPlayer) return;
@@ -444,14 +457,28 @@ export default function GamePage() {
           question.question,
         ];
         
+        let scoreChange = 0;
         if (isCorrect) {
-          updatedTeams[teamIndex].score += 1;
-          playerToUpdate.coloringCredits += 1;
+          scoreChange = 1;
+          playerToUpdate.coloringCredits = (playerToUpdate.coloringCredits || 0) + 1;
+        } else {
+           scoreChange = -1;
         }
+        
+        updatedTeams[teamIndex].score += scoreChange;
+        playerToUpdate.score += scoreChange;
+
 
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
         transaction.update(gameRef, { teams: updatedTeams });
       });
+
+      if (isCorrect) {
+          setShowColorGrid(true);
+      } else {
+          setTimeout(handleNextQuestion, 1500);
+      }
+
     } catch (error) {
       console.error(error);
       toast({
@@ -493,6 +520,8 @@ export default function GamePage() {
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
 
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
+      }).then(() => {
+          handleNextQuestion();
       })
   };
 
@@ -571,6 +600,22 @@ export default function GamePage() {
           return (
             <p>Error: Your team or player data could not be found.</p>
           );
+
+        const isIndividualMode = game.sessionType === 'individual' || !!game.parentSessionId;
+
+        if (showColorGrid && playerToUpdate.coloringCredits > 0 && !isIndividualMode) {
+            return (
+                <ColorGridScreen 
+                    grid={game.grid}
+                    teams={game.teams}
+                    onColorSquare={handleColorSquare}
+                    teamColoring={playerTeam.color}
+                    credits={currentPlayer.coloringCredits}
+                    onSkip={handleNextQuestion}
+                />
+            )
+        }
+
         if (!currentQuestion) {
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
@@ -594,7 +639,7 @@ export default function GamePage() {
             duration={game.timer || 300}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
-            isIndividualMode={game.sessionType === 'individual' || !!game.parentSessionId}
+            isIndividualMode={isIndividualMode}
           />
         );
       case "finished":
@@ -603,7 +648,7 @@ export default function GamePage() {
             game={game}
             onPlayAgain={() => {}}
             isAdmin={isAdmin}
-            individualPlayerId={game.sessionType === 'individual' ? currentPlayer?.id : undefined}
+            individualPlayerId={game.parentSessionId ? currentPlayer?.id : undefined}
           />
         );
       default:

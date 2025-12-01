@@ -44,7 +44,7 @@ export default function GameScreen({
   const handleAnswer = (q: Question, a: string) => {
     const isCorrect = q.answer === a;
     onAnswer(q, a);
-    if (isCorrect) {
+    if (isCorrect && !isIndividualMode) {
       setShowColorGrid(true);
     }
   }
@@ -55,7 +55,8 @@ export default function GameScreen({
 
   const handleColorSquareAndProceed = (squareId: number) => {
     onColorSquare(squareId);
-    setShowColorGrid(false);
+    // The logic to proceed to the next question is now handled in the page itself
+    // after the coloring action completes.
   }
 
   if (showColorGrid && currentPlayer.coloringCredits > 0) {
@@ -72,7 +73,7 @@ export default function GameScreen({
   }
 
   return (
-    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative", isIndividualMode && "mobile-grid-background")}>
+    <div className={cn("flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative game-screen", isIndividualMode && "mobile-grid-background")}>
       <div className="lg:col-span-3 order-2 lg:order-1">
         {question ? (
           <QuestionCard 
