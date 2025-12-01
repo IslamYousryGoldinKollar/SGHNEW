@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Users, Swords, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { v4 as uuidv4 } from 'uuid';
+import { ScrollArea } from "../ui/scroll-area";
 
 type LobbyProps = {
   game: Game;
@@ -44,17 +45,19 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
         </CardTitle>
       </CardHeader>
       <CardContent className="flex-1 space-y-2">
-        {team.players.length > 0 ? (
-            <ul className="space-y-1 text-sm text-muted-foreground">
-            {team.players.map((p) => (
-                <li key={p.id} className={`truncate ${p.id === currentPlayer?.id ? 'font-bold text-primary' : ''}`}>
-                {p.name}
-                </li>
-            ))}
-            </ul>
-        ) : (
-            <p className="text-sm text-muted-foreground">No players have joined this team yet.</p>
-        )}
+        <ScrollArea className="h-32">
+            {team.players.length > 0 ? (
+                <ul className="space-y-1 text-sm text-muted-foreground pr-4">
+                {team.players.map((p) => (
+                    <li key={p.id} className={`truncate p-1 rounded-sm ${p.id === currentPlayer?.id ? 'font-bold text-primary bg-primary/10' : ''}`}>
+                    {p.name}
+                    </li>
+                ))}
+                </ul>
+            ) : (
+                <p className="text-sm text-muted-foreground">No players have joined this team yet.</p>
+            )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );
@@ -148,5 +151,3 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
     </div>
   );
 }
-
-    

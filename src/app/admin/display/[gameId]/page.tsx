@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -380,7 +381,7 @@ export default function DisplayPage() {
                     </CardHeader>
                     <CardContent className="flex flex-col items-center">
                          <div className="flex flex-wrap justify-center items-start gap-6 mt-4 w-full">
-                            {winningTeams.map(team => (
+                            {sortedTeams.map(team => (
                                 <div key={team.name} className="p-4 bg-card/10 rounded-lg shadow-lg border-2 flex-1 min-w-[300px]" style={{borderColor: team.color}}>
                                     <p className="text-4xl font-bold font-display" style={{color: team.color}}>{team.name}</p>
                                      <ul className="mt-4 space-y-2 text-left">
@@ -428,7 +429,7 @@ export default function DisplayPage() {
                     {renderStatus()}
                 </div>
                  
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-shrink-0 z-20">
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-shrink-0 z-30">
                     {game.status === 'lobby' && (
                         <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
                             <Play className="mr-4"/> Start Game

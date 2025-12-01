@@ -272,12 +272,22 @@ export default function GamePage() {
     return null;
   }, [game, currentPlayer]);
 
+  const handleNextQuestion = useCallback(() => {
+    setShowColorGrid(false);
+    const nextQ = getNextQuestion();
+    setCurrentQuestion(nextQ);
+  }, [getNextQuestion]);
+  
+
   useEffect(() => {
     if (!game || !currentPlayer || game.status !== 'playing') return;
     if(showColorGrid) return; // Don't fetch a new question if we are showing the grid
-    const nextQ = getNextQuestion();
-    setCurrentQuestion(nextQ);
-  }, [currentPlayer?.answeredQuestions, game, getNextQuestion, game?.status, showColorGrid]);
+    
+    // Set initial question
+    if(!currentQuestion && currentPlayer.answeredQuestions.length === 0){
+        setCurrentQuestion(game.questions[0]);
+    }
+  }, [currentPlayer, game, showColorGrid, currentQuestion]);
 
 
   // Effect for game timeout
@@ -561,6 +571,8 @@ export default function GamePage() {
       question.answer.trim().toLowerCase() ===
       answer.trim().toLowerCase();
 
+    let newPlayerState: Player | null = null;
+
     try {
       await runTransaction(db, async (transaction) => {
         const gameRef = doc(db, "games", gameId);
@@ -592,7 +604,13 @@ export default function GamePage() {
           playerToUpdate.coloringCredits += 1;
         }
         transaction.update(gameRef, { teams: updatedTeams });
+        newPlayerState = playerToUpdate; // Store the new state
       });
+      
+      // Manually update local player state to get next question correctly
+      if(newPlayerState) {
+        setCurrentPlayer(newPlayerState);
+      }
 
       if (isCorrect) {
           setShowColorGrid(true);
@@ -656,11 +674,6 @@ export default function GamePage() {
           errorEmitter.emit('permission-error', permissionError);
     }
   };
-
-  const handleNextQuestion = () => {
-    setShowColorGrid(false);
-    setCurrentQuestion(getNextQuestion());
-  }
 
   const renderContent = () => {
     if (loading) {
@@ -757,6 +770,7 @@ export default function GamePage() {
         }
 
         if (!currentQuestion) {
+          handleNextQuestion();
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
               <h1 className="text-4xl font-bold font-display">
