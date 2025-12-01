@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -11,10 +10,9 @@ import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
 type QuestionCardProps = {
   question: Question;
   onAnswer: (question: Question, answer: string) => void;
-  onNextQuestion: () => void;
 };
 
-export default function QuestionCard({ question, onAnswer, onNextQuestion }: QuestionCardProps) {
+export default function QuestionCard({ question, onAnswer }: QuestionCardProps) {
   const [feedback, setFeedback] = useState<"idle" | "correct" | "incorrect">("idle");
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,21 +35,6 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     }
   }, [question]);
 
-  // Automatically move to the next question after a delay
-  useEffect(() => {
-    if (feedback !== 'idle') {
-      nextQuestionTimer.current = setTimeout(() => {
-        onNextQuestion();
-      }, 2000); // 2-second delay
-    }
-    return () => {
-      if (nextQuestionTimer.current) {
-        clearTimeout(nextQuestionTimer.current);
-      }
-    };
-  }, [feedback, onNextQuestion]);
-
-
   const handleAnswerClick = (option: string) => {
     if (isSubmitting) return;
     
@@ -63,14 +46,6 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
     
     onAnswer(question, option);
   };
-  
-  const handleNextClick = () => {
-    if (nextQuestionTimer.current) {
-      clearTimeout(nextQuestionTimer.current);
-    }
-    onNextQuestion();
-  }
-
 
   const getButtonClass = (option: string) => {
     if (feedback === 'idle') return "border-primary/20";
@@ -124,9 +99,7 @@ export default function QuestionCard({ question, onAnswer, onNextQuestion }: Que
                   <p className="text-lg text-muted-foreground">The correct answer was: <span className="font-bold text-foreground">{question.answer}</span></p>
                </div>
              )}
-              <Button size="lg" onClick={handleNextClick} className="mt-8">
-                  Next Question <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
+             <p className="text-sm text-muted-foreground animate-pulse">Waiting for next question...</p>
            </div>
         )}
     </Card>

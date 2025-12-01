@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -14,44 +13,31 @@ import { generateQuestionsAction } from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
 import {
   doc,
-  onSnapshot,
   updateDoc,
-  getDoc,
   serverTimestamp,
   runTransaction,
-  collection,
-  addDoc,
   Timestamp,
-  query,
-  where,
-  limit,
-  writeBatch,
-  deleteDoc,
   setDoc,
-  orderBy,
-  getDocs,
-  arrayUnion,
 } from "firebase/firestore";
-import {
-  signInAnonymously,
-  onAuthStateChanged,
-  type User,
-} from "firebase/auth";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 import Lobby from "@/components/game/Lobby";
 import GameScreen from "@/components/game/GameScreen";
 import ResultsScreen from "@/components/game/ResultsScreen";
 import PreGameCountdown from "@/components/game/PreGameCountdown";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Swords, User as UserIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
 import { errorEmitter } from "@/firebase/error-emitter";
 import { FirestorePermissionError } from "@/firebase/errors";
 import ColorGridScreen from "@/components/game/ColorGridScreen";
+import { useGameState } from "@/hooks/useGameState";
+import { GameService } from "@/lib/gameService";
 
 const generatePin = () =>
   Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -105,13 +91,12 @@ const IndividualLobby = ({
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto">
-      <div className="text-center mb-8">
+       <div className="text-center mb-8">
         <h1 className="text-5xl font-bold font-display text-white drop-shadow-lg">{game.title}</h1>
         <CardDescription className="mt-2 max-w-xl text-lg text-slate-200">
           You have {Math.floor(game.timer / 60)} minutes to prove your knowledge.
         </CardDescription>
       </div>
-
       <Card className="w-full">
         <CardHeader className="text-center items-center">
             <div className="bg-primary/20 p-4 rounded-full mb-2">
@@ -155,100 +140,48 @@ export default function GamePage() {
   const params = useParams();
   const router = useRouter();
   const gameId = params.gameId as string;
-  const [game, setGame] = useState<Game | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [authUser, setAuthUser] = useState<User | null>(null);
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [authUser, authLoading] = useAuthState(auth);
+  
+  const { game, loading, currentPlayer, isAdmin, currentQuestion, subscribeToGame } = useGameState(gameId);
+
   const { toast } = useToast();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [currentQuestion, setCurrentQuestion] =
-    useState<Question | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [showColorGrid, setShowColorGrid] = useState(false);
 
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setAuthUser(user);
-      } else {
-        signInAnonymously(auth).catch((error) => {
-          console.error("Anonymous sign-in error", error);
-          toast({
-            title: "Authentication Error",
-            description: "Could not sign in.",
-            variant: "destructive",
-          });
-        });
-      }
-    });
-    return () => unsubAuth();
-  }, [toast]);
-
-  // Main game state listener
+    if (gameId) {
+      const unsubscribe = subscribeToGame(gameId);
+      return () => unsubscribe();
+    }
+  }, [gameId, subscribeToGame]);
+  
+  // Effect to manage game state transitions and redirects
   useEffect(() => {
-    if (!gameId || !authUser) return;
-    setLoading(true);
-    const gameRef = doc(db, "games", gameId.toUpperCase());
+    if (!game || !authUser) return;
 
-    const unsubGame = onSnapshot(gameRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const gameData = {
-          id: docSnap.id,
-          ...docSnap.data(),
-        } as Game;
-        
-        setGame(gameData);
-
-        const isUserAdmin = gameData.adminId === authUser.uid;
-        setIsAdmin(isUserAdmin);
-
-        const player =
-          gameData.teams
-            ?.flatMap((t) => t.players)
-            .find((p) => p.id === authUser.uid) || null;
-            
-        setCurrentPlayer(player);
-        
-        if (gameData.status === 'playing' && !player && gameData.parentSessionId) {
-             toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
-             router.replace(`/game/${gameData.parentSessionId}`);
-             return;
-        }
-        
-        if (gameData.status === 'starting' && gameData.gameStartedAt && (gameData.gameStartedAt.toMillis() < Date.now())) {
-            if (isUserAdmin || gameData.sessionType === 'individual' || gameData.parentSessionId) {
-                 updateDoc(gameRef, { status: "playing" }).catch((serverError) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: gameRef.path,
-                        operation: 'update',
-                        requestResourceData: { status: 'playing' },
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
+    if (game.status === 'playing' && !currentPlayer && game.parentSessionId) {
+        toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
+        router.replace(`/game/${game.parentSessionId}`);
+        return;
+    }
+    
+    if (game.status === 'starting' && game.gameStartedAt && (game.gameStartedAt.toMillis() < Date.now())) {
+        if (isAdmin || game.sessionType === 'individual' || game.parentSessionId) {
+             const gameRef = doc(db, "games", gameId);
+             updateDoc(gameRef, { status: "playing" }).catch((serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: gameRef.path,
+                    operation: 'update',
+                    requestResourceData: { status: 'playing' },
                 });
-            }
+                errorEmitter.emit('permission-error', permissionError);
+            });
         }
-
-
-        setLoading(false);
-      } else {
-        setGame(null);
-        setCurrentPlayer(null);
-        setLoading(false);
-      }
-    }, (error) => {
-        const permissionError = new FirestorePermissionError({
-            path: gameRef.path,
-            operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        setLoading(false);
-    });
-
-    return () => unsubGame();
-  }, [gameId, authUser, toast, router, isAdmin]);
+    }
+  }, [game, currentPlayer, authUser, isAdmin, gameId, router, toast]);
 
   const handleTimeout = useCallback(async () => {
-    if (!game) return;
+    if (!game || loading) return;
     const is1v1 = !!game.parentSessionId;
     if (game.status === "playing" && (isAdmin || game.sessionType === 'individual' || is1v1)) {
       const gameRef = doc(db, "games", gameId);
@@ -261,36 +194,8 @@ export default function GamePage() {
         errorEmitter.emit('permission-error', permissionError);
       });
     }
-  }, [game, isAdmin, gameId]);
-  
-  const getNextQuestion = useCallback(() => {
-    if (!game || !currentPlayer) return null;
-    const answeredCount = currentPlayer.answeredQuestions?.length || 0;
-    if (answeredCount < game.questions.length) {
-      return game.questions[answeredCount];
-    }
-    return null;
-  }, [game, currentPlayer]);
+  }, [game, isAdmin, gameId, loading]);
 
-  const handleNextQuestion = useCallback(() => {
-    setShowColorGrid(false);
-    const nextQ = getNextQuestion();
-    setCurrentQuestion(nextQ);
-  }, [getNextQuestion]);
-  
-
-  useEffect(() => {
-    if (!game || !currentPlayer || game.status !== 'playing') return;
-    if(showColorGrid) return; // Don't fetch a new question if we are showing the grid
-    
-    // Set initial question
-    if(!currentQuestion && currentPlayer.answeredQuestions.length === 0){
-        setCurrentQuestion(game.questions[0]);
-    }
-  }, [currentPlayer, game, showColorGrid, currentQuestion]);
-
-
-  // Effect for game timeout
   useEffect(() => {
     if (game?.status === 'playing' && game.gameStartedAt && game.timer) {
       const gameStartTime = game.gameStartedAt.toMillis();
@@ -306,82 +211,16 @@ export default function GamePage() {
     }
   }, [game?.status, game?.gameStartedAt, game?.timer, handleTimeout]);
 
-
   const handleJoinTeam = async (
     playerName: string,
     playerId: string,
     teamName: string
   ) => {
-    if (!playerName.trim()) {
-      toast({
-        title: "Invalid Name",
-        description: "Please enter your name.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (!game || !authUser) return;
-
+    if (!authUser) return;
     try {
-      await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", gameId);
-        const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw new Error("Game does not exist!");
-        const currentGame = gameDoc.data() as Game;
-
-        if (currentGame.sessionType !== "team")
-          throw new Error("This is not a team game.");
-
-        const isAlreadyInAnyTeam = currentGame.teams.some((t) =>
-          t.players.some((p) => p.id === authUser.uid)
-        );
-        if (isAlreadyInAnyTeam) {
-          toast({
-            title: "Already in a team",
-            description: "You have already joined a team.",
-            variant: "destructive",
-          });
-          return;
-        }
-
-        const teamIndex = currentGame.teams.findIndex(
-          (t) => t.name === teamName
-        );
-        if (teamIndex === -1) throw new Error("Team not found!");
-        if (
-          currentGame.teams[teamIndex].players.length >=
-          currentGame.teams[teamIndex].capacity
-        )
-          throw new Error(`Sorry, ${teamName} is full.`);
-
-        const newPlayer: Player = {
-          id: authUser.uid,
-          playerId,
-          name: playerName,
-          teamName,
-          answeredQuestions: [],
-          coloringCredits: 0,
-          score: 0,
-        };
-        const updatedTeams = [...currentGame.teams];
-        updatedTeams[teamIndex].players.push(newPlayer);
-        transaction.update(gameRef, { teams: updatedTeams });
-      });
+      await GameService.joinTeam(gameId, playerName, playerId, teamName, authUser.uid);
     } catch (error: any) {
-      console.error("Error joining team: ", error);
-      const gameRef = doc(db, "games", gameId);
-      const permissionError = new FirestorePermissionError({
-        path: gameRef.path,
-        operation: 'update',
-        requestResourceData: { teams: "..." } // Cannot get full data in transaction error
-      });
-      errorEmitter.emit('permission-error', permissionError);
-      toast({
-        title: "Could Not Join",
-        description:
-          error.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+       toast({ title: "Could Not Join", description: error.message, variant: "destructive" });
     }
   };
 
@@ -396,7 +235,6 @@ export default function GamePage() {
     const templateGameRef = doc(db, "games", gameId);
 
     try {
-      
       let templateGameData = game;
 
       if (!templateGameData.questions || templateGameData.questions.length === 0) {
@@ -492,24 +330,11 @@ export default function GamePage() {
 
   const handleStartGame = async () => {
     if (!game || !isAdmin) {
-      toast({
-        title: "Not Authorized",
-        description: "Only the admin can start.",
-        variant: "destructive",
-      });
+      toast({ title: "Not Authorized", description: "Only the admin can start.", variant: "destructive" });
       return;
     }
-    if (
-      game.teams.reduce(
-        (sum, t) => sum + t.players.length,
-        0
-      ) === 0
-    ) {
-      toast({
-        title: "No players!",
-        description: "At least one player must join.",
-        variant: "destructive",
-      });
+    if (game.teams.reduce((sum, t) => sum + t.players.length, 0) === 0) {
+      toast({ title: "No players!", description: "At least one player must join.", variant: "destructive" });
       return;
     }
 
@@ -533,150 +358,56 @@ export default function GamePage() {
         status: "playing",
         gameStartedAt: serverTimestamp(),
       };
-      await updateDoc(gameRef, updateData).catch((serverError) => {
-          const permissionError = new FirestorePermissionError({
-              path: gameRef.path,
-              operation: 'update',
-              requestResourceData: updateData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-          throw serverError;
-      });
+      await updateDoc(gameRef, updateData);
     } catch (error) {
       console.error(error);
-      if (!(error instanceof FirestorePermissionError)) {
-        toast({
-            title: "Error Starting Game",
-            description: "Could not prepare questions.",
-            variant: "destructive",
-        });
-      }
-      updateDoc(gameRef, { status: "lobby" }).catch((serverError) => {
-          const permissionError = new FirestorePermissionError({
-              path: gameRef.path,
-              operation: 'update',
-              requestResourceData: { status: 'lobby' },
-          });
-          errorEmitter.emit('permission-error', permissionError);
-      });
+      toast({ title: "Error Starting Game", description: "Could not prepare questions.", variant: "destructive" });
+      updateDoc(gameRef, { status: "lobby" });
     }
   };
 
-  const handleAnswer = async (
-    question: Question,
-    answer: string
-  ) => {
-    if (!game || !currentPlayer || !authUser) return;
-    const isCorrect =
-      question.answer.trim().toLowerCase() ===
-      answer.trim().toLowerCase();
-
-    let newPlayerState: Player | null = null;
+ const handleAnswer = async (question: Question, answer: string) => {
+    if (!game || !currentPlayer) return;
+    const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
 
     try {
-      await runTransaction(db, async (transaction) => {
-        const gameRef = doc(db, "games", gameId);
-        const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw new Error("Game does not exist!");
-        const currentGame = gameDoc.data() as Game;
-
-        const teamIndex = currentGame.teams.findIndex(
-          (t) => t.name === currentPlayer.teamName
-        );
-        if (teamIndex === -1) return;
-        const playerIndex =
-          currentGame.teams[teamIndex].players.findIndex(
-            (p) => p.id === currentPlayer.id
-          );
-        if (playerIndex === -1) return;
-
-        const updatedTeams = [...currentGame.teams];
-        const playerToUpdate =
-          updatedTeams[teamIndex].players[playerIndex];
-        
-        playerToUpdate.answeredQuestions = [
-          ...(playerToUpdate.answeredQuestions || []),
-          question.question,
-        ];
-
-        if (isCorrect) {
-          updatedTeams[teamIndex].score += 1;
-          playerToUpdate.coloringCredits += 1;
-        }
-        transaction.update(gameRef, { teams: updatedTeams });
-        newPlayerState = playerToUpdate; // Store the new state
-      });
-      
-      // Manually update local player state to get next question correctly
-      if(newPlayerState) {
-        setCurrentPlayer(newPlayerState);
-      }
-
+      const newPlayerState = await GameService.submitAnswer(gameId, currentPlayer, question, isCorrect);
       if (isCorrect) {
           setShowColorGrid(true);
       } else {
+          // If the answer is wrong, we don't show the color grid, so we immediately want to "skip" to the next question.
           handleNextQuestion();
       }
-
-    } catch (error) {
-      console.error("Error handling answer:", error);
-      const gameRef = doc(db, "games", gameId);
-      const permissionError = new FirestorePermissionError({
-        path: gameRef.path,
+    } catch (error: any) {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: `games/${gameId}`,
         operation: 'update',
-        requestResourceData: { teams: "..." } // Cannot get full data in transaction error
-      });
-      errorEmitter.emit('permission-error', permissionError);
+        requestResourceData: { teams: "..." }
+      }));
+      toast({ title: "Error", description: "Could not submit your answer.", variant: "destructive" });
     }
-  };
+};
+
+const handleNextQuestion = () => {
+    setShowColorGrid(false);
+};
 
   const handleColorSquare = async (squareId: number) => {
-    if (!game || !currentPlayer) return;
+    if (!game || !currentPlayer || currentPlayer.coloringCredits <= 0) return;
 
     try {
-        await runTransaction(db, async (transaction) => {
-            const gameRef = doc(db, 'games', gameId);
-            const gameDoc = await transaction.get(gameRef);
-
-            if (!gameDoc.exists()) throw new Error("Game does not exist!");
-            const currentGame = gameDoc.data() as Game;
-            
-            const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
-            if (teamIndex === -1) return;
-            const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
-            if (playerIndex === -1) return;
-            
-            const updatedTeams = [...currentGame.teams];
-            const playerToUpdate = updatedTeams[teamIndex].players[playerIndex];
-
-            if (playerToUpdate.coloringCredits <= 0) return;
-
-            const gridIndex = currentGame.grid.findIndex(s => s.id === squareId);
-            if (gridIndex === -1) return;
-            
-            const updatedGrid = [...currentGame.grid];
-            if (updatedGrid[gridIndex].coloredBy) {
-                // If it's already colored, don't use a credit
-            } else {
-                updatedGrid[gridIndex].coloredBy = game.sessionType === 'individual' || game.parentSessionId ? playerToUpdate.id : playerToUpdate.teamName;
-                playerToUpdate.coloringCredits -= 1;
-            }
-            
-            transaction.update(gameRef, { teams: updatedTeams, grid: updatedGrid });
-        });
-    } catch (error) {
-        console.error("Error coloring square:", error);
-         const gameRef = doc(db, "games", gameId);
-          const permissionError = new FirestorePermissionError({
-            path: gameRef.path,
+        await GameService.colorSquare(gameId, currentPlayer, squareId);
+    } catch (error: any) {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `games/${gameId}`,
             operation: 'update',
-          });
-          errorEmitter.emit('permission-error', permissionError);
+        }));
+        toast({ title: "Error", description: "Could not claim the tile.", variant: "destructive" });
     }
   };
 
   const renderContent = () => {
-    if (loading) {
+    if (loading || authLoading) {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -707,8 +438,11 @@ export default function GamePage() {
       );
     }
 
-    if (!currentPlayer && game.parentSessionId) {
-        return <div className="flex items-center justify-center h-full">Error: Could not find player data in this game.</div>
+    if (!currentPlayer && (game.sessionType === 'team' || game.parentSessionId)) {
+        if(game.status !== 'lobby') {
+            return <div className="text-center p-8">This game is already in progress. You cannot join now.</div>;
+        }
+        // If it's lobby, the Lobby component will handle the join UI
     }
     
     if(game.parentSessionId && game.status === 'lobby' && currentPlayer) {
@@ -770,7 +504,6 @@ export default function GamePage() {
         }
 
         if (!currentQuestion) {
-          handleNextQuestion();
           return (
             <div className="flex flex-col items-center justify-center flex-1 text-center">
               <h1 className="text-4xl font-bold font-display">
@@ -788,7 +521,6 @@ export default function GamePage() {
             currentPlayer={currentPlayer}
             question={currentQuestion}
             onAnswer={handleAnswer}
-            onNextQuestion={handleNextQuestion}
             duration={game.timer || 300}
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}

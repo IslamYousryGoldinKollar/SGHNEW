@@ -1,8 +1,60 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    
+    // ============================================================================
+    // GAMES COLLECTION - Public read, controlled write
+    // ============================================================================
+    match /games/{gameId} {
+      // Anyone can read game data (public trivia games)
+      allow read: if true;
+      
+      // Only authenticated users can create games
+      allow create: if request.auth != null 
+        && request.resource.data.adminId == request.auth.uid
+        && request.resource.data.status == "lobby";
+      
+      // Controlled updates - admins can update games, players can update team data
+      allow update: if request.auth != null 
+        && (
+          // Game admin can update most fields
+          (resource.data.adminId == request.auth.uid
+           && request.resource.data.adminId == resource.data.adminId
+           && request.resource.data.id == resource.data.id) ||
+          
+          // Players can join a team
+          (request.resource.data.teams.size() > resource.data.teams.size())
+        );
+      
+      // Only admins can delete games
+      allow delete: if request.auth != null 
+        && resource.data.adminId == request.auth.uid;
+    }
+    
+    // ============================================================================
+    // ADMINS COLLECTION - Restricted access
+    // ============================================================================
+    match /admins/{adminId} {
+      // Users can read their own admin record
+      allow read: if request.auth != null 
+        && request.auth.uid == adminId;
+      
+      // Super admins can read all admin records
+      allow read: if request.auth != null 
+        && request.auth.uid in ['eEPycxZHbrbUaomlMmppQiHJETs2'];
+      
+      // New admin signup - limited creation
+      allow create: if request.auth != null 
+        && request.auth.uid == adminId
+        && request.resource.data.status == "pending";
+      
+      // Super admins can update any admin record
+      allow update: if request.auth != null
+        && request.auth.uid in ['eEPycxZHbrbUaomlMmppQiHJETs2'];
+      
+      // Only super admins can delete admin records
+      allow delete: if request.auth != null 
+        && request.auth.uid in ['eEPycxZHbrbUaomlMmppQiHJETs2'];
     }
   }
 }

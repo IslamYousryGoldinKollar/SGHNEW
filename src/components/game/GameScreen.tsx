@@ -11,7 +11,6 @@ type GameScreenProps = {
   currentPlayer: Player;
   question: Question;
   onAnswer: (question: Question, answer: string) => void;
-  onNextQuestion: () => void;
   duration: number;
   onTimeout: () => void;
   gameStartedAt: Timestamp | null | undefined;
@@ -23,7 +22,6 @@ export default function GameScreen({
   currentPlayer,
   question,
   onAnswer,
-  onNextQuestion,
   duration,
   onTimeout,
   gameStartedAt,
@@ -45,7 +43,6 @@ export default function GameScreen({
             key={question.question} 
             question={question} 
             onAnswer={onAnswer} 
-            onNextQuestion={onNextQuestion}
           />
         ) : (
           <div className="flex items-center justify-center h-full">
