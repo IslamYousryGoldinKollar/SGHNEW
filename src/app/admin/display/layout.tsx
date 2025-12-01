@@ -33,7 +33,7 @@ export default function DisplayLayout({
             loop
             muted
             playsInline
-            className="absolute top-0 left-0 w-full h-full object-cover z-0"
+            className="absolute top-0 left-0 w-full h-full object-fill z-0"
         >
           <source 
             src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Floop-1.mp4?alt=media&token=5fc4b71c-bf5b-4c47-ba8e-ee6647cfab5a"
