@@ -73,14 +73,40 @@
 }
 
 @layer utilities {
-    .mobile-grid-background {
-        background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
-        background-size: cover;
-        background-position: center;
-    }
     .game-screen {
         background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
         background-size: cover;
         background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+        padding: 1rem;
+    }
+    
+    .mobile-grid-background {
+        background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        min-height: 100vh;
+        padding: 1rem;
+    }
+    
+    /* Enhanced desktop styling for question cards */
+    .game-screen .question-card {
+        backdrop-filter: blur(8px);
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Individual game specific improvements */
+    .game-screen .individual-game-sidebar {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 0.8rem;
+        padding: 1.5rem;
     }
 }

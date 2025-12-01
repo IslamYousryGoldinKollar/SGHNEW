@@ -151,41 +151,58 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!gameId) return;
+
     const gameRef = doc(db, "games", gameId.toUpperCase());
-    const unsubscribe = onSnapshot(gameRef, (doc) => {
-      if (doc.exists()) {
-        const gameData = { id: doc.id, ...doc.data() } as Game;
-        setGame(gameData);
+    const individualGameRef = doc(db, "individual_games", gameId.toUpperCase());
+    let foundGame = false;
 
-        if (authUser) {
-          const player =
-            gameData.teams
-              ?.flatMap((t) => t.players)
-              .find((p) => p.id === authUser.uid) || null;
-          setCurrentPlayer(player);
+    const handleDocSnapshot = (doc: any) => {
+        if (doc.exists()) {
+            foundGame = true;
+            const gameData = { id: doc.id, ...doc.data() } as Game;
+            setGame(gameData);
 
-          if (player && gameData.status === "playing") {
-            const answeredCount = player.answeredQuestions?.length || 0;
-            if (answeredCount < gameData.questions.length) {
-              setCurrentQuestion(gameData.questions[answeredCount]);
-            } else {
-              setCurrentQuestion(null);
+            if (authUser) {
+                const player =
+                    gameData.teams
+                        ?.flatMap((t) => t.players)
+                        .find((p) => p.id === authUser.uid) || null;
+                setCurrentPlayer(player);
+
+                if (player && gameData.status === "playing") {
+                    const answeredCount = player.answeredQuestions?.length || 0;
+                    if (answeredCount < gameData.questions.length) {
+                        setCurrentQuestion(gameData.questions[answeredCount]);
+                    } else {
+                        setCurrentQuestion(null);
+                    }
+                }
             }
-          }
+            setLoading(false);
         }
-      } else {
-        setGame(null);
-        toast({
-          title: "Session Not Found",
-          description: "This game session does not exist or has expired.",
-          variant: "destructive",
-        });
-        router.push("/");
-      }
-      setLoading(false);
-    });
+    };
+    
+    const unsubscribeGames = onSnapshot(gameRef, handleDocSnapshot);
+    const unsubscribeIndividualGames = onSnapshot(individualGameRef, handleDocSnapshot);
 
-    return () => unsubscribe();
+    const timeout = setTimeout(() => {
+        if (!foundGame) {
+            setGame(null);
+            toast({
+                title: "Session Not Found",
+                description: "This game session does not exist or has expired.",
+                variant: "destructive",
+            });
+            router.push("/");
+            setLoading(false);
+        }
+    }, 2000);
+
+    return () => {
+        unsubscribeGames();
+        unsubscribeIndividualGames();
+        clearTimeout(timeout);
+    };
   }, [gameId, authUser, router, toast]);
   
   // Effect to manage game state transitions and redirects
@@ -434,8 +451,7 @@ export default function GamePage() {
     const isCorrect = question.answer === answer;
     let showGrid = false;
 
-    try {
-      await runTransaction(db, async (transaction) => {
+    runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game not found");
 
@@ -479,25 +495,25 @@ export default function GamePage() {
 
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
         transaction.update(gameRef, { teams: updatedTeams });
-      });
-
-      // UI updates after successful transaction
-      if (showGrid) {
-        setShowColorGrid(true);
-      } else {
+      })
+      .then(() => {
+        // UI updates after successful transaction
+        if (showGrid) {
+          setShowColorGrid(true);
+        } else {
+          setTimeout(handleNextQuestion, 1500);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+        toast({
+          title: "Error",
+          description: "Could not submit answer.",
+          variant: "destructive",
+        });
+        // If error, force next question after delay to avoid getting stuck
         setTimeout(handleNextQuestion, 1500);
-      }
-
-    } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: "Could not submit answer.",
-        variant: "destructive",
       });
-      // If error, force next question after delay to avoid getting stuck
-      setTimeout(handleNextQuestion, 1500);
-    }
   };
 
   const handleColorSquare = (squareId: number) => {
