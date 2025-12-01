@@ -150,7 +150,7 @@ export default function DisplayPage() {
                         #ffffff 100%
                     )
                 `,
-                boxShadow: 'inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
+                boxShadow: 'inset 10px -10px 40px -10px rgba(0, 0, 0, 0.1), inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
             }}
         >
             <div 
