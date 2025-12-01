@@ -246,22 +246,23 @@ export default function DisplayPage() {
 
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
-                <div className="absolute left-8 top-8 z-10">
-                    {teamLeft && <TeamScorePod team={teamLeft} />}
-                </div>
-
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                 <div className="absolute left-8 top-8 z-10">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
+
+                <div className="absolute top-8 left-1/2 -translate-x-1/2 z-10">
+                   {teamLeft && <TeamScorePod team={teamLeft} />}
+                </div>
+                
+                <div className="absolute top-8 right-8 z-10">
+                   {teamRight && <TeamScorePod team={teamRight} />}
+                </div>
+
 
                 <div className="w-auto h-full flex items-center justify-center">
                     <div className="w-auto h-full aspect-[1065/666] relative">
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} />
                     </div>
-                </div>
-
-                <div className="absolute right-8 top-8 z-10">
-                    {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
         )
@@ -389,5 +390,7 @@ export default function DisplayPage() {
     );
 
     }
+
+    
 
     
