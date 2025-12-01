@@ -28,7 +28,15 @@ export default function DisplayLayout({
 
   return (
     <div className="bg-background text-foreground h-screen w-screen overflow-hidden relative">
-        <div className="absolute inset-0 bg-cover bg-center" style={{backgroundImage: "url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground.png?alt=media&token=11c26d82-783e-40d0-aa51-5cbc533d5788')"}} />
+        <video 
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+            src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Floop-1.mp4?alt=media&token=5fc4b71c-bf5b-4c47-ba8e-ee6647cfab5a"
+        />
+        <div className="absolute inset-0 bg-black/30" />
         <Particles className="absolute inset-0" quantity={250} />
         <div className="relative z-10 h-full w-full">
             {children}
