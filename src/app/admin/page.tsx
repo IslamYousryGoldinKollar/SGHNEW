@@ -49,7 +49,7 @@ export default function AdminDashboard() {
         setIsLoadingSessions(false);
       }, (error) => {
           const permissionError = new FirestorePermissionError({
-            path: q.path,
+            path: collection(db, "games").path,
             operation: 'list',
           });
           errorEmitter.emit('permission-error', permissionError);
@@ -68,23 +68,22 @@ export default function AdminDashboard() {
         await runTransaction(db, async (transaction) => {
             let gameRef;
             let pinExists = true;
+            let attempts = 0;
+            const maxAttempts = 5;
 
             // Loop to ensure the PIN is unique
-            while (pinExists) {
+            while (pinExists && attempts < maxAttempts) {
                 newPin = generatePin();
                 gameRef = doc(db, "games", newPin);
                 const gameDoc = await transaction.get(gameRef);
                 pinExists = gameDoc.exists();
+                attempts++;
             }
-            if (!gameRef) throw new Error("Failed to generate a unique session PIN.");
 
+            if (pinExists || !gameRef) {
+                 throw new Error("Failed to generate a unique session PIN after several attempts.");
+            }
 
-            const adminRef = doc(db, "admins", user.uid);
-
-            // 1. All READS must happen before any writes.
-            const adminDoc = await transaction.get(adminRef);
-
-            // 2. Prepare all data and logic.
             const initialGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({
                 id: i,
                 coloredBy: null,
@@ -110,52 +109,56 @@ export default function AdminDashboard() {
                 parentSessionId: null,
             };
 
-            // 3. Now, perform all WRITES.
             transaction.set(gameRef, newGame);
-
-            if (!adminDoc.exists()) {
-                transaction.set(adminRef, {
-                    uid: user.uid,
-                    email: user.email,
-                    createdAt: serverTimestamp(),
-                    plan: 'basic',
-                    sessionCount: 1,
-                });
-            } else {
-                transaction.update(adminRef, {
-                    sessionCount: (adminDoc.data().sessionCount || 0) + 1,
-                });
-            }
-            
         });
 
         if (newPin) {
             router.push(`/admin/session/${newPin}`);
         }
 
-    } catch (e) {
+    } catch (e: any) {
         console.error("Transaction failed: ", e);
-        const gameRef = doc(db, "games", newPin || 'unknown');
-        const permissionError = new FirestorePermissionError({
-          path: gameRef.path,
-          operation: 'write',
+        const gameRef = doc(db, "games", newPin || 'unknown_pin');
+        
+        if (e instanceof FirestorePermissionError) {
+             errorEmitter.emit('permission-error', e);
+        } else {
+            const permissionError = new FirestorePermissionError({
+              path: gameRef.path,
+              operation: 'create',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+       
+        toast({
+            title: "Failed to Create Session",
+            description: e.message || "Could not create a new game session due to a database error.",
+            variant: "destructive",
         });
-        errorEmitter.emit('permission-error', permissionError);
-        alert("Failed to create new session.");
     }
   };
 
   const deleteSession = async (gameId: string) => {
     if (window.confirm("Are you sure you want to delete this session? This action cannot be undone.")) {
         const gameRef = doc(db, "games", gameId);
-        await deleteDoc(gameRef).catch((serverError) => {
-            const permissionError = new FirestorePermissionError({
+        try {
+            await deleteDoc(gameRef);
+            toast({
+                title: "Session Deleted",
+                description: `Session ${gameId} has been successfully deleted.`,
+            });
+        } catch (serverError: any) {
+             const permissionError = new FirestorePermissionError({
                 path: gameRef.path,
                 operation: 'delete',
             });
             errorEmitter.emit('permission-error', permissionError);
-            alert("Failed to delete session.");
-        });
+            toast({
+                title: "Delete Failed",
+                description: "You do not have permission to delete this session.",
+                variant: "destructive",
+            });
+        }
     }
   }
 
@@ -163,24 +166,30 @@ export default function AdminDashboard() {
     if (!user) return;
     const originalGameRef = doc(db, "games", gameId);
     let newGameRef;
+    let newPin;
     try {
       const originalGameSnap = await getDoc(originalGameRef);
 
       if (!originalGameSnap.exists()) {
-        alert("Session to duplicate not found.");
+        toast({ title: "Error", description: "Session to duplicate not found.", variant: "destructive" });
         return;
       }
 
       const originalGameData = originalGameSnap.data() as Omit<Game, 'id'>;
-      let newPin;
+      
       let pinExists = true;
-
-      while(pinExists) {
+      let attempts = 0;
+      while(pinExists && attempts < 5) {
         newPin = generatePin();
         newGameRef = doc(db, "games", newPin);
         const gameDoc = await getDoc(newGameRef);
         pinExists = gameDoc.exists();
+        attempts++;
       }
+
+       if (pinExists || !newGameRef) {
+          throw new Error("Failed to generate a unique session PIN for duplication.");
+       }
       
       const newGrid: GridSquare[] = Array.from({ length: TEAM_GRID_SIZE }, (_, i) => ({ id: i, coloredBy: null }));
 
@@ -197,16 +206,21 @@ export default function AdminDashboard() {
       await setDoc(newGameRef, duplicatedGame);
       router.push(`/admin/session/${newPin}`);
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to duplicate session:", err);
       if (newGameRef) {
         const permissionError = new FirestorePermissionError({
             path: newGameRef.path,
             operation: 'create',
+            requestResourceData: 'Duplicated Data'
         });
         errorEmitter.emit('permission-error', permissionError);
       }
-      alert("Failed to duplicate session.");
+      toast({
+        title: "Duplication Failed",
+        description: err.message || "Could not duplicate the session due to a database error.",
+        variant: "destructive"
+      });
     }
   };
 
