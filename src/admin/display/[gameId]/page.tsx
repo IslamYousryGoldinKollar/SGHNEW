@@ -139,16 +139,16 @@ export default function DisplayPage() {
             <Card className="w-full h-full flex flex-col bg-background/80 backdrop-blur-sm" style={{ borderColor: team.color }}>
                 <CardHeader className="text-center flex-shrink-0 p-4 pt-20">
                      <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
-                     <div className="flex items-center justify-center text-muted-foreground pt-2">
+                     <div className="flex items-center justify-center text-foreground pt-2">
                         <Users className="mr-2 h-5 w-5" /> 
-                        <span className="text-2xl">{team.players.length} / {team.capacity}</span>
+                        <span className="text-2xl font-semibold drop-shadow-sm">{team.players.length} / {team.capacity}</span>
                     </div>
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col min-h-0 p-4">
                     <ScrollArea className="flex-1">
                         <ul className="space-y-2 text-lg text-center pr-4">
                             {team.players.map(p => (
-                                <li key={p.id} className="truncate bg-secondary/30 p-2 rounded-md">{p.name}</li>
+                                <li key={p.id} className="truncate bg-secondary/30 p-2 rounded-md font-medium">{p.name}</li>
                             ))}
                              {team.players.length === 0 && <li className="text-muted-foreground italic">No players yet...</li>}
                         </ul>
@@ -180,7 +180,15 @@ export default function DisplayPage() {
                         className="object-contain -z-10 opacity-50"
                      />
                     <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
-                        <h2 className="text-4xl font-display text-primary mb-4">Care Clans</h2>
+                        <div className="mb-6 flex justify-center">
+                            <Image 
+                                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
+                                alt="Saudi German Health Logo"
+                                width={300}
+                                height={100}
+                                className="object-contain"
+                            />
+                        </div>
                          <div className="bg-white p-4 rounded-lg inline-block">
                             <QRCodeSVG value={joinUrl} size={256} />
                         </div>
@@ -204,14 +212,14 @@ export default function DisplayPage() {
             )} 
             style={{ borderColor: team.color }}>
             <div className="flex items-center justify-center gap-4">
-                {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={40} height={40} /> : <div className="h-10 w-10"/>}
-                <h3 className="text-3xl font-display" style={{ color: team.color }}>{team.name}</h3>
+                {team.icon && <Image src={team.icon} alt={`${team.name} icon`} width={40} height={40} />}
+                <h3 className="text-3xl font-display drop-shadow-md" style={{ color: team.color }}>{team.name}</h3>
             </div>
-             <div className="flex items-center justify-center text-muted-foreground text-xl my-2">
+             <div className="flex items-center justify-center text-foreground text-xl my-2">
                 <Users className="mr-2 h-5 w-5" /> 
-                <span>{team.players.length}</span>
+                <span className="drop-shadow-sm font-semibold">{team.players.length}</span>
             </div>
-            <p className="text-6xl font-bold font-mono my-2">{team.score}</p>
+            <p className="text-6xl font-bold font-mono my-2 drop-shadow-lg">{team.score}</p>
         </div>
     );
 

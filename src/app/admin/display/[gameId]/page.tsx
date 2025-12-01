@@ -180,9 +180,9 @@ export default function DisplayPage() {
                         className="object-contain -z-10 opacity-50"
                      />
                     <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl">
-                        <div className="mb-6">
+                        <div className="mb-6 flex justify-center">
                             <Image 
-                                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsaudi-german-health-logo.png?alt=media&token=99b8f553-6132-4753-941f-0e428574c878"
+                                src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
                                 alt="Saudi German Health Logo"
                                 width={300}
                                 height={100}
@@ -354,7 +354,7 @@ export default function DisplayPage() {
                         </Button>
                     )}
                      {game.status === 'playing' && (
-                        <Button size="lg" variant="destructive" onClick={handleEndGame} className="minw-[200px] h-14 text-2xl shadow-2xl">
+                        <Button size="lg" variant="destructive" onClick={handleEndGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
                             <Square className="mr-4"/> End Game
                         </Button>
                     )}
