@@ -9,7 +9,6 @@ import type {
   Game,
   Team,
   GridSquare,
-  EmojiEvent,
 } from "@/lib/types";
 import { generateQuestionsAction } from "@/lib/actions";
 import { db, auth } from "@/lib/firebase";
@@ -160,81 +159,6 @@ const IndividualLobby = ({
   );
 };
 
-const MatchmakingLobby = ({
-  onJoinQueue,
-  isJoining,
-}: {
-  onJoinQueue: (name: string, id: string) => void;
-  isJoining: boolean;
-}) => {
-  const [playerName, setPlayerName] = useState("");
-  const [idNumber, setIdNumber] = useState("");
-
-  const handleJoin = () => {
-    if (!playerName.trim() || !idNumber.trim()) {
-      alert("Please enter your name and ID.");
-      return;
-    }
-    onJoinQueue(playerName.trim(), idNumber.trim());
-  };
-
-  return (
-    <div className="flex flex-col items-center justify-center flex-1">
-      <div className="text-center">
-        <Swords className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-5xl font-bold font-display">1v1 Challenge</h1>
-        <p className="text-muted-foreground mt-2 max-w-xl">
-          Enter your name and ID to find a worthy opponent. The battle
-          begins soon!
-        </p>
-      </div>
-      <div className="my-8 w-full max-w-md space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="playerName" className="sr-only">
-            Full Name
-          </Label>
-          <Input
-            id="playerName"
-            type="text"
-            placeholder="Enter your full name"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            className="text-lg p-6 w-full text-center"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="idNumber" className="sr-only">
-            ID Number
-          </Label>
-          <Input
-            id="idNumber"
-            type="text"
-            placeholder="Enter your ID number"
-            value={idNumber}
-            onChange={(e) => setIdNumber(e.target.value)}
-            className="text-lg p-6 w-full text-center"
-          />
-        </div>
-        <Button
-          size="lg"
-          className="w-full"
-          onClick={handleJoin}
-          disabled={
-            isJoining || !playerName.trim() || !idNumber.trim()
-          }
-        >
-          {isJoining ? (
-            <Loader2 className="animate-spin" />
-          ) : (
-            "Find Match"
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-
 export default function GamePage() {
   const params = useParams();
   const router = useRouter();
@@ -378,120 +302,6 @@ export default function GamePage() {
       }
     }
   }, [game?.status, game?.gameStartedAt, game?.timer, handleTimeout]);
-
-
-  const handleFindMatch = async (playerName: string, playerId: string) => {
-    if (!game || !authUser) return;
-    setIsJoining(true);
-
-    try {
-        const q = query(
-            collection(db, "games"),
-            where("parentSessionId", "==", game.id),
-            where("status", "==", "lobby"),
-            orderBy("createdAt", "asc"),
-            limit(1)
-        );
-        const openLobbies = await getDocs(q);
-
-        if (openLobbies.docs.length > 0) {
-            const lobbyDoc = openLobbies.docs[0];
-            const lobbyGameRef = lobbyDoc.ref;
-
-            await runTransaction(db, async (transaction) => {
-                const lobbyGameSnap = await transaction.get(lobbyGameRef);
-                if (!lobbyGameSnap.exists()) throw new Error("Lobby closed.");
-                const lobbyGame = lobbyGameSnap.data() as Game;
-                if (lobbyGame.teams[0].players.length !== 1) throw new Error("Lobby is no longer available.");
-
-                const opponent = lobbyGame.teams[0].players[0];
-                const opponentTeamName = lobbyGame.teams[0].name;
-
-                const newPlayer: Player = {
-                    id: authUser.uid,
-                    playerId,
-                    name: playerName,
-                    teamName: `Team ${playerName}`,
-                    answeredQuestions: [],
-                    coloringCredits: 0,
-                    score: 0,
-                };
-                
-                const updatedTeams: Team[] = [
-                    { ...lobbyGame.teams[0], name: opponentTeamName },
-                    { 
-                        name: `Team ${newPlayer.name}`,
-                        score: 0, 
-                        players: [newPlayer], 
-                        capacity: 1,
-                        color: "#60A5FA",
-                        icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue%20tower%20copy2.png?alt=media&token=81f82f6a-2644-4159-9c08-2d0f3a037f9e",
-                    }
-                ];
-                
-                const startTime = new Date(Date.now() + 5000);
-
-                transaction.update(lobbyGameRef, {
-                    teams: updatedTeams,
-                    title: `1v1: ${opponent.name} vs ${newPlayer.name}`,
-                    status: "starting",
-                    gameStartedAt: Timestamp.fromDate(startTime)
-                });
-            });
-
-            router.push(`/game/${lobbyDoc.id}`);
-
-        } else {
-            const newGameId = `${game.id}-${generatePin()}`;
-            const newGameRef = doc(db, "games", newGameId);
-            const templateGame = game;
-
-            const newPlayer: Player = {
-                id: authUser.uid,
-                playerId,
-                name: playerName,
-                teamName: `Team ${playerName}`,
-                answeredQuestions: [],
-                coloringCredits: 0,
-                score: 0,
-            };
-
-            const newGame: Omit<Game, "id"> = {
-                ...templateGame,
-                title: `1v1 Lobby - Waiting...`,
-                status: "lobby",
-                parentSessionId: game.id,
-                sessionType: game.sessionType, // Carry over session type
-                teams: [
-                    { 
-                        name: `Team ${newPlayer.name}`, 
-                        score: 0, 
-                        players: [newPlayer], 
-                        capacity: 1, 
-                        color: "#34D399",
-                        icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fgreen%20tower%20copy.png?alt=media&token=fab0d082-5590-4fd7-9d69-a63c101471de"
-                    }
-                ],
-                createdAt: serverTimestamp() as Timestamp,
-                gameStartedAt: null,
-            };
-            
-            await setDoc(newGameRef, newGame).catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: newGameRef.path,
-                    operation: 'create',
-                    requestResourceData: newGame,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            });
-            router.push(`/game/${newGameId}`);
-        }
-    } catch(error: any) {
-        console.error("Error finding match:", error);
-        toast({ title: "Matchmaking Error", description: error.message, variant: "destructive" });
-        setIsJoining(false);
-    }
-  }
 
 
   const handleJoinTeam = async (
@@ -804,27 +614,6 @@ export default function GamePage() {
   const handleNextQuestion = () =>
     setCurrentQuestion(getNextQuestion());
 
-  const handleSendEmoji = async (emoji: string) => {
-    if (!game || !authUser) return;
-    const gameRef = doc(db, "games", game.id);
-    const newEmojiEvent: EmojiEvent = {
-      id: uuidv4(),
-      senderId: authUser.uid,
-      emoji,
-      timestamp: Timestamp.now(),
-    };
-    await updateDoc(gameRef, {
-      emojiEvents: arrayUnion(newEmojiEvent),
-    }).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: gameRef.path,
-            operation: 'update',
-            requestResourceData: { emojiEvents: arrayUnion(newEmojiEvent) },
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    });
-  };
-
   const renderContent = () => {
     if (loading) {
       return (
@@ -845,18 +634,6 @@ export default function GamePage() {
                 <Button onClick={() => router.push('/')} className="mt-8">Back to Home</Button>
             </div>
         )
-    }
-
-    if (
-      (game.sessionType === "matchmaking") &&
-      !currentPlayer && !game.parentSessionId
-    ) {
-      return (
-        <MatchmakingLobby
-          onJoinQueue={handleFindMatch}
-          isJoining={isJoining}
-        />
-      );
     }
 
     if (game.sessionType === "individual" && !currentPlayer && !game.parentSessionId) {
@@ -888,9 +665,6 @@ export default function GamePage() {
     }
 
      if (game.status === "lobby") {
-        if (game.sessionType === 'matchmaking') {
-             return <MatchmakingLobby onJoinQueue={handleFindMatch} isJoining={isJoining} />;
-        }
       return (
         <Lobby
           game={game}
@@ -942,8 +716,6 @@ export default function GamePage() {
             onTimeout={handleTimeout}
             gameStartedAt={game.gameStartedAt}
             isIndividualMode={isIndividualMode}
-            onSendEmoji={handleSendEmoji}
-            emojiEvents={game.emojiEvents}
           />
         );
       case "finished":
@@ -966,5 +738,3 @@ export default function GamePage() {
     </div>
   );
 }
-
-    

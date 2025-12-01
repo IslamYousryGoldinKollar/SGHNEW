@@ -46,7 +46,7 @@ export interface Team {
 }
 
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
-export type SessionType = "team" | "individual" | "matchmaking";
+export type SessionType = "team" | "individual";
 
 export type EmojiEvent = {
   id: string; // unique id for the event
@@ -71,7 +71,6 @@ export interface Game {
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];
     parentSessionId?: string | null;
-    emojiEvents?: EmojiEvent[];
 }
 
 // Represents a tenant/admin user in the system

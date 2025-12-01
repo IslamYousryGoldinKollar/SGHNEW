@@ -1,11 +1,9 @@
 
-import type { Team, Player, Question, EmojiEvent, SessionType } from "@/lib/types";
+import type { Team, Player, Question, SessionType } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
-import EmojiBar from "./EmojiBar";
-import EmojiDisplay from "./EmojiDisplay";
 
 type GameScreenProps = {
   teams: Team[];
@@ -17,8 +15,6 @@ type GameScreenProps = {
   onTimeout: () => void;
   gameStartedAt: Timestamp | null | undefined;
   isIndividualMode: boolean;
-  onSendEmoji: (emoji: string) => void;
-  emojiEvents: EmojiEvent[] | undefined;
 };
 
 export default function GameScreen({
@@ -31,8 +27,6 @@ export default function GameScreen({
   onTimeout,
   gameStartedAt,
   isIndividualMode,
-  onSendEmoji,
-  emojiEvents,
 }: GameScreenProps) {
 
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
@@ -44,7 +38,6 @@ export default function GameScreen({
 
   return (
     <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-8 relative">
-      {is1v1 && opponentTeam && <EmojiDisplay emojiEvents={emojiEvents} opponentId={opponentTeam.players[0].id} />}
       <div className="lg:col-span-3 order-2 lg:order-1">
         {question ? (
           <QuestionCard 
@@ -71,8 +64,6 @@ export default function GameScreen({
            !isIndividualMode && <Scoreboard team={playerTeam} />
         )}
         
-        {is1v1 && <EmojiBar onSendEmoji={onSendEmoji} />}
-
       </aside>
     </div>
   );

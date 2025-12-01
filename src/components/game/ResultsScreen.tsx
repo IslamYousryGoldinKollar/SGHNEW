@@ -9,8 +9,6 @@ import { cn } from "@/lib/utils";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { doc, deleteDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
 
 type ResultsScreenProps = {

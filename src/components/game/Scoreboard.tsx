@@ -8,7 +8,7 @@ type ScoreboardProps = {
 };
 
 export default function Scoreboard({ team }: ScoreboardProps) {
-  const isSinglePlayerTeam = team.players.length === 1;
+  const isSinglePlayerTeam = team.players.length === 1 && team.name === 'Team';
 
   return (
     <Card className="backdrop-blur-sm shadow-lg flex-1" style={{ borderColor: team.color }}>

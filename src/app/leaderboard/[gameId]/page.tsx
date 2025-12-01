@@ -50,7 +50,6 @@ export default function LeaderboardPage() {
             const allPlayers: LeaderboardPlayer[] = [];
             for (const gameDoc of querySnapshot.docs) {
                 const game = gameDoc.data() as Game;
-                // For both individual and 1v1 games, the score is on the team object
                 if (game.teams && game.teams.length > 0) {
                      game.teams.forEach(team => {
                          if (team.players && team.players.length > 0) {
@@ -85,9 +84,7 @@ export default function LeaderboardPage() {
         return <div className="flex h-screen w-full items-center justify-center"><h1>Session not found.</h1></div>;
     }
 
-    const requiredFields = parentGame.sessionType === 'individual' 
-        ? parentGame.requiredPlayerFields 
-        : [{id: 'name', label: 'Name', type: 'text'}, {id: 'id', label: 'ID', type: 'text'}];
+    const requiredFields = parentGame.requiredPlayerFields;
 
 
     const top10Players = players.slice(0, 10);
@@ -129,13 +126,7 @@ export default function LeaderboardPage() {
                                     <TableRow key={`${player.id}-${player.playerId}-${index}`} className={cn(player.id === currentPlayerId && "bg-primary/20")}>
                                         <TableCell className="font-medium text-lg">{index + 1}</TableCell>
                                         {requiredFields.map(field => {
-                                            let cellValue = 'N/A';
-                                            if (parentGame.sessionType === 'individual') {
-                                                cellValue = player.customData?.[field.id] || player.name || 'N/A';
-                                            } else {
-                                                if (field.id === 'name') cellValue = player.name;
-                                                if (field.id === 'id') cellValue = player.playerId;
-                                            }
+                                            const cellValue = player.customData?.[field.label] || 'N/A';
                                             return <TableCell key={field.id}>{cellValue}</TableCell>
                                         })}
                                         <TableCell className="text-right font-bold font-mono text-lg">{player.finalScore}</TableCell>
@@ -157,13 +148,7 @@ export default function LeaderboardPage() {
                                     <TableRow key={`${currentPlayerRowData.id}-${currentPlayerRowData.playerId}-rank`} className="bg-accent/30 border-y-2 border-accent">
                                         <TableCell className="font-medium text-lg">{currentPlayerRank + 1}</TableCell>
                                         {requiredFields.map(field => {
-                                            let cellValue = 'N/A';
-                                            if (parentGame.sessionType === 'individual') {
-                                                cellValue = currentPlayerRowData.customData?.[field.id] || currentPlayerRowData.name || 'N/A';
-                                            } else {
-                                                if (field.id === 'name') cellValue = currentPlayerRowData.name;
-                                                if (field.id === 'id') cellValue = currentPlayerRowData.playerId;
-                                            }
+                                            const cellValue = currentPlayerRowData.customData?.[field.label] || 'N/A';
                                             return <TableCell key={field.id}>{cellValue}</TableCell>
                                         })}
                                         <TableCell className="text-right font-bold font-mono text-lg">{currentPlayerRowData.finalScore}</TableCell>

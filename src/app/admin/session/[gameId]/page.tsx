@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
-  sessionType: z.enum(["team", "individual", "matchmaking"]),
+  sessionType: z.enum(["team", "individual"]),
   teams: z
     .array(
       z.object({
@@ -336,7 +336,7 @@ export default function SessionConfigPage() {
 
       let teamsUpdate;
 
-      if (data.sessionType === "team" || data.sessionType === "matchmaking") {
+      if (data.sessionType === "team") {
         teamsUpdate = data.teams.map((t) => ({
           ...t,
           score: game?.teams.find((originalTeam) => originalTeam.name === t.name)?.score || 0,
@@ -493,7 +493,7 @@ export default function SessionConfigPage() {
                                 }
                             }}
                             defaultValue={field.value}
-                            className="grid grid-cols-1 md:grid-cols-4 gap-4"
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
                           >
                             <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
                               <RadioGroupItem value="team" className="sr-only" />
@@ -504,11 +504,6 @@ export default function SessionConfigPage() {
                               <RadioGroupItem value="individual" className="sr-only" />
                               <User className="mb-3 h-6 w-6" />
                               Individual Challenge
-                            </Label>
-                            <Label className="flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
-                              <RadioGroupItem value="matchmaking" className="sr-only" />
-                              <Swords className="mb-3 h-6 w-6" />
-                              1v1 Challenge
                             </Label>
                           </RadioGroup>
                         </FormControl>
@@ -606,7 +601,7 @@ export default function SessionConfigPage() {
                     ))}
                   </CardContent>
                 </Card>
-              ) : sessionType === "individual" ? (
+              ) : (
                 <Card>
                   <CardHeader>
                     <div className="flex justify-between items-center">
@@ -682,16 +677,6 @@ export default function SessionConfigPage() {
                       </p>
                     )}
                   </CardContent>
-                </Card>
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>1v1 Challenge</CardTitle>
-                    <CardDescription>
-                      Players who join this session will be automatically matched for games. No further
-                      configuration is needed here.
-                    </CardDescription>
-                  </CardHeader>
                 </Card>
               )}
 
