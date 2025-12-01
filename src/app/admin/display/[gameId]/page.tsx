@@ -129,8 +129,23 @@ export default function DisplayPage() {
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
         <div 
-            className="relative w-full h-full bg-gradient-to-b from-slate-50 to-slate-200 text-card-foreground shadow-xl flex flex-col"
-            style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}
+            className="relative w-full h-full text-card-foreground shadow-xl flex flex-col"
+            style={{
+                clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
+                background: `
+                    repeating-linear-gradient(
+                        0deg,
+                        #f8fafc 0px,
+                        #f8fafc 15px,
+                        #e2e8f0 15px,
+                        #e2e8f0 35px,
+                        #f1f5f9 35px,
+                        #f1f5f9 50px,
+                        #cbd5e1 50px,
+                        #cbd5e1 70px
+                    )
+                `
+            }}
         >
             <div className="absolute top-0 left-0 h-[10px] w-full shadow-inner" style={{backgroundColor: team.color}} />
             
@@ -154,7 +169,7 @@ export default function DisplayPage() {
 
             <div className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 w-48 h-48">
                  {team.icon ? 
-                    <Image src={team.icon} alt={`${team.name} icon`} layout="fill" className="object-contain" /> 
+                    <Image src={team.icon} alt={`${team.name} icon`} fill className="object-contain" /> 
                     : <Trophy className="w-16 h-16" style={{color: team.color}} />
                  }
             </div>
