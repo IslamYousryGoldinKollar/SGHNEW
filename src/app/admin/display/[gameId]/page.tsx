@@ -151,7 +151,7 @@ export default function DisplayPage() {
                 </div>
             </div>
 
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-32">
+            <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 h-48">
                  {team.icon ? 
                     <Image src={team.icon} alt={`${team.name} icon`} layout="fill" className="object-contain" /> 
                     : <Trophy className="w-16 h-16" style={{color: team.color}} />
@@ -167,17 +167,17 @@ export default function DisplayPage() {
         const teamRight = game.teams.length > 1 ? game.teams[1] : null;
 
         return (
-            <div className="flex-1 w-full max-w-full flex items-center justify-around gap-8 p-8">
+            <div className="flex-1 w-full max-w-full flex items-start justify-around gap-8 p-8 pt-[5vh]">
                 {/* Left Team */}
-                <div className="w-1/4 h-3/4 flex">
+                <div className="w-1/4 h-[70vh] flex">
                     {teamLeft && <TeamDisplayCard team={teamLeft} />}
                 </div>
 
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
                     <Card className="rounded-2xl w-full max-w-sm">
-                        <CardHeader>
-                            <div className="flex justify-center pt-4">
+                        <CardHeader className="pt-2">
+                            <div className="flex justify-center">
                                 <Image 
                                     src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
                                     alt="Saudi German Health Logo"
@@ -198,7 +198,7 @@ export default function DisplayPage() {
                 </div>
 
                 {/* Right Team */}
-                 <div className="w-1/4 h-3/4 flex">
+                 <div className="w-1/4 h-[70vh] flex">
                     {teamRight && <TeamDisplayCard team={teamRight} />}
                 </div>
             </div>
@@ -231,10 +231,11 @@ export default function DisplayPage() {
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
                 <div className="absolute left-8 top-8 z-10">
-                    <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
-                </div>
-                <div className="absolute left-8 top-32 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} />}
+                </div>
+
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
+                    <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
 
                 <div className="w-auto h-full flex items-center justify-center">
@@ -243,7 +244,7 @@ export default function DisplayPage() {
                     </div>
                 </div>
 
-                <div className="absolute right-8 top-32 z-10">
+                <div className="absolute right-8 top-8 z-10">
                     {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
