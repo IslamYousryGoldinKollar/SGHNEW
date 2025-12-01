@@ -439,11 +439,6 @@ export default function DisplayPage() {
                             <StopCircle className="mr-4"/> End Game
                         </Button>
                     )}
-                     {game.status === 'finished' && (
-                        <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl shadow-2xl">
-                            <RotateCw className="mr-4"/> Play Again
-                        </Button>
-                    )}
                 </div>
                  
             </div>
