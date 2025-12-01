@@ -118,7 +118,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
             {isTie ? "It's a Tie!" : `${winningTeams.length > 1 ? 'Winners!' : winningTeams[0].name + ' Wins!'}`}
           </h1>
           <CardDescription className="text-2xl pt-4">
-            Congratulations to the Trivia Titans!
+            Congratulations to the winners!
              {winReason && <span className="text-sm block">({winReason})</span>}
           </CardDescription>
 

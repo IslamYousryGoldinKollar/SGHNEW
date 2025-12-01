@@ -6,7 +6,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Trivia Titans",
+  title: "Care Clans",
   description: "A live trivia game for teams",
 };
 

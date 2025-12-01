@@ -55,7 +55,7 @@ export default function LandingPage() {
   return (
     <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center">
       <div className="text-center mb-12">
-        <h1 className="text-5xl font-bold font-display text-primary">Trivia Titans</h1>
+        <h1 className="text-5xl font-bold font-display text-primary">Care Clans</h1>
         <p className="text-muted-foreground mt-2 text-xl">The ultimate team trivia challenge</p>
       </div>
 
@@ -91,7 +91,7 @@ export default function LandingPage() {
               <Shield className="text-accent" />
               Admin Access
             </CardTitle>
-            <CardDescription>Create and manage trivia sessions.</CardDescription>
+            <CardDescription>Create and manage game sessions.</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">

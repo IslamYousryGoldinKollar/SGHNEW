@@ -37,7 +37,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
 
   useEffect(() => {
     if (session) {
-      setTitle(session.title || "Trivia Titans");
+      setTitle(session.title || "Care Clans");
       setDescription(session.description || "");
       if (typeof window !== "undefined") {
         setJoinUrl(`${window.location.origin}/game/${session.id}`);
@@ -119,7 +119,7 @@ export default function ShareSessionModal({ session, onClose }: ShareSessionModa
                   id="description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="A fun trivia game for the whole team!"
+                  placeholder="A fun game for the whole team!"
                 />
               </div>
             </CardContent>

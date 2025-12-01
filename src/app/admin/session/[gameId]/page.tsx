@@ -183,7 +183,7 @@ export default function SessionConfigPage() {
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
     defaultValues: {
-      title: "Trivia Titans",
+      title: "Care Clans",
       timer: 300,
       sessionType: "team",
       teams: [],
@@ -245,7 +245,7 @@ export default function SessionConfigPage() {
             setIsCustomTheme(themeIsObject);
             
             form.reset({
-              title: gameData.title || "Trivia Titans",
+              title: gameData.title || "Care Clans",
               timer: gameData.timer,
               sessionType: gameData.sessionType || "team",
               teams: gameData.teams.map((t) => ({
@@ -455,7 +455,7 @@ export default function SessionConfigPage() {
       <Card>
         <CardHeader>
           <CardTitle>Configure Session: {gameId}</CardTitle>
-          <CardDescription>Edit the details for this trivia game session.</CardDescription>
+          <CardDescription>Edit the details for this game session.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

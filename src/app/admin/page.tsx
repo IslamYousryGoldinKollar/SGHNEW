@@ -91,7 +91,7 @@ export default function AdminDashboard() {
             }));
 
             const newGame: Omit<Game, 'id'> = {
-                title: "Trivia Titans",
+                title: "Care Clans",
                 description: "A live trivia game for the whole team. Join in on the fun!",
                 status: "lobby",
                 adminId: user.uid,
@@ -232,7 +232,7 @@ export default function AdminDashboard() {
       <Card>
         <CardHeader>
           <CardTitle>Create New Session</CardTitle>
-          <CardDescription>Start a new trivia game with a unique PIN.</CardDescription>
+          <CardDescription>Start a new game with a unique PIN.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={createNewSession}>
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
-                                <span>{session.title || 'Trivia Titans'}</span>
+                                <span>{session.title || 'Care Clans'}</span>
                                  <Badge variant="secondary" className="capitalize">{session.sessionType || 'team'}</Badge>
                             </CardTitle>
                             <CardDescription>

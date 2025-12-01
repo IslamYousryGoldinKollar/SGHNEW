@@ -17,7 +17,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary">
             <BrainCircuit className="h-7 w-7" />
-            <h1 className="font-display">Trivia Titans</h1>
+            <h1 className="font-display">Care Clans</h1>
           </Link>
           <nav>
             {isSuperAdmin && (
