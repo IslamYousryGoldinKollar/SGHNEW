@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
-import type { Game, CustomTheme, CustomPlayerField, GameTheme } from "@/lib/types";
+import type { Game, CustomPlayerField, GameTheme } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,16 +23,6 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { v4 as uuidv4 } from "uuid";
 import { cn } from "@/lib/utils";
 
-const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color");
-
-const customThemeSchema = z.object({
-  background: hexColor,
-  card: hexColor,
-  accent: hexColor,
-  foreground: hexColor,
-  cardForeground: hexColor,
-});
-
 const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
@@ -42,7 +32,7 @@ const sessionSchema = z.object({
       z.object({
         name: z.string().min(1, "Team name is required."),
         capacity: z.coerce.number().min(1, "Capacity must be at least 1."),
-        color: hexColor,
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Must be a valid hex color"),
         icon: z.string().url("Must be a valid URL.").or(z.literal("")),
       })
     )
@@ -73,7 +63,7 @@ const sessionSchema = z.object({
       }
     ),
   topic: z.string(),
-  theme: z.union([z.enum(["default", "team-alpha", "team-bravo"]), customThemeSchema]),
+  theme: z.enum(["default", "team-alpha", "team-bravo"]),
 });
 
 type SessionFormValues = z.infer<typeof sessionSchema>;
@@ -159,14 +149,6 @@ function QuestionItem({
   );
 }
 
-const defaultTheme: CustomTheme = {
-  background: "#FFFFFF",
-  card: "#FFFFFF",
-  accent: "#FF4500",
-  foreground: "#0A0A0A",
-  cardForeground: "#0A0A0A",
-};
-
 export default function SessionConfigPage() {
   const params = useParams();
   const router = useRouter();
@@ -178,7 +160,6 @@ export default function SessionConfigPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isExtracting, setIsExtracting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isCustomTheme, setIsCustomTheme] = useState(false);
 
   const form = useForm<SessionFormValues>({
     resolver: zodResolver(sessionSchema),
@@ -195,12 +176,7 @@ export default function SessionConfigPage() {
   });
 
   const sessionType = form.watch("sessionType");
-  const themeValue = form.watch("theme");
 
-  useEffect(() => {
-    setIsCustomTheme(typeof themeValue === "object");
-  }, [themeValue]);
-  
   const { fields: teamFields, append: appendTeam, remove: removeTeam } = useFieldArray({
     control: form.control,
     name: "teams",
@@ -240,10 +216,6 @@ export default function SessionConfigPage() {
           setIsAuthorized(true);
           setGame(gameData);
           if (!form.formState.isDirty) {
-            const currentTheme: GameTheme = gameData.theme || 'default';
-            const themeIsObject = typeof currentTheme === 'object';
-            setIsCustomTheme(themeIsObject);
-            
             form.reset({
               title: gameData.title || "Care Clans",
               timer: gameData.timer,
@@ -257,7 +229,7 @@ export default function SessionConfigPage() {
               requiredPlayerFields: gameData.requiredPlayerFields || [],
               questions: gameData.questions.map((q) => ({ ...q, options: q.options || [] })),
               topic: gameData.topic,
-              theme: themeIsObject ? { ...defaultTheme, ...currentTheme } : currentTheme,
+              theme: gameData.theme || "default",
             });
           }
         } else {
@@ -388,8 +360,6 @@ export default function SessionConfigPage() {
         ];
       }
       
-      const themeToSave = data.theme;
-
       await updateDoc(gameRef, {
         title: data.title,
         timer: data.timer,
@@ -398,7 +368,7 @@ export default function SessionConfigPage() {
         requiredPlayerFields: data.requiredPlayerFields,
         questions: data.questions,
         topic: data.topic,
-        theme: themeToSave,
+        theme: data.theme,
       });
 
       toast({
@@ -520,32 +490,24 @@ export default function SessionConfigPage() {
                         <FormItem>
                           <FormControl>
                             <RadioGroup
-                              onValueChange={(value) => {
-                                if (value === "custom") {
-                                  setIsCustomTheme(true);
-                                  field.onChange(form.getValues("theme") || defaultTheme);
-                                } else {
-                                  setIsCustomTheme(false);
-                                  field.onChange(value);
-                                }
-                              }}
-                              value={isCustomTheme ? "custom" : (field.value as string)}
+                              onValueChange={field.onChange}
+                              value={field.value}
                               className="grid grid-cols-2 md:grid-cols-4 gap-4"
                             >
-                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", !isCustomTheme && themeValue === 'default' && 'border-primary')}>
+                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'default' && 'border-primary')}>
                                 <RadioGroupItem value="default" className="sr-only" />
                                 Default
                               </Label>
-                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", !isCustomTheme && themeValue === 'team-alpha' && 'border-primary')}>
+                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'team-alpha' && 'border-primary')}>
                                 <RadioGroupItem value="team-alpha" className="sr-only" />
                                 Team Alpha
                               </Label>
-                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", !isCustomTheme && themeValue === 'team-bravo' && 'border-primary')}>
+                               <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", field.value === 'team-bravo' && 'border-primary')}>
                                 <RadioGroupItem value="team-bravo" className="sr-only" />
                                 Team Bravo
                               </Label>
-                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground", isCustomTheme && 'border-primary')}>
-                                <RadioGroupItem value="custom" className="sr-only" />
+                              <Label className={cn("flex flex-col items-center justify-center rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground cursor-not-allowed opacity-50")}>
+                                <RadioGroupItem value="custom" className="sr-only" disabled />
                                 <Palette className="mb-2 h-5 w-5" />
                                 Custom
                               </Label>
@@ -554,71 +516,6 @@ export default function SessionConfigPage() {
                         </FormItem>
                       )}
                     />
-                    {isCustomTheme && typeof form.getValues("theme") === "object" && (
-                        <div className="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4 border rounded-lg animate-in fade-in">
-                           <FormField
-                              control={form.control}
-                              name="theme.background"
-                              render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Background</FormLabel>
-                                    <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
-                                    </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                             <FormField
-                              control={form.control}
-                              name="theme.card"
-                              render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Card</FormLabel>
-                                    <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
-                                    </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                             <FormField
-                              control={form.control}
-                              name="theme.accent"
-                              render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Accent</FormLabel>
-                                    <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
-                                    </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                             <FormField
-                              control={form.control}
-                              name="theme.foreground"
-                              render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Bg Font</FormLabel>
-                                    <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
-                                    </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                             <FormField
-                              control={form.control}
-                              name="theme.cardForeground"
-                              render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Card Font</FormLabel>
-                                    <FormControl>
-                                        <Input type="color" {...field} className="p-1 h-10 w-full" value={field.value || ''}/>
-                                    </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                        </div>
-                    )}
-
                 </CardContent>
               </Card>
 

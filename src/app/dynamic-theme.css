@@ -1,21 +1,21 @@
 
 .dynamic-theme {
-  --background: var(--dynamic-background-hsl);
-  --card: var(--dynamic-card-hsl);
-  --accent: var(--dynamic-accent-hsl);
-  --foreground: var(--dynamic-foreground-hsl);
+  --background: hsl(var(--dynamic-background-hsl));
+  --card: hsl(var(--dynamic-card-hsl));
+  --accent: hsl(var(--dynamic-accent-hsl));
+  --foreground: hsl(var(--dynamic-foreground-hsl));
   
-  --card-foreground: var(--dynamic-foreground-hsl);
-  --popover: var(--dynamic-card-hsl);
-  --popover-foreground: var(--dynamic-foreground-hsl);
-  --primary: var(--dynamic-accent-hsl);
-  --primary-foreground: var(--dynamic-foreground-hsl);
+  --card-foreground: hsl(var(--dynamic-card-foreground-hsl));
+  --popover: hsl(var(--dynamic-card-hsl));
+  --popover-foreground: hsl(var(--dynamic-card-foreground-hsl));
+  --primary: hsl(var(--dynamic-accent-hsl));
+  --primary-foreground: hsl(var(--dynamic-card-foreground-hsl));
   --secondary: hsl(var(--dynamic-accent-hsl) / 0.1);
-  --secondary-foreground: var(--dynamic-foreground-hsl);
+  --secondary-foreground: hsl(var(--dynamic-card-foreground-hsl));
   --muted: hsl(var(--dynamic-accent-hsl) / 0.15);
   --muted-foreground: hsl(var(--dynamic-foreground-hsl) / 0.6);
-  --accent-foreground: var(--dynamic-foreground-hsl);
+  --accent-foreground: hsl(var(--dynamic-card-foreground-hsl));
   --border: hsl(var(--dynamic-accent-hsl) / 0.2);
   --input: hsl(var(--dynamic-accent-hsl) / 0.2);
-  --ring: var(--dynamic-accent-hsl);
+  --ring: hsl(var(--dynamic-accent-hsl));
 }

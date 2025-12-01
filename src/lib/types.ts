@@ -48,15 +48,7 @@ export interface Team {
 export type GameStatus = "lobby" | "starting" | "playing" | "finished";
 export type SessionType = "team" | "individual" | "matchmaking";
 
-export type CustomTheme = {
-  background: string;
-  card: string;
-  accent: string;
-  foreground: string;
-  cardForeground: string;
-};
-
-export type GameTheme = "default" | "team-alpha" | "team-bravo" | CustomTheme;
+export type GameTheme = "default" | "team-alpha" | "team-bravo";
 
 export type EmojiEvent = {
   id: string; // unique id for the event
