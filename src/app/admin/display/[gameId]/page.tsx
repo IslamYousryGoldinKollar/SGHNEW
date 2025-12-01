@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -129,24 +128,18 @@ export default function DisplayPage() {
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
         <div 
-            className="relative pt-16 w-full h-full bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm"
+            className="relative w-full h-full bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm flex flex-col"
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%)' }}
         >
-             <div className="absolute top-0 left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 pt-4">
-                <div className="p-2">
-                    <div className="w-32 h-32 flex items-center justify-center">
-                       {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={96} height={96} className="object-contain drop-shadow-lg" /> : <Trophy className="w-16 h-16" style={{color: team.color}} />}
-                    </div>
-                </div>
-            </div>
-            <div className="w-full h-full flex flex-col pt-20 text-center px-4">
+            <div className="absolute top-0 left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
+            
+            <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-8">
                 <h2 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h2>
                 <div className="flex items-center justify-center text-foreground pt-2">
                     <Users className="mr-2 h-5 w-5" /> 
                     <span className="text-2xl font-semibold drop-shadow-sm">{team.players.length} / {team.capacity}</span>
                 </div>
-                <div className="flex-1 flex flex-col min-h-0 pt-4">
+                <div className="flex-1 flex flex-col min-h-0 pt-4 w-full">
                     <ScrollArea className="flex-1">
                         <ul className="space-y-2 text-lg text-center pr-4">
                             {team.players.map(p => (
@@ -156,6 +149,13 @@ export default function DisplayPage() {
                         </ul>
                     </ScrollArea>
                 </div>
+            </div>
+
+            <div className="w-full flex justify-center items-end h-32 -mb-2">
+                 {team.icon ? 
+                    <Image src={team.icon} alt={`${team.name} icon`} width={96} height={96} className="object-contain drop-shadow-lg" /> 
+                    : <Trophy className="w-16 h-16" style={{color: team.color}} />
+                 }
             </div>
         </div>
     );
@@ -175,7 +175,7 @@ export default function DisplayPage() {
 
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
-                    <Card>
+                    <Card className="rounded-2xl">
                         <CardHeader>
                             <div className="flex justify-center pt-4">
                                 <Image 
@@ -191,7 +191,7 @@ export default function DisplayPage() {
                              <div className="bg-white p-4 rounded-lg inline-block">
                                 <QRCodeSVG value={joinUrl} size={256} />
                             </div>
-                            <p className="text-xl text-muted-foreground mt-6">Session PIN</p>
+                            <p className="text-xl text-muted-foreground mt-2">Session PIN</p>
                             <h1 className="text-3xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
                         </CardContent>
                     </Card>
