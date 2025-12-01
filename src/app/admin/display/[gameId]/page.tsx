@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -5,7 +6,7 @@ import { useParams } from "next/navigation";
 import { doc, onSnapshot, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Game, Team, GridSquare, Player } from "@/lib/types";
-import { Loader2, Play, Square, RotateCw, Users, Trophy } from "lucide-react";
+import { Loader2, Play, Square, RotateCw, Users, Trophy, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -249,20 +250,44 @@ export default function DisplayPage() {
     }
 
     const TeamScorePod = ({ team }: { team: Team }) => (
-        <div className={cn(
-            "p-4 rounded-lg bg-card/80 backdrop-blur-sm shadow-xl text-center transition-all duration-500 border-2 w-56",
-             "rounded-lg"
-            )} 
-            style={{ borderColor: team.color }}>
-            <div className="flex items-center justify-center gap-3">
-                {team.icon && <Image src={team.icon} alt={`${team.name} icon`} width={32} height={32} />}
-                <h3 className="text-2xl font-display drop-shadow-md" style={{ color: team.color }}>{team.name}</h3>
+        <div
+            className="relative w-56 h-[170px] text-card-foreground shadow-xl flex flex-col"
+            style={{
+                clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)',
+                background: `
+                    linear-gradient(
+                        0deg,
+                        #ffffff 0%,
+                        #f0f2f5 8%,
+                        #ffffff 15%,
+                        #e8ecf0 23%,
+                        #ffffff 30%,
+                        #f0f2f5 38%,
+                        #ffffff 45%,
+                        #f0f2f5 52%,
+                        #e8ecf0 60%,
+                        #ffffff 68%,
+                        #f0f2f5 75%,
+                        #ffffff 83%,
+                        #f0f2f5 90%,
+                        #ffffff 100%
+                    )
+                `,
+                boxShadow: 'inset 10px -10px 40px -10px rgba(0, 0, 0, 0.1), inset 0 0 60px rgba(0,0,0,0.03), 0 10px 30px rgba(0,0,0,0.1)'
+            }}
+        >
+             <div 
+                className="absolute top-0 left-0 h-[10px] w-full shadow-inner" 
+                style={{backgroundColor: team.color}} 
+            />
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <h3 className="text-2xl font-display" style={{ color: team.color }}>{team.name}</h3>
+                <div className="flex items-center justify-center text-foreground text-base my-1">
+                    <Users className="mr-2 h-4 w-4" /> 
+                    <span className="drop-shadow-sm font-semibold">{team.players.length}</span>
+                </div>
+                <p className="text-5xl font-bold font-mono drop-shadow-lg">{team.score}</p>
             </div>
-             <div className="flex items-center justify-center text-foreground text-base my-1">
-                <Users className="mr-2 h-4 w-4" /> 
-                <span className="drop-shadow-sm font-semibold">{team.players.length}</span>
-            </div>
-            <p className="text-5xl font-bold font-mono drop-shadow-lg">{team.score}</p>
         </div>
     );
 
@@ -291,6 +316,17 @@ export default function DisplayPage() {
                         <HexMap grid={game.grid} teams={game.teams} onHexClick={() => {}} />
                     </div>
                 </div>
+
+                {teamLeft?.icon && (
+                    <div className="absolute bottom-0 left-0 w-48 h-48 pointer-events-none -translate-x-1/4 translate-y-1/4">
+                         <Image src={teamLeft.icon} alt={`${teamLeft.name} icon`} layout="fill" objectFit="contain" />
+                    </div>
+                )}
+                 {teamRight?.icon && (
+                    <div className="absolute bottom-0 right-0 w-48 h-48 pointer-events-none translate-x-1/4 translate-y-1/4">
+                         <Image src={teamRight.icon} alt={`${teamRight.name} icon`} layout="fill" objectFit="contain" />
+                    </div>
+                )}
              </div>
         )
     }
@@ -392,20 +428,25 @@ export default function DisplayPage() {
                 <div className="flex-1 flex flex-col justify-start min-h-0">
                     {renderStatus()}
                 </div>
-                 {game.status !== 'playing' && (
-                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-shrink-0 z-20">
-                        {game.status === 'lobby' && (
-                            <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
-                                <Play className="mr-4"/> Start Game
-                            </Button>
-                        )}
-                         {game.status === 'finished' && (
-                            <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl shadow-2xl">
-                                <RotateCw className="mr-4"/> Play Again
-                            </Button>
-                        )}
-                    </div>
-                 )}
+                 
+                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-shrink-0 z-20">
+                    {game.status === 'lobby' && (
+                        <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
+                            <Play className="mr-4"/> Start Game
+                        </Button>
+                    )}
+                     {game.status === 'playing' && (
+                        <Button size="lg" variant="destructive" onClick={handleEndGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
+                            <StopCircle className="mr-4"/> End Game
+                        </Button>
+                    )}
+                     {game.status === 'finished' && (
+                        <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl shadow-2xl">
+                            <RotateCw className="mr-4"/> Play Again
+                        </Button>
+                    )}
+                </div>
+                 
             </div>
         )
     }
@@ -417,7 +458,3 @@ export default function DisplayPage() {
     );
 
     }
-
-    
-
-    
