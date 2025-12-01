@@ -132,11 +132,11 @@ export default function DisplayPage() {
             className="relative pt-16 w-full h-full bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm"
             style={{ clipPath: 'polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%)' }}
         >
-             <div className="absolute bottom-[10%] left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
-                <div className="bg-background p-2 rounded-full shadow-lg">
-                    <div className="w-32 h-32 rounded-full border-4 flex items-center justify-center" style={{borderColor: team.color, backgroundColor: team.color+'30'}}>
-                       {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={96} height={96} className="object-contain" /> : <Trophy className="w-16 h-16" style={{color: team.color}} />}
+             <div className="absolute top-0 left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10 pt-4">
+                <div className="p-2">
+                    <div className="w-32 h-32 flex items-center justify-center">
+                       {team.icon ? <Image src={team.icon} alt={`${team.name} icon`} width={96} height={96} className="object-contain drop-shadow-lg" /> : <Trophy className="w-16 h-16" style={{color: team.color}} />}
                     </div>
                 </div>
             </div>
@@ -177,7 +177,7 @@ export default function DisplayPage() {
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
                     <Card>
                         <CardHeader>
-                            <div className="flex justify-center">
+                            <div className="flex justify-center pt-4">
                                 <Image 
                                     src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
                                     alt="Saudi German Health Logo"
