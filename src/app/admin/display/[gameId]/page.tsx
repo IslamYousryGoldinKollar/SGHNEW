@@ -129,11 +129,11 @@ export default function DisplayPage() {
     const TeamDisplayCard = ({ team }: { team: Team }) => (
         <div 
             className="relative w-full h-full bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm flex flex-col"
-            style={{ clipPath: 'polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%)' }}
+            style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}
         >
             <div className="absolute top-0 left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
             
-            <div className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-8">
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
                 <h2 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h2>
                 <div className="flex items-center justify-center text-foreground pt-2">
                     <Users className="mr-2 h-5 w-5" /> 
@@ -151,9 +151,9 @@ export default function DisplayPage() {
                 </div>
             </div>
 
-            <div className="w-full flex justify-center items-end h-32 -mb-2">
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-32">
                  {team.icon ? 
-                    <Image src={team.icon} alt={`${team.name} icon`} width={96} height={96} className="object-contain drop-shadow-lg" /> 
+                    <Image src={team.icon} alt={`${team.name} icon`} layout="fill" className="object-contain" /> 
                     : <Trophy className="w-16 h-16" style={{color: team.color}} />
                  }
             </div>
@@ -175,23 +175,23 @@ export default function DisplayPage() {
 
                 {/* Center Content */}
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
-                    <Card className="rounded-2xl">
+                    <Card className="rounded-2xl w-full max-w-sm">
                         <CardHeader>
                             <div className="flex justify-center pt-4">
                                 <Image 
                                     src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
                                     alt="Saudi German Health Logo"
-                                    width={300}
-                                    height={100}
+                                    width={250}
+                                    height={80}
                                     className="object-contain"
                                 />
                             </div>
                         </CardHeader>
-                        <CardContent className="flex flex-col items-center">
-                             <div className="bg-white p-4 rounded-lg inline-block">
-                                <QRCodeSVG value={joinUrl} size={256} />
+                        <CardContent className="flex flex-col items-center !pt-0">
+                             <div className="bg-white p-2 rounded-lg inline-block">
+                                <QRCodeSVG value={joinUrl} size={192} />
                             </div>
-                            <p className="text-xl text-muted-foreground mt-2">Session PIN</p>
+                            <p className="text-lg text-muted-foreground mt-1">Session PIN</p>
                             <h1 className="text-3xl font-bold font-mono tracking-widest text-primary">{game.id}</h1>
                         </CardContent>
                     </Card>
@@ -207,19 +207,19 @@ export default function DisplayPage() {
 
     const TeamScorePod = ({ team }: { team: Team }) => (
         <div className={cn(
-            "p-6 rounded-2xl bg-card/80 backdrop-blur-sm shadow-xl text-center transition-all duration-500 border-4 w-64",
-             "rounded-2xl"
+            "p-4 rounded-lg bg-card/80 backdrop-blur-sm shadow-xl text-center transition-all duration-500 border-2 w-56",
+             "rounded-lg"
             )} 
             style={{ borderColor: team.color }}>
-            <div className="flex items-center justify-center gap-4">
-                {team.icon && <Image src={team.icon} alt={`${team.name} icon`} width={40} height={40} />}
-                <h3 className="text-3xl font-display drop-shadow-md" style={{ color: team.color }}>{team.name}</h3>
+            <div className="flex items-center justify-center gap-3">
+                {team.icon && <Image src={team.icon} alt={`${team.name} icon`} width={32} height={32} />}
+                <h3 className="text-2xl font-display drop-shadow-md" style={{ color: team.color }}>{team.name}</h3>
             </div>
-             <div className="flex items-center justify-center text-foreground text-xl my-2">
-                <Users className="mr-2 h-5 w-5" /> 
+             <div className="flex items-center justify-center text-foreground text-base my-1">
+                <Users className="mr-2 h-4 w-4" /> 
                 <span className="drop-shadow-sm font-semibold">{team.players.length}</span>
             </div>
-            <p className="text-6xl font-bold font-mono my-2 drop-shadow-lg">{team.score}</p>
+            <p className="text-5xl font-bold font-mono drop-shadow-lg">{team.score}</p>
         </div>
     );
 
@@ -230,10 +230,10 @@ export default function DisplayPage() {
 
         return (
              <div className="flex-1 w-full h-full flex items-center justify-center relative p-8">
-                <div className="absolute left-1/2 -translate-x-1/2 top-0 z-10">
+                <div className="absolute left-8 top-8 z-10">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
-                <div className="absolute left-8 top-8 z-10">
+                <div className="absolute left-8 top-32 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} />}
                 </div>
 
@@ -243,7 +243,7 @@ export default function DisplayPage() {
                     </div>
                 </div>
 
-                <div className="absolute right-8 top-8 z-10">
+                <div className="absolute right-8 top-32 z-10">
                     {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
@@ -347,18 +347,20 @@ export default function DisplayPage() {
                 <div className="flex-1 flex flex-col justify-start min-h-0">
                     {renderStatus()}
                 </div>
-                <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-shrink-0 z-20">
-                    {game.status === 'lobby' && (
-                        <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
-                            <Play className="mr-4"/> Start Game
-                        </Button>
-                    )}
-                     {game.status === 'playing' && (
-                        <Button size="lg" variant="destructive" onClick={handleEndGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
-                            <Square className="mr-4"/> End Game
-                        </Button>
-                    )}
-                </div>
+                 {game.status !== 'playing' && (
+                    <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex-shrink-0 z-20">
+                        {game.status === 'lobby' && (
+                            <Button size="lg" onClick={handleStartGame} className="min-w-[200px] h-14 text-2xl shadow-2xl">
+                                <Play className="mr-4"/> Start Game
+                            </Button>
+                        )}
+                         {game.status === 'finished' && (
+                            <Button size="lg" onClick={handlePlayAgain} className="min-w-[200px] h-14 text-2xl shadow-2xl">
+                                <RotateCw className="mr-4"/> Play Again
+                            </Button>
+                        )}
+                    </div>
+                 )}
             </div>
         )
     }
