@@ -128,7 +128,11 @@ export default function DisplayPage() {
     };
 
     const TeamDisplayCard = ({ team }: { team: Team }) => (
-        <div className="relative pt-16 w-full h-full">
+        <div 
+            className="relative pt-16 w-full h-full bg-card/80 text-card-foreground shadow-xl backdrop-blur-sm"
+            style={{ clipPath: 'polygon(0 0, 100% 0, 100% 90%, 50% 100%, 0 90%)' }}
+        >
+             <div className="absolute bottom-[10%] left-0 h-[5px] w-full bg-gradient-to-r from-primary to-accent" />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 z-10">
                 <div className="bg-background p-2 rounded-full shadow-lg">
                     <div className="w-32 h-32 rounded-full border-4 flex items-center justify-center" style={{borderColor: team.color, backgroundColor: team.color+'30'}}>
@@ -136,15 +140,13 @@ export default function DisplayPage() {
                     </div>
                 </div>
             </div>
-            <Card className="w-full h-full flex flex-col" style={{ borderColor: team.color }}>
-                <CardHeader className="text-center flex-shrink-0 p-4 pt-20">
-                     <CardTitle className="text-4xl font-display" style={{ color: team.color }}>{team.name}</CardTitle>
-                     <div className="flex items-center justify-center text-foreground pt-2">
-                        <Users className="mr-2 h-5 w-5" /> 
-                        <span className="text-2xl font-semibold drop-shadow-sm">{team.players.length} / {team.capacity}</span>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col min-h-0 p-4">
+            <div className="w-full h-full flex flex-col pt-20 text-center px-4">
+                <h2 className="text-4xl font-display" style={{ color: team.color }}>{team.name}</h2>
+                <div className="flex items-center justify-center text-foreground pt-2">
+                    <Users className="mr-2 h-5 w-5" /> 
+                    <span className="text-2xl font-semibold drop-shadow-sm">{team.players.length} / {team.capacity}</span>
+                </div>
+                <div className="flex-1 flex flex-col min-h-0 pt-4">
                     <ScrollArea className="flex-1">
                         <ul className="space-y-2 text-lg text-center pr-4">
                             {team.players.map(p => (
@@ -153,8 +155,8 @@ export default function DisplayPage() {
                              {team.players.length === 0 && <li className="text-muted-foreground italic">No players yet...</li>}
                         </ul>
                     </ScrollArea>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     );
     
@@ -175,7 +177,7 @@ export default function DisplayPage() {
                 <div className="w-1/3 flex flex-col items-center justify-center text-center text-card-foreground">
                     <Card>
                         <CardHeader>
-                            <div className="mb-6 flex justify-center">
+                            <div className="flex justify-center">
                                 <Image 
                                     src="https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fsgh.png?alt=media&token=b5eaf98c-f82f-4428-8c60-078a0509dcf2"
                                     alt="Saudi German Health Logo"
@@ -231,7 +233,7 @@ export default function DisplayPage() {
                 <div className="absolute left-1/2 -translate-x-1/2 top-0 z-10">
                     <Timer duration={game.timer} onTimeout={handleEndGame} gameStartedAt={game.gameStartedAt}/>
                 </div>
-                <div className="absolute left-8 top-40 z-10">
+                <div className="absolute left-8 top-8 z-10">
                     {teamLeft && <TeamScorePod team={teamLeft} />}
                 </div>
 
@@ -241,7 +243,7 @@ export default function DisplayPage() {
                     </div>
                 </div>
 
-                <div className="absolute right-8 top-40 z-10">
+                <div className="absolute right-8 top-8 z-10">
                     {teamRight && <TeamScorePod team={teamRight} />}
                 </div>
              </div>
