@@ -40,7 +40,6 @@ export default function DisplayLayout({
             type="video/mp4"
           />
         </video>
-        <div className="absolute inset-0 bg-black/30 z-10" />
         <Particles className="absolute inset-0 z-20" quantity={250} />
         <div className="relative z-30 h-full w-full">
             {children}
