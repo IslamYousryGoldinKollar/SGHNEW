@@ -5,13 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface ColorGridScreenProps {
   squares?: any;
-  teams?: any;
-  onColorSquare?: any;
-  teamColoring?: any;
-  credits?: any;
-  onSkip?: any;
   grid?: any;
-  teams?: any;
   onColorSquare?: any;
   teamColoring?: any;
   credits?: any;
