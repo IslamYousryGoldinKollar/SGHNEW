@@ -6,13 +6,7 @@ import { cn } from "@/lib/utils";
 interface ColorGridScreenProps {
   squares?: any;
   teams?: any;
-  teamColoring?: any;
-  credits?: any;
-  onSkip?: any;
   grid?: any;
-  teamColoring?: any;
-  credits?: any;
-  onSkip?: any;
   onComplete?: (score: number) => void;
   targetColor?: string;
   gridSize?: number;
