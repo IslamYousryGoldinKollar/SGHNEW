@@ -587,3 +587,4 @@ export default function GamePage() {
 
   return <div className="container mx-auto flex flex-1 flex-col px-4 py-8 h-screen">{renderContent()}</div>;
 }
+
