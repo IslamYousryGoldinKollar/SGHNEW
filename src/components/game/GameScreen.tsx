@@ -5,12 +5,11 @@ import Scoreboard from "@/components/game/Scoreboard";
 import Timer from "@/components/game/Timer";
 import QuestionCard from "@/components/game/QuestionCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target, HelpCircle, Palette } from "lucide-react";
+import { Target } from "lucide-react";
 
 type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
 type GameScreenProps = {
-  squares?: any;
   teams: Team[];
   currentPlayer: Player;
   question: Question;
@@ -33,7 +32,6 @@ export default function GameScreen({
   questionPhase,
   lastAnswerCorrect,
   onAnswer,
-  grid,
   duration,
   onTimeout,
   gameStartedAt,
@@ -45,33 +43,17 @@ export default function GameScreen({
   if (!playerTeam) return null;
 
   const answeredCount = currentQuestionIndex;
-  // Calculate progress for bar
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
-    <div className="game-screen flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
-      {/* LEFT: Question Area */}
-      <div className="lg:col-span-3 order-2 lg:order-1">
-        <QuestionCard
-          question={question}
-          questionPhase={questionPhase}
-          lastAnswerCorrect={lastAnswerCorrect}
-          onAnswer={onAnswer}
-          className="question-card h-full min-h-96"
-          isIndividualMode={isIndividualMode}
-        />
-      </div>
-
-      {/* RIGHT: Sidebar */}
-      <aside className="lg:col-span-1 order-1 lg:order-2 flex flex-col gap-4">
-        <Timer duration={duration} onTimeout={onTimeout} gameStartedAt={gameStartedAt} />
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto">
+      <div className="w-full">
+        <Timer initialTime={duration} onTimeUp={onTimeout} isRunning={true} className="mb-4" />
         
-        {/* CONDITIONAL SIDEBAR */}
         {!isIndividualMode ? (
           <Scoreboard team={playerTeam} />
         ) : (
-          /* FIX FOR ISSUE #3: Dedicated Individual Mode Card */
-          <Card className="individual-stats-card bg-white/90 backdrop-blur-md border-white/20 shadow-lg">
+          <Card className="individual-stats-card bg-white/90 backdrop-blur-md border-white/20 shadow-lg mb-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
@@ -99,7 +81,18 @@ export default function GameScreen({
             </CardContent>
           </Card>
         )}
-      </aside>
+      </div>
+
+      <div className="w-full flex-1 flex flex-col mt-4">
+        <QuestionCard
+          question={question}
+          questionPhase={questionPhase}
+          lastAnswerCorrect={lastAnswerCorrect}
+          onAnswer={onAnswer}
+          className="question-card flex-1 min-h-[300px]"
+          isIndividualMode={isIndividualMode}
+        />
+      </div>
     </div>
   );
 }

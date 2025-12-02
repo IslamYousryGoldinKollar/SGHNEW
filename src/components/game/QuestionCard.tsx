@@ -6,7 +6,7 @@ import type { Question } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, XCircle, ChevronRight } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
@@ -29,13 +29,12 @@ export default function QuestionCard({
 }: QuestionCardProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
-  // Reset local selection when question changes
   useEffect(() => {
     setSelectedAnswer(null);
   }, [question.question]);
 
   const handleAnswerClick = (option: string) => {
-    if (questionPhase !== 'answering') return; // BLOCK clicks if not answering
+    if (questionPhase !== 'answering') return;
     setSelectedAnswer(option);
     onAnswer(question, option);
   };
@@ -56,42 +55,44 @@ export default function QuestionCard({
   const showFeedbackOverlay = questionPhase === 'feedback' || questionPhase === 'transitioning';
 
   return (
-    <Card className={cn("h-full relative overflow-hidden", className)}>
+    <Card className={cn("h-full relative overflow-hidden flex flex-col", className)}>
       <CardHeader>
-        <CardTitle className="text-2xl font-display">{question.question}</CardTitle>
+        <CardTitle className="text-xl md:text-2xl font-display">{question.question}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-center">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-3">
           {question.options.map((option, index) => (
             <Button
               key={`${question.question}-${index}`}
               variant="outline"
               size="lg"
-              className={cn("h-auto min-h-16 py-4 text-lg justify-start text-left", getButtonClass(option))}
+              className={cn(
+                "h-auto min-h-14 py-3 text-base md:text-lg justify-start text-left whitespace-normal", 
+                getButtonClass(option)
+              )}
               onClick={() => handleAnswerClick(option)}
               disabled={questionPhase !== 'answering'}
             >
-              <span className="mr-4 font-bold">{String.fromCharCode(65 + index)}.</span>
-              {option}
+              <span className="mr-3 font-bold">{String.fromCharCode(65 + index)}.</span>
+              <span className="flex-1">{option}</span>
             </Button>
           ))}
         </div>
       </CardContent>
 
-      {/* OVERLAY: Shows immediately on click */}
       {showFeedbackOverlay && lastAnswerCorrect !== null && (
         <div className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-300">
           {lastAnswerCorrect ? (
              <>
-               <CheckCircle2 className="h-20 w-20 text-green-500 mb-4" />
-               <p className="text-4xl font-bold text-green-600">Correct!</p>
+               <CheckCircle2 className="h-16 w-16 md:h-20 md:w-20 text-green-500 mb-4" />
+               <p className="text-2xl md:text-4xl font-bold text-green-600">Correct!</p>
              </>
           ) : (
              <>
-               <XCircle className="h-20 w-20 text-red-500 mb-4" />
-               <p className="text-4xl font-bold text-red-600">Incorrect!</p>
+               <XCircle className="h-16 w-16 md:h-20 md:w-20 text-red-500 mb-4" />
+               <p className="text-2xl md:text-4xl font-bold text-red-600">Incorrect!</p>
                {isIndividualMode && (
-                <p className="mt-2 text-muted-foreground">Answer: {question.answer}</p>
+                <p className="mt-2 text-muted-foreground text-sm md:text-base">Answer: {question.answer}</p>
                )}
              </>
           )}
