@@ -166,7 +166,7 @@ const TerritoryClaimScreen = ({
     // If we're clicking the SVG path directly
     const hexData = game.grid.find(h => h.id === id);
     if (!hexData || hexData.coloredBy) {
-        // Can't claim an already colored hex - shake effect handled by CSS class or logic inside HexMap usually
+        // Can't claim an already colored hex
         return;
     }
     onClaim(id);
