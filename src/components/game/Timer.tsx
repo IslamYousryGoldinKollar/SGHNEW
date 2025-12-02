@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,11 +5,13 @@ import { cn } from "@/lib/utils";
 import type { Timestamp } from "firebase/firestore";
 
 interface TimerProps {
-  initialTime: number; // Total duration in seconds
-  gameStartedAt: Timestamp | null | undefined;
+  initialTime?: number; // Made optional to fix build errors
+  gameStartedAt?: Timestamp | null | undefined;
   onTimeUp?: () => void;
   isRunning?: boolean;
   className?: string;
+  duration?: number; // Alias for initialTime for compatibility
+  onTimeout?: () => void; // Alias for onTimeUp for compatibility
 }
 
 export function Timer({ 
@@ -18,9 +19,17 @@ export function Timer({
   gameStartedAt,
   onTimeUp, 
   isRunning = true,
-  className 
+  className,
+  duration,
+  onTimeout
 }: TimerProps) {
-  const [timeLeft, setTimeLeft] = useState(initialTime);
+  const effectiveInitialTime = initialTime ?? duration ?? 0;
+  const effectiveOnTimeUp = onTimeUp ?? onTimeout;
+  const [timeLeft, setTimeLeft] = useState(effectiveInitialTime);
+
+  useEffect(() => {
+    setTimeLeft(effectiveInitialTime);
+  }, [effectiveInitialTime]);
 
   useEffect(() => {
     if (!isRunning || !gameStartedAt) {
@@ -28,7 +37,7 @@ export function Timer({
     }
 
     const startTime = gameStartedAt.toMillis();
-    const endTime = startTime + initialTime * 1000;
+    const endTime = startTime + effectiveInitialTime * 1000;
 
     const updateTimer = () => {
       const now = Date.now();
@@ -36,17 +45,17 @@ export function Timer({
       const remainingSeconds = Math.ceil(remaining / 1000);
       setTimeLeft(remainingSeconds);
 
-      if (remainingSeconds <= 0 && onTimeUp) {
-        onTimeUp();
+      if (remainingSeconds <= 0 && effectiveOnTimeUp) {
+        effectiveOnTimeUp();
       }
     };
     
-    updateTimer(); // Initial call to set the time immediately
+    updateTimer(); 
 
     const timerInterval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timerInterval);
-  }, [isRunning, gameStartedAt, initialTime, onTimeUp]);
+  }, [isRunning, gameStartedAt, effectiveInitialTime, effectiveOnTimeUp]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -58,10 +67,7 @@ export function Timer({
   const isCriticalTime = timeLeft <= 30;
 
   return (
-    <div className={cn(
-      "text-center",
-      className
-    )}>
+    <div className={cn("text-center", className)}>
       <span className={cn(
         "text-5xl md:text-6xl font-bold tracking-tight drop-shadow-lg transition-colors duration-300",
         isCriticalTime ? "text-red-500 animate-pulse" : 

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -38,7 +37,6 @@ import { v4 as uuidv4 } from "uuid";
 import HexMap from "@/components/game/HexMap";
 import Timer from "@/components/game/Timer";
 
-
 type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
 const generatePin = () =>
@@ -56,7 +54,7 @@ const IndividualLobby = ({
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [playerName, setPlayerName] = useState("");
   const [error, setError] = useState("");
-  const nameField = game.requiredPlayerFields.find((f) =>
+  const nameField = game.requiredPlayerFields?.find((f) =>
     f.label.toLowerCase().includes("name")
   );
 
@@ -69,7 +67,7 @@ const IndividualLobby = ({
       setError("Please fill out your name.");
       return;
     }
-    const allFieldsFilled = game.requiredPlayerFields.every(field => {
+    const allFieldsFilled = (game.requiredPlayerFields || []).every(field => {
         if (nameField && field.id === nameField.id) return !!playerName.trim();
         return formData[field.id] && formData[field.id].trim() !== ""
     });
@@ -109,7 +107,7 @@ const IndividualLobby = ({
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            {game.requiredPlayerFields.map((field) => (
+            {(game.requiredPlayerFields || []).map((field) => (
                 <div key={field.id} className="space-y-2">
                   <Label htmlFor={field.id}>{field.label}</Label>
                   <Input
@@ -138,7 +136,6 @@ const IndividualLobby = ({
   );
 };
 
-
 const TerritoryClaimScreen = ({
   game,
   onClaim,
@@ -166,17 +163,14 @@ const TerritoryClaimScreen = ({
   }, [onSkip]);
 
   const handleHexClick = (id: number, event: React.MouseEvent<SVGPathElement>) => {
-    const hexElement = event.target as SVGPathElement;
+    // If we're clicking the SVG path directly
     const hexData = game.grid.find(h => h.id === id);
     if (!hexData || hexData.coloredBy) {
-        // Can't claim an already colored hex
-        hexElement.style.animation = "shake 0.5s";
-        setTimeout(() => hexElement.style.animation = "", 500);
+        // Can't claim an already colored hex - shake effect handled by CSS class or logic inside HexMap usually
         return;
     }
     onClaim(id);
   };
-
 
   return (
     <div className="flex flex-col items-center justify-center flex-1 w-full text-center">
@@ -187,9 +181,8 @@ const TerritoryClaimScreen = ({
         Time to choose: <span className={timeLeft <= 3 ? "text-destructive" : ""}>{timeLeft}</span>
       </div>
 
-      <div className="w-full max-w-2xl aspect-square relative">
+      <div className="w-full max-w-2xl aspect-square relative flex items-center justify-center">
         <HexMap
-          ref={mapRef}
           grid={game.grid}
           teams={game.teams}
           onHexClick={handleHexClick}
@@ -199,18 +192,9 @@ const TerritoryClaimScreen = ({
        <Button onClick={onSkip} variant="link" className="mt-4 text-white/80">
         Skip and Go to Next Question
       </Button>
-
-      <style jsx>{`
-        @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(-5px); }
-          75% { transform: translateX(5px); }
-        }
-      `}</style>
     </div>
   );
 };
-
 
 export default function GamePage() {
   const params = useParams();
@@ -225,17 +209,13 @@ export default function GamePage() {
   const [isJoining, setIsJoining] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  // NEW STATE MACHINE FOR FLOW CONTROL
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
-
-  // Refs for timeout management to prevent race conditions
   const phaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const isAdmin = game?.adminId === authUser?.uid;
   const isIndividualMode = game?.sessionType === 'individual' || !!game?.parentSessionId;
 
-  // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
       if (phaseTimeoutRef.current) clearTimeout(phaseTimeoutRef.current);
@@ -244,7 +224,6 @@ export default function GamePage() {
 
   useEffect(() => {
     if (!gameId) return;
-
     let foundGame = false;
   
     const handleDocSnapshot = (doc: any) => {
@@ -252,11 +231,9 @@ export default function GamePage() {
             foundGame = true;
             const gameData = { id: doc.id, ...doc.data() } as Game;
             setGame(gameData);
-
             if(gameData.questions && gameData.questions.length > 0){
               setCurrentQuestion(gameData.questions[0]);
             }
-
             if (authUser) {
                 const player =
                     gameData.teams
@@ -278,21 +255,12 @@ export default function GamePage() {
         }
     };
     
-    // Check both games and individual_games collections
     const gamesRef = doc(db, "games", gameId.toUpperCase());
-    
     const unsubscribeGames = onSnapshot(gamesRef, handleDocSnapshot);
     
-    // If neither collection has the game, show error after a short delay
     const timeout = setTimeout(() => {
         if (!foundGame) {
             setGame(null);
-            toast({
-                title: "Session Not Found",
-                description: "This game session does not exist or has expired.",
-                variant: "destructive",
-            });
-            router.push("/");
             setLoading(false);
         }
     }, 3000);
@@ -301,19 +269,15 @@ export default function GamePage() {
       unsubscribeGames();
       clearTimeout(timeout);
     };
-  }, [gameId, authUser, router, toast]);
+  }, [gameId, authUser]);
 
-    
-  // Effect to manage game state transitions and redirects
   useEffect(() => {
     if (!game || !authUser) return;
-
     if (game.status === 'playing' && !currentPlayer && game.parentSessionId) {
         toast({ title: "Game in progress", description: "This match has already started.", variant: "destructive"});
         router.replace(`/game/${game.parentSessionId}`);
         return;
     }
-    
     if (game.status === 'starting' && game.gameStartedAt && (game.gameStartedAt.toMillis() < Date.now())) {
         if (isAdmin || game.sessionType === 'individual' || game.parentSessionId) {
              updateDoc(doc(db, "games", gameId), { status: "playing" });
@@ -334,7 +298,6 @@ export default function GamePage() {
       const gameStartTime = game.gameStartedAt.toMillis();
       const endTime = gameStartTime + game.timer * 1000;
       const now = Date.now();
-      
       if (now >= endTime) {
         handleTimeout();
       } else {
@@ -344,38 +307,22 @@ export default function GamePage() {
     }
   }, [game?.status, game?.gameStartedAt, game?.timer, handleTimeout]);
 
-  const handleJoinTeam = async (
-    playerName: string,
-    playerId: string,
-    teamName: string
-  ) => {
+  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
     if (!game || !authUser) return;
-
     const gameRef = doc(db, "games", gameId);
     try {
       await runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) {
-          throw new Error("Game does not exist");
-        }
-
+        if (!gameDoc.exists()) throw new Error("Game does not exist");
         const currentGame = gameDoc.data() as Game;
-
-        if (currentGame.status !== "lobby") {
-          throw new Error("Game has already started");
-        }
-
-        const existingPlayer = currentGame.teams
-          .flatMap((t) => t.players)
-          .find((p) => p.id === authUser.uid);
-        if (existingPlayer) {
-          throw new Error("You have already joined a team.");
-        }
+        if (currentGame.status !== "lobby") throw new Error("Game has already started");
+        
+        const existingPlayer = currentGame.teams.flatMap((t) => t.players).find((p) => p.id === authUser.uid);
+        if (existingPlayer) throw new Error("You have already joined a team.");
 
         const team = currentGame.teams.find((t) => t.name === teamName);
         if (!team) throw new Error("Team not found");
-        if (team.players.length >= team.capacity)
-          throw new Error("Team is full");
+        if (team.players.length >= team.capacity) throw new Error("Team is full");
 
         const newPlayer: Player = {
           id: authUser.uid,
@@ -386,39 +333,25 @@ export default function GamePage() {
           coloringCredits: 0,
           score: 0,
         };
-
         const updatedTeams = currentGame.teams.map((t) => {
-          if (t.name === teamName) {
-            return { ...t, players: [...t.players, newPlayer] };
-          }
+          if (t.name === teamName) return { ...t, players: [...t.players, newPlayer] };
           return t;
         });
-
         transaction.update(gameRef, { teams: updatedTeams });
       });
     } catch (error: any) {
-      toast({
-        title: "Could not join team",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Could not join team", description: error.message, variant: "destructive" });
     }
   };
 
-  const handleJoinIndividual = async (
-    customData: Record<string, string>,
-    name: string
-  ) => {
+  const handleJoinIndividual = async (customData: Record<string, string>, name: string) => {
     if (!game || !authUser) return;
     setIsJoining(true);
-
     const newGameId = `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
     const newGameRef = doc(db, "games", newGameId);
-    const templateGameRef = doc(db, "games", gameId);
-
+    
     try {
       let templateGameData = { ...game };
-
       if (!templateGameData.questions || templateGameData.questions.length === 0) {
         const result = await generateQuestionsAction({
           topic: templateGameData.topic || "General Knowledge",
@@ -426,32 +359,28 @@ export default function GamePage() {
         });
         if (result.questions) {
           templateGameData.questions = result.questions;
-          await updateDoc(templateGameRef, { questions: result.questions });
         } else {
           throw new Error("AI failed to generate questions.");
         }
       }
 
-      const idNumberField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('id number'));
-      const nameField = game.requiredPlayerFields.find(f => f.label.toLowerCase().includes('name'));
+      const idNumberField = game.requiredPlayerFields?.find(f => f.label.toLowerCase().includes('id number'));
+      const nameField = game.requiredPlayerFields?.find(f => f.label.toLowerCase().includes('name'));
       
       const playerId = idNumberField ? customData[idNumberField.id] || uuidv4() : uuidv4();
       const playerName = nameField ? name : customData[Object.keys(customData)[0]];
 
       const newCustomData: Record<string, string> = {};
-      game.requiredPlayerFields.forEach(field => {
+      (game.requiredPlayerFields || []).forEach(field => {
         newCustomData[field.label] = customData[field.id] || '';
       });
-       if(nameField) {
-        newCustomData[nameField.label] = name;
-       }
-
+       if(nameField) newCustomData[nameField.label] = name;
 
       const newPlayer: Player = {
         id: authUser.uid,
         playerId: playerId,
         name: playerName,
-        teamName: "Team", // Dummy team
+        teamName: "Team",
         answeredQuestions: [],
         coloringCredits: 0,
         score: 0,
@@ -480,31 +409,15 @@ export default function GamePage() {
 
       await setDoc(newGameRef, newGame);
       router.push(`/game/${newGameId}`);
-
     } catch (error: any) {
-      console.error("Error joining individual challenge: ", error);
-      toast({
-        title: "Could Not Join",
-        description: error.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast({ title: "Could Not Join", description: error.message, variant: "destructive" });
       setIsJoining(false);
     }
   };
 
-
   const handleStartGame = async () => {
-    if (!game || !isAdmin) {
-      toast({ title: "Not Authorized", description: "Only the admin can start.", variant: "destructive" });
-      return;
-    }
-    if (game.teams.reduce((sum, t) => sum + t.players.length, 0) === 0) {
-      toast({ title: "No players!", description: "At least one player must join.", variant: "destructive" });
-      return;
-    }
-
+    if (!game || !isAdmin) return;
     const gameRef = doc(db, "games", gameId);
-    
     try {
       let questionsToUse: Question[] = game.questions || [];
       if (questionsToUse.length === 0) {
@@ -512,133 +425,89 @@ export default function GamePage() {
           topic: game.topic || "General Knowledge",
           numberOfQuestions: 20,
         });
-        if (result.questions) {
-          questionsToUse = result.questions;
-        } else {
-          throw new Error("AI failed to generate questions.");
-        }
+        if (result.questions) questionsToUse = result.questions;
       }
-      const updateData = {
-        questions: questionsToUse,
-        status: "playing",
-        gameStartedAt: serverTimestamp(),
-      };
-      await updateDoc(gameRef, updateData);
+      await updateDoc(gameRef, { questions: questionsToUse, status: "playing", gameStartedAt: serverTimestamp() });
     } catch (error) {
-      console.error(error);
-      toast({ title: "Error Starting Game", description: "Could not prepare questions.", variant: "destructive" });
-      updateDoc(gameRef, { status: "lobby" });
+      toast({ title: "Error", description: "Could not start game", variant: "destructive" });
     }
   };
   
-    // 3. CENTRALIZED NEXT QUESTION LOGIC
   const moveToNextQuestion = useCallback(() => {
     if (!game) return;
-
     if (phaseTimeoutRef.current) clearTimeout(phaseTimeoutRef.current);
-    
     const nextIndex = currentQuestionIndex + 1;
     setCurrentQuestionIndex(nextIndex);
-
     if (nextIndex < game.questions.length) {
       setCurrentQuestion(game.questions[nextIndex]);
     } else {
       setCurrentQuestion(null);
     }
-
-    // Reset phase state for the new question
     setQuestionPhase('answering');
     setLastAnswerCorrect(null);
   }, [game, currentQuestionIndex]);
 
-  // 4. HANDLE ANSWER WITH PHASE TRANSITIONS
   const handleAnswer = async (question: Question, answer: string) => {
-    // Prevent double clicking or answering during wrong phase
     if (!game || !currentPlayer || questionPhase !== 'answering') return;
     
     const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
-
-    // A. Immediate Feedback (Optimistic UI)
     setQuestionPhase('feedback');
     setLastAnswerCorrect(isCorrect);
     
     const gameRef = doc(db, "games", gameId);
-
     try {
       await runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
         if (!gameDoc.exists()) throw new Error("Game not found");
-        
         const currentGame = gameDoc.data() as Game;
         const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
-        if (teamIndex === -1) throw new Error("Team not found");
-        
+        if (teamIndex === -1) return;
         const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
-        if (playerIndex === -1) throw new Error("Player not found");
+        if (playerIndex === -1) return;
         
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = { ...updatedTeams[teamIndex].players[playerIndex] };
-
-        playerToUpdate.answeredQuestions = [
-          ...(playerToUpdate.answeredQuestions || []),
-          question.question,
-        ];
+        playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
 
         let scoreChange = 0;
         if (isCorrect) {
           scoreChange = 1;
           playerToUpdate.coloringCredits += 1;
         } else if (isIndividualMode) {
-          scoreChange = -1; // Penalty for individual mode
+          scoreChange = -1;
         }
-
         updatedTeams[teamIndex].score += scoreChange;
         playerToUpdate.score += scoreChange;
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
-        
         transaction.update(gameRef, { teams: updatedTeams });
       });
 
-      // B. Schedule Next Phase
       phaseTimeoutRef.current = setTimeout(() => {
-        // If correct AND Team Mode -> Go to Coloring
         if (isCorrect && !isIndividualMode) {
            setQuestionPhase('coloring');
         } else {
-           // If Wrong OR Individual Mode -> Skip coloring, go to next
            setQuestionPhase('transitioning');
-           phaseTimeoutRef.current = setTimeout(() => {
-             moveToNextQuestion();
-           }, 500);
+           phaseTimeoutRef.current = setTimeout(() => { moveToNextQuestion(); }, 500);
         }
-      }, 2000); // Show feedback for 2 seconds
-
+      }, 2000);
     } catch (error) {
-      console.error(error);
-      toast({ title: "Error", description: "Could not submit answer.", variant: "destructive" });
-      // On error, force move next after delay
       setTimeout(moveToNextQuestion, 2000);
     }
   };
 
-  // 5. HANDLE COLORING SELECTION
   const handleColorSquare = async (squareId: number) => {
-    // If skipping (squareId -1) or error
     if (!game || !currentPlayer || squareId < 0) {
       moveToNextQuestion();
       return;
     }
-
     const gameRef = doc(db, "games", gameId);
     try {
       await runTransaction(db, async (transaction) => {
         const gameDoc = await transaction.get(gameRef);
-        if (!gameDoc.exists()) throw new Error("Game not found");
-        
+        if (!gameDoc.exists()) return;
         const currentGame = gameDoc.data() as Game;
         const teamIndex = currentGame.teams.findIndex(t => t.name === currentPlayer.teamName);
         if (teamIndex === -1) return;
-
         const playerIndex = currentGame.teams[teamIndex].players.findIndex(p => p.id === currentPlayer.id);
         if (playerIndex === -1) return;
 
@@ -648,22 +517,15 @@ export default function GamePage() {
 
         const updatedGrid = [...currentGame.grid];
         const gridIndex = updatedGrid.findIndex(s => s.id === squareId);
-        if (gridIndex === -1) return;
+        if (gridIndex === -1 || updatedGrid[gridIndex].coloredBy) return;
 
-        if (updatedGrid[gridIndex].coloredBy) {
-            // Already colored
-        } else {
-            updatedGrid[gridIndex].coloredBy = currentPlayer.teamName;
-            playerToUpdate.coloringCredits -= 1;
-        }
+        updatedGrid[gridIndex].coloredBy = currentPlayer.teamName;
+        playerToUpdate.coloringCredits -= 1;
         
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
         transaction.update(gameRef, { grid: updatedGrid, teams: updatedTeams });
       });
-    } catch (error) {
-      console.error(error);
-    }
-    // Always move next after attempt
+    } catch (error) { console.error(error); }
     moveToNextQuestion();
   };
 
@@ -672,97 +534,34 @@ export default function GamePage() {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <h1 className="mt-4 text-4xl font-bold font-display text-white drop-shadow-lg">
-            Loading Session...
-          </h1>
+          <h1 className="mt-4 text-4xl font-bold font-display text-white drop-shadow-lg">Loading...</h1>
         </div>
       );
     }
-    
-    if (!game) {
-        return (
-             <div className="flex flex-col items-center justify-center flex-1 text-center">
-                <h1 className="text-4xl font-bold font-display text-destructive">Session Not Found</h1>
-                <p className="mt-2 text-muted-foreground">The game PIN you entered does not exist or has expired.</p>
-                <Button onClick={() => router.push('/')} className="mt-8">Back to Home</Button>
-            </div>
-        )
-    }
+    if (!game) return <div>Session Not Found</div>;
 
     if (game.sessionType === "individual" && !currentPlayer && !game.parentSessionId) {
-      return (
-        <IndividualLobby
-          game={game}
-          onJoin={handleJoinIndividual}
-          isJoining={isJoining}
-        />
-      );
+      return <IndividualLobby game={game} onJoin={handleJoinIndividual} isJoining={isJoining} />;
     }
-
-    if (!currentPlayer && (game.sessionType === 'team' || game.parentSessionId)) {
-        if(game.status !== 'lobby') {
-            return <div className="text-center p-8">This game is already in progress. You cannot join now.</div>;
-        }
-        // If it's lobby, the Lobby component will handle the join UI
-    }
-    
     if(game.parentSessionId && game.status === 'lobby' && currentPlayer) {
-      return (
-         <div className="flex flex-col items-center justify-center flex-1 text-center">
-            <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">
-              Waiting for an opponent...
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              You are in the queue, {currentPlayer.name}. A match will begin automatically.
-            </p>
-        </div>
-      )
+      return <div>Waiting for opponent...</div>;
     }
 
     switch (game.status) {
       case "lobby":
-        return (
-          <Lobby
-            game={game}
-            onJoinTeam={handleJoinTeam}
-            onStartGame={handleStartGame}
-            currentPlayer={currentPlayer}
-            isAdmin={isAdmin}
-          />
-        );
+        return <Lobby game={game} onJoinTeam={handleJoinTeam} onStartGame={handleStartGame} currentPlayer={currentPlayer} isAdmin={isAdmin} />;
       case "starting":
         return <PreGameCountdown gameStartedAt={game.gameStartedAt} />;
       case "playing":
-        if (!currentPlayer) return <p>Joining game...</p>;
-        
+        if (!currentPlayer) return <p>Joining...</p>;
         const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
-        if (!playerTeam) return (<p>Error: Your team or player data could not be found.</p>);
-
-        const freshPlayer = playerTeam.players.find(p => p.id === currentPlayer.id);
+        const freshPlayer = playerTeam?.players.find(p => p.id === currentPlayer.id);
 
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
-            return (
-              <TerritoryClaimScreen
-                game={game}
-                onClaim={handleColorSquare}
-                onSkip={() => handleColorSquare(-1)}
-              />
-            )
+            return <TerritoryClaimScreen game={game} onClaim={handleColorSquare} onSkip={() => handleColorSquare(-1)} />;
         }
-
-        if (!currentQuestion) {
-          return (
-            <div className="flex flex-col items-center justify-center flex-1 text-center">
-              <h1 className="text-4xl font-bold font-display">
-                You've answered all questions!
-              </h1>
-              <p className="mt-2 text-muted-foreground">
-                Great job! See your final score when time is up.
-              </p>
-            </div>
-          );
-        }
+        if (!currentQuestion) return <div>You've answered all questions!</div>;
+        
         return (
           <GameScreen
             teams={game.teams}
@@ -781,22 +580,10 @@ export default function GamePage() {
           />
         );
       case "finished":
-        return (
-          <ResultsScreen
-            game={game}
-            onPlayAgain={() => {}}
-            isAdmin={isAdmin}
-            individualPlayerId={game.parentSessionId ? currentPlayer?.id : undefined}
-          />
-        );
-      default:
-        return <div className="text-center">Unknown game state.</div>;
+        return <ResultsScreen game={game} onPlayAgain={() => {}} isAdmin={isAdmin} individualPlayerId={game.parentSessionId ? currentPlayer?.id : undefined} />;
+      default: return <div>Unknown state</div>;
     }
   };
 
-  return (
-    <div className="container mx-auto flex flex-1 flex-col px-4 py-8 h-screen">
-      {renderContent()}
-    </div>
-  );
+  return <div className="container mx-auto flex flex-1 flex-col px-4 py-8 h-screen">{renderContent()}</div>;
 }
