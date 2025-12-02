@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "cache-bust": "echo 'Cache-busting script'"
+    "cache-bust": "echo 'Cache-busting script v2'"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
@@ -42,7 +42,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "dotenv": "^16.5.0",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^11.9.1",
     "framer-motion": "^11.5.1",
@@ -75,5 +74,3 @@
     "typescript": "^5"
   }
 }
-
-    
