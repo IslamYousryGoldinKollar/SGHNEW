@@ -29,13 +29,15 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import PreGameCountdown from "@/components/game/PreGameCountdown";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { v4 as uuidv4 } from "uuid";
-import ColorGridScreen from "@/components/game/ColorGridScreen";
+import HexMap from "@/components/game/HexMap";
+import Timer from "@/components/game/Timer";
+
 
 type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 
@@ -136,6 +138,80 @@ const IndividualLobby = ({
   );
 };
 
+
+const TerritoryClaimScreen = ({
+  game,
+  onClaim,
+  onSkip,
+}: {
+  game: Game;
+  onClaim: (hexId: number) => void;
+  onSkip: () => void;
+}) => {
+  const [timeLeft, setTimeLeft] = useState(10);
+  const mapRef = useRef<SVGSVGElement>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          onSkip();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [onSkip]);
+
+  const handleHexClick = (id: number, event: React.MouseEvent<SVGPathElement>) => {
+    const hexElement = event.target as SVGPathElement;
+    const hexData = game.grid.find(h => h.id === id);
+    if (!hexData || hexData.coloredBy) {
+        // Can't claim an already colored hex
+        hexElement.style.animation = "shake 0.5s";
+        setTimeout(() => hexElement.style.animation = "", 500);
+        return;
+    }
+    onClaim(id);
+  };
+
+
+  return (
+    <div className="flex flex-col items-center justify-center flex-1 w-full text-center">
+      <h1 className="text-4xl font-bold font-display text-white">Claim Your Territory!</h1>
+      <p className="text-muted-foreground mt-2 text-lg">You answered correctly! Click an empty hex to claim it for your team.</p>
+      
+      <div className="my-4 text-2xl font-bold text-white">
+        Time to choose: <span className={timeLeft <= 3 ? "text-destructive" : ""}>{timeLeft}</span>
+      </div>
+
+      <div className="w-full max-w-2xl aspect-square relative">
+        <HexMap
+          ref={mapRef}
+          grid={game.grid}
+          teams={game.teams}
+          onHexClick={handleHexClick}
+        />
+      </div>
+
+       <Button onClick={onSkip} variant="link" className="mt-4 text-white/80">
+        Skip and Go to Next Question
+      </Button>
+
+      <style jsx>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px); }
+          75% { transform: translateX(5px); }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+
 export default function GamePage() {
   const params = useParams();
   const router = useRouter();
@@ -152,7 +228,6 @@ export default function GamePage() {
   // NEW STATE MACHINE FOR FLOW CONTROL
   const [questionPhase, setQuestionPhase] = useState<QuestionPhase>('answering');
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
-  const [pendingColorCredits, setPendingColorCredits] = useState(0);
 
   // Refs for timeout management to prevent race conditions
   const phaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -205,10 +280,8 @@ export default function GamePage() {
     
     // Check both games and individual_games collections
     const gamesRef = doc(db, "games", gameId.toUpperCase());
-    const individualGamesRef = doc(db, "individual_games", gameId.toUpperCase());
-
+    
     const unsubscribeGames = onSnapshot(gamesRef, handleDocSnapshot);
-    const unsubscribeIndividualGames = onSnapshot(individualGamesRef, handleDocSnapshot);
     
     // If neither collection has the game, show error after a short delay
     const timeout = setTimeout(() => {
@@ -222,11 +295,10 @@ export default function GamePage() {
             router.push("/");
             setLoading(false);
         }
-    }, 2000);
+    }, 3000);
   
     return () => {
       unsubscribeGames();
-      unsubscribeIndividualGames();
       clearTimeout(timeout);
     };
   }, [gameId, authUser, router, toast]);
@@ -477,7 +549,6 @@ export default function GamePage() {
     // Reset phase state for the new question
     setQuestionPhase('answering');
     setLastAnswerCorrect(null);
-    setPendingColorCredits(0);
   }, [game, currentQuestionIndex]);
 
   // 4. HANDLE ANSWER WITH PHASE TRANSITIONS
@@ -514,12 +585,9 @@ export default function GamePage() {
         ];
 
         let scoreChange = 0;
-        let newColorCredits = playerToUpdate.coloringCredits || 0;
-
         if (isCorrect) {
           scoreChange = 1;
-          newColorCredits += 1;
-          playerToUpdate.coloringCredits = newColorCredits;
+          playerToUpdate.coloringCredits += 1;
         } else if (isIndividualMode) {
           scoreChange = -1; // Penalty for individual mode
         }
@@ -529,11 +597,6 @@ export default function GamePage() {
         updatedTeams[teamIndex].players[playerIndex] = playerToUpdate;
         
         transaction.update(gameRef, { teams: updatedTeams });
-
-        // Store credits locally to decide next phase
-        if (isCorrect) {
-          setPendingColorCredits(newColorCredits);
-        }
       });
 
       // B. Schedule Next Phase
@@ -680,11 +743,11 @@ export default function GamePage() {
 
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
             return (
-                <ColorGridScreen 
-                    gridSize={8}
-                    timeLimit={30}
-                    onComplete={() => handleColorSquare(-1)}
-                />
+              <TerritoryClaimScreen
+                game={game}
+                onClaim={handleColorSquare}
+                onSkip={() => handleColorSquare(-1)}
+              />
             )
         }
 
