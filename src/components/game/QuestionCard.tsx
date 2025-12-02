@@ -30,8 +30,11 @@ export default function QuestionCard({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
   useEffect(() => {
-    setSelectedAnswer(null);
-  }, [question.question]);
+    // Reset selected answer when the question changes (signified by phase resetting to 'answering')
+    if (questionPhase === 'answering') {
+      setSelectedAnswer(null);
+    }
+  }, [question, questionPhase]);
 
   const handleAnswerClick = (option: string) => {
     if (questionPhase !== 'answering') return;
@@ -57,10 +60,10 @@ export default function QuestionCard({
   return (
     <Card className={cn("h-full relative overflow-hidden flex flex-col", className)}>
       <CardHeader className="flex-shrink-0">
-        <CardTitle className="text-xl md:text-2xl font-display leading-tight">{question.question}</CardTitle>
+        <CardTitle className="text-xl md:text-2xl font-display leading-tight text-center">{question.question}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col justify-center min-h-0">
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {question.options.map((option, index) => (
             <Button
               key={`${question.question}-${index}`}

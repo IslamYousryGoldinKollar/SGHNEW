@@ -1,6 +1,7 @@
 
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import MainLayoutClient from './main-layout-client';
+import { cn } from '@/lib/utils';
 
 export default function MainLayout({
   children,
@@ -9,7 +10,9 @@ export default function MainLayout({
 }) {
   return (
     <MainLayoutClient>
-      {children}
+      <div className={cn("game-screen")}>
+        {children}
+      </div>
       <FirebaseErrorListener />
     </MainLayoutClient>
   );

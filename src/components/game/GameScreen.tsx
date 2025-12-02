@@ -32,6 +32,7 @@ export default function GameScreen({
   questionPhase,
   lastAnswerCorrect,
   onAnswer,
+  grid,
   duration,
   onTimeout,
   gameStartedAt,
@@ -94,7 +95,7 @@ export default function GameScreen({
           questionPhase={questionPhase}
           lastAnswerCorrect={lastAnswerCorrect}
           onAnswer={onAnswer}
-          className="question-card flex-1"
+          className="flex-1"
           isIndividualMode={isIndividualMode}
         />
       </div>
