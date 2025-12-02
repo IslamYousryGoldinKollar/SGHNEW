@@ -386,7 +386,7 @@ export default function GamePage() {
         customData: newCustomData,
       };
 
-      const newGame: Omit<Game, "id"> = {
+      const newGame: Game = {
         ...templateGameData,
         id: newGameId,
         title: `${templateGameData.title} - ${playerName}`,
