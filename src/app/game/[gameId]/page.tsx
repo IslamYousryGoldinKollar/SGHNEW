@@ -166,7 +166,7 @@ const TerritoryClaimScreen = ({
     // If we're clicking the SVG path directly
     const hexData = game.grid.find(h => h.id === id);
     if (!hexData || hexData.coloredBy) {
-        // Can't claim an already colored hex
+        // Can't claim an already colored hex - shake effect handled by CSS class or logic inside HexMap usually
         return;
     }
     onClaim(id);
@@ -587,4 +587,4 @@ export default function GamePage() {
 
   return <div className="container mx-auto flex flex-1 flex-col px-4 py-8 h-screen">{renderContent()}</div>;
 }
-// Force update Tue Dec  2 06:06:46 PM UTC 2025
+    
