@@ -81,7 +81,7 @@ export default function QuestionCard({
       </CardContent>
 
       {showFeedbackOverlay && lastAnswerCorrect !== null && (
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-300">
+        <div className="absolute inset-0 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-300">
           {lastAnswerCorrect ? (
              <>
                <CheckCircle2 className="h-16 w-16 md:h-20 md:w-20 text-green-500 mb-4" />

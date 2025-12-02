@@ -58,7 +58,7 @@ export default function GameScreen({
         {!isIndividualMode ? (
           <Scoreboard team={playerTeam} />
         ) : (
-          <Card className="individual-stats-card bg-white/90 backdrop-blur-md border-white/20 shadow-lg mb-4">
+          <Card className="individual-stats-card">
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
