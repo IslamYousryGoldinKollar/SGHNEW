@@ -50,7 +50,7 @@ export default function IndividualEntryPage() {
       <div className="relative z-10 w-full max-w-md px-4">
         {/* Title */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-gray-700/30 mb-2">Care Clans</h1>
+          <h1 className="text-6xl font-bold text-gray-700/30 mb-2">Care Clans</h1>
           <p className="text-gray-600">You have 5 minutes to prove your knowledge.</p>
         </div>
 
