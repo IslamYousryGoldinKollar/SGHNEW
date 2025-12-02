@@ -415,7 +415,3 @@ export default function DisplayPage() {
     );
 
     }
-    
-    
-
-    
