@@ -15,6 +15,7 @@ type QuestionCardProps = {
   lastAnswerCorrect: boolean | null;
   onAnswer: (question: Question, answer: string) => void;
   className?: string;
+  isIndividualMode: boolean;
 };
 
 export default function QuestionCard({
@@ -22,7 +23,8 @@ export default function QuestionCard({
   questionPhase,
   lastAnswerCorrect,
   onAnswer,
-  className
+  className,
+  isIndividualMode
 }: QuestionCardProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
 
@@ -87,7 +89,9 @@ export default function QuestionCard({
              <>
                <XCircle className="h-20 w-20 text-red-500 mb-4" />
                <p className="text-4xl font-bold text-red-600">Incorrect!</p>
-               <p className="mt-2 text-muted-foreground">Answer: {question.answer}</p>
+               {isIndividualMode && (
+                <p className="mt-2 text-muted-foreground">Answer: {question.answer}</p>
+               )}
              </>
           )}
         </div>

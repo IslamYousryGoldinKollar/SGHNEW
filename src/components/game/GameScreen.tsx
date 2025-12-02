@@ -56,6 +56,7 @@ export default function GameScreen({
           lastAnswerCorrect={lastAnswerCorrect}
           onAnswer={onAnswer}
           className="question-card h-full min-h-96"
+          isIndividualMode={isIndividualMode}
         />
       </div>
 
