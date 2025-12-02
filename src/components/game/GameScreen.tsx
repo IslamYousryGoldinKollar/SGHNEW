@@ -3,7 +3,7 @@ import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
 import Scoreboard from "@/components/game/Scoreboard";
 import Timer from "@/components/game/Timer";
-import QuestionCard from "./QuestionCard";
+import QuestionCard from "@/components/game/QuestionCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, HelpCircle, Palette } from "lucide-react";
 
