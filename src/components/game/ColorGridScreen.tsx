@@ -4,6 +4,12 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface ColorGridScreenProps {
+  grid?: any;
+  teams?: any;
+  onColorSquare?: any;
+  teamColoring?: any;
+  credits?: any;
+  onSkip?: any;
   onComplete?: (score: number) => void;
   targetColor?: string;
   gridSize?: number;
