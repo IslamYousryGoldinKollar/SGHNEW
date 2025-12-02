@@ -1,5 +1,22 @@
 {
-  "apphosting": {
-    "serviceId": "sgh"
+  "apphosting": [
+    {
+      "backendId": "default",
+      "serviceId": "sgh"
+    }
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }
