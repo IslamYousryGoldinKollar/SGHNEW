@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import type { Game } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export default function GameLayout({
   children,
@@ -16,7 +17,7 @@ export default function GameLayout({
   const gameId = params.gameId as string;
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground">
+    <div className={cn("flex flex-col min-h-screen text-foreground", "game-screen")}>
       {children}
     </div>
   );
