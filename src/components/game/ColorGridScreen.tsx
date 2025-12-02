@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { GridSquare, Team } from "@/lib/types";

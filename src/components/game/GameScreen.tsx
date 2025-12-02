@@ -1,10 +1,11 @@
+
 import type { Team, Player, Question, GridSquare } from "@/lib/types";
 import type { Timestamp } from "firebase/firestore";
 import Scoreboard from "./Scoreboard";
 import Timer from "./Timer";
 import QuestionCard from "./QuestionCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Target } from "lucide-react";
+import { Target, HelpCircle, Palette } from "lucide-react";
 
 type QuestionPhase = 'answering' | 'feedback' | 'coloring' | 'transitioning';
 

@@ -1,4 +1,6 @@
 
+"use client";
+
 import type { Team } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Shield, User } from "lucide-react";
