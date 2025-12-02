@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface TimerProps {
+  duration?: number;
+  onTimeout?: any;
+  gameStartedAt?: any;
   initialTime: number;
   onTimeUp?: () => void;
   isRunning?: boolean;
@@ -16,6 +19,9 @@ export function Timer({
   isRunning = true,
   className 
 }: TimerProps) {
+  duration?: number;
+  onTimeout?: any;
+  gameStartedAt?: any;
   const [timeLeft, setTimeLeft] = useState(initialTime);
 
   useEffect(() => {
