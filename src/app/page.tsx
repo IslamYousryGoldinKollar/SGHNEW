@@ -53,8 +53,8 @@ export default function LandingPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center game-screen">
-      <div className="text-center mb-12 text-white drop-shadow-lg">
-        <h1 className="text-5xl font-bold font-display text-primary">Care Clans</h1>
+      <div className="text-center mb-12 text-foreground drop-shadow-lg">
+        <h1 className="text-5xl font-bold font-display">Care Clans</h1>
         <p className="text-xl mt-2">The ultimate team trivia challenge</p>
       </div>
 
