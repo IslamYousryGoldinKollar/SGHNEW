@@ -11,11 +11,6 @@ export default function MainLayout({
 }>) {
   const pathname = usePathname();
 
-  useEffect(() => {
-    // For admin pages, we can remove the theme or set a default admin theme
-    document.documentElement.removeAttribute('data-theme');
-  }, [pathname]);
-
   return (
     <>
       <Header />
