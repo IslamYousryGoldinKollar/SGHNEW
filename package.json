@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "cache-bust": "echo 'Cache-busting script v4'"
+    "cache-bust": "echo 'Cache-busting script v5'"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
@@ -47,6 +47,7 @@
     "framer-motion": "^12.23.25",
     "geist": "^1.5.1",
     "lucide-react": "^0.555.0",
+    "patch-package": "^8.0.0",
     "qrcode.react": "^4.2.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -64,6 +65,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/uuid": "^9.0.8",
+    "autoprefixer": "^10.0.1",
     "genkit-cli": "^1.14.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
