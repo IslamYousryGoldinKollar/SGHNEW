@@ -1,37 +1,43 @@
 
-"use server";
+'use server';
 
 import {
   curateTriviaQuestions,
   type CurateTriviaQuestionsInput,
   type CurateTriviaQuestionsOutput,
-} from "@/ai/flows/ai-question-curator";
+} from '@/ai/flows/ai-question-curator';
 
 import {
   extractQuestionsFromPdf,
   type ExtractQuestionsFromPdfInput,
   type ExtractQuestionsFromPdfOutput,
-} from "@/ai/flows/ai-pdf-question-extractor";
+} from '@/ai/flows/ai-pdf-question-extractor';
 
 import {
-    translateQuestions,
-    type TranslateQuestionsInput,
-    type TranslateQuestionsOutput
+  translateQuestions,
+  type TranslateQuestionsInput,
+  type TranslateQuestionsOutput,
 } from '@/ai/flows/ai-question-translator';
 
+import {
+  generateQuestions,
+  type GenerateQuestionsInput,
+  type GenerateQuestionsOutput,
+} from '@/ai/flows/ai-question-generator';
+
 export async function generateQuestionsAction(
-  input: CurateTriviaQuestionsInput
-): Promise<CurateTriviaQuestionsOutput> {
+  input: GenerateQuestionsInput
+): Promise<GenerateQuestionsOutput> {
   try {
-    const output = await curateTriviaQuestions(input);
+    console.log(`Generating ${input.numberOfQuestions} questions for topic: ${input.topic}`);
+    const output = await generateQuestions(input);
+    console.log(`Successfully generated ${output.questions.length} questions.`);
     return output;
   } catch (error) {
-    console.error("Error generating questions:", error);
-    // Return a structured error or re-throw
-    throw new Error("Failed to generate questions via AI flow.");
+    console.error('Error in generateQuestionsAction:', error);
+    throw new Error('Failed to generate questions via AI flow.');
   }
 }
-
 
 export async function extractQuestionsFromPdfAction(
   input: ExtractQuestionsFromPdfInput
@@ -40,19 +46,19 @@ export async function extractQuestionsFromPdfAction(
     const output = await extractQuestionsFromPdf(input);
     return output;
   } catch (error) {
-    console.error("Error extracting questions from PDF:", error);
-    throw new Error("Failed to extract questions from PDF via AI flow.");
+    console.error('Error extracting questions from PDF:', error);
+    throw new Error('Failed to extract questions from PDF via AI flow.');
   }
 }
 
 export async function translateQuestionsAction(
-    input: TranslateQuestionsInput
+  input: TranslateQuestionsInput
 ): Promise<TranslateQuestionsOutput> {
-    try {
-        const output = await translateQuestions(input);
-        return output;
-    } catch (error) {
-        console.error("Error translating questions:", error);
-        throw new Error("Failed to translate questions via AI flow.");
-    }
+  try {
+    const output = await translateQuestions(input);
+    return output;
+  } catch (error) {
+    console.error('Error translating questions:', error);
+    throw new Error('Failed to translate questions via AI flow.');
+  }
 }
