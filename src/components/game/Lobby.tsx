@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Swords, Loader2 } from "lucide-react";
+import { Users, Swords, Loader2, Languages } from "lucide-react";
 import Image from "next/image";
 import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from "../ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 type LobbyProps = {
   game: Game;
-  onJoinTeam: (playerName: string, playerId: string, teamName: string) => void;
+  onJoinTeam: (playerName: string, playerId: string, teamName: string, language: 'en' | 'ar') => void;
   onStartGame: () => void;
   currentPlayer: Player | null;
   isAdmin: boolean;
@@ -22,6 +24,7 @@ type LobbyProps = {
 
 export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
   const [playerName, setPlayerName] = useState("");
+  const [language, setLanguage] = useState<'en' | 'ar'>(game.language || 'en');
   const { teams, status } = game;
 
   const handleJoin = (teamName: string) => {
@@ -31,7 +34,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
     }
     // For team games, we can generate a simple unique ID for the player.
     const playerId = uuidv4();
-    onJoinTeam(playerName.trim(), playerId, teamName);
+    onJoinTeam(playerName.trim(), playerId, teamName, language);
   }
 
     const TeamCard = ({ team }: { team: Team }) => (
@@ -176,6 +179,19 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 className="text-lg p-6 w-full text-center"
                 aria-label="Player Full Name"
               />
+          </div>
+
+           <div className="space-y-2">
+                <Label htmlFor="language" className="sr-only">Preferred Language</Label>
+                <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'ar')}>
+                     <SelectTrigger className="text-lg p-6 w-full">
+                         <SelectValue placeholder="Select Language" />
+                     </SelectTrigger>
+                     <SelectContent>
+                         <SelectItem value="en">English</SelectItem>
+                         <SelectItem value="ar">Arabic</SelectItem>
+                     </SelectContent>
+                 </Select>
           </div>
           
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

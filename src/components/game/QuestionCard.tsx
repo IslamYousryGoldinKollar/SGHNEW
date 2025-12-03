@@ -45,34 +45,9 @@ export default function QuestionCard({
     }
   }, [question, questionPhase]);
 
-  const handleAnswerClick = (option: string, originalOption: string) => {
+  const handleAnswerClick = (option: string) => {
     if (questionPhase !== 'answering') return;
-    // We store the original (English/Base) option value to match logic upstream
-    // But we might need to be careful if upstream expects the localized string. 
-    // The `submitAnswer` logic compares against `question.answer`.
-    // If we render localized options, we need to know which base option it corresponds to.
-    
-    // However, the `onAnswer` callback signature is (question, answerString).
-    // If we pass the localized string, it might fail validation if the logic compares to English answer.
-    
-    // Simplest fix: The upstream logic compares `option === question.answer`. 
-    // If we are in Arabic mode, `question.answer` should ideally be the Arabic answer if we passed the Arabic option.
-    // BUT, the game logic might be centralized.
-    
-    // Let's assume for now we pass the *displayed* option text. 
-    // And we must ensure the `question` object passed to `submitAnswer` has the matching `answer` field as the current language.
-    // OR simpler: we always pass the index or we handle comparison intelligently.
-    
-    // Looking at `GameScreen.tsx` (not visible here but assumed): it likely calls `handleAnswer`.
-    // Looking at `gameService.ts`: `submitAnswer` adds `question.question` to `answeredQuestions`.
-    // And logic checks `isCorrect` passed from client.
-    
-    // So CLIENT determines correctness? 
-    // `handleAnswer` in `page.tsx`:
-    // `const isCorrect = answer === currentQuestion.answer;`
-    
-    // So if we display Arabic options, we must compare against `question.answerAr`.
-    
+    setSelectedAnswer(option);
     onAnswer(question, option);
   };
   
@@ -115,7 +90,7 @@ export default function QuestionCard({
                 getButtonClass(option),
                 isRTL && "text-right flex-row-reverse"
               )}
-              onClick={() => handleAnswerClick(option, question.options[index])}
+              onClick={() => handleAnswerClick(option)}
               disabled={questionPhase !== 'answering'}
             >
               <span className={cn("font-bold", isRTL ? "ml-3" : "mr-3")}>
