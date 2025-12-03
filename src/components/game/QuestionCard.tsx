@@ -72,9 +72,9 @@ export default function QuestionCard({
   const showFeedbackOverlay = questionPhase === 'feedback' || questionPhase === 'transitioning';
 
   return (
-    <Card className={cn("h-full relative overflow-hidden flex flex-col", className)} dir={isRTL ? "rtl" : "ltr"}>
+    <Card className={cn("h-full relative overflow-hidden flex flex-col", className, isRTL && "font-arabic")} dir={isRTL ? "rtl" : "ltr"}>
       <CardHeader className="flex-shrink-0">
-        <CardTitle className={cn("text-xl md:text-2xl font-display leading-tight text-center", isRTL && "font-arabic")}>
+        <CardTitle className={cn("text-xl md:text-2xl font-display leading-tight text-center")}>
             {displayQuestion}
         </CardTitle>
       </CardHeader>
@@ -88,7 +88,7 @@ export default function QuestionCard({
               className={cn(
                 "h-auto min-h-14 py-3 text-base md:text-lg justify-start text-left whitespace-normal", 
                 getButtonClass(option),
-                isRTL && "text-right flex-row-reverse font-arabic"
+                isRTL && "text-right flex-row-reverse"
               )}
               onClick={() => handleAnswerClick(option)}
               disabled={questionPhase !== 'answering'}
@@ -107,14 +107,14 @@ export default function QuestionCard({
           {lastAnswerCorrect ? (
              <>
                <CheckCircle2 className="h-16 w-16 md:h-20 md:w-20 text-green-500 mb-4" />
-               <p className={cn("text-2xl md:text-4xl font-bold text-green-600", isRTL && "font-arabic")}>
+               <p className={cn("text-2xl md:text-4xl font-bold text-green-600")}>
                    {isRTL ? "إجابة صحيحة!" : "Correct!"}
                </p>
              </>
           ) : (
              <>
                <XCircle className="h-16 w-16 md:h-20 md:w-20 text-red-500 mb-4" />
-               <p className={cn("text-2xl md:text-4xl font-bold text-red-600", isRTL && "font-arabic")}>
+               <p className={cn("text-2xl md:text-4xl font-bold text-red-600")}>
                    {isRTL ? "إجابة خاطئة!" : "Incorrect!"}
                </p>
                {isIndividualMode && (

@@ -11,6 +11,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthState } from "react-firebase-hooks/auth";
+import { cn } from "@/lib/utils";
 
 export default function LandingPage() {
   const [pin, setPin] = useState("");
@@ -58,13 +59,13 @@ export default function LandingPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center game-screen" dir={isArabicUser ? 'rtl' : 'ltr'}>
-      <div className="text-center mb-12 text-foreground drop-shadow-lg">
+      <div className={cn("text-center mb-12 text-foreground drop-shadow-lg", isArabicUser && "font-arabic")}>
         <h1 className="text-5xl font-bold font-display text-slate-700">{isArabicUser ? 'حروب الرعاية' : 'Care Clans'}</h1>
         <p className="text-xl mt-2 text-slate-700">{isArabicUser ? 'تحدي الأسئلة النهائي للفرق' : 'The ultimate team trivia challenge'}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-        <Card>
+        <Card className={cn(isArabicUser && "font-arabic")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="text-accent" />
@@ -89,7 +90,7 @@ export default function LandingPage() {
           </CardFooter>
         </Card>
 
-        <Card>
+        <Card className={cn(isArabicUser && "font-arabic")}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="text-accent" />
@@ -112,5 +113,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
-    

@@ -59,22 +59,22 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     const finalScore = player.score || 0;
 
     return (
-       <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500" dir={isArabicUser ? 'rtl' : 'ltr'}>
+       <div className={cn("flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500", isArabicUser && "font-arabic")} dir={isArabicUser ? 'rtl' : 'ltr'}>
             <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
-            <h1 className={cn("text-5xl font-bold mt-4 font-display", isArabicUser && "font-arabic")}>{isArabicUser ? 'اكتمل التحدي!' : 'Challenge Complete!'}</h1>
-            <CardDescription className={cn("text-2xl pt-4", isArabicUser && "font-arabic")}>
+            <h1 className="text-5xl font-bold mt-4 font-display">{isArabicUser ? 'اكتمل التحدي!' : 'Challenge Complete!'}</h1>
+            <CardDescription className="text-2xl pt-4">
                 {isArabicUser ? `أحسنت يا ${player.name}! هذه هي نتيجتك.` : `Well done, ${player.name}! Here's your score.`}
             </CardDescription>
             <Card className="my-12 shadow-lg w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle className={cn("text-2xl font-display text-primary", isArabicUser && "font-arabic")}>{isArabicUser ? 'نتيجتك النهائية' : 'Your Final Score'}</CardTitle>
+                    <CardTitle className="text-2xl font-display text-primary">{isArabicUser ? 'نتيجتك النهائية' : 'Your Final Score'}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-6xl font-bold text-primary">{finalScore}</p>
-                    <p className={cn("text-muted-foreground", isArabicUser && "font-arabic")}>{isArabicUser ? 'نقاط' : 'points'}</p>
+                    <p className="text-muted-foreground">{isArabicUser ? 'نقاط' : 'points'}</p>
                 </CardContent>
             </Card>
-            <p className={cn("text-muted-foreground animate-pulse", isArabicUser && "font-arabic")}>{isArabicUser ? 'جاري إعادة التوجيه إلى لوحة الصدارة...' : 'Redirecting to the leaderboard...'}</p>
+            <p className="text-muted-foreground animate-pulse">{isArabicUser ? 'جاري إعادة التوجيه إلى لوحة الصدارة...' : 'Redirecting to the leaderboard...'}</p>
        </div>
     )
   }
@@ -103,15 +103,15 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
 
 
   return (
-    <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500" dir={isArabicUser ? 'rtl' : 'ltr'}>
+    <div className={cn("flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500", isArabicUser && "font-arabic")} dir={isArabicUser ? 'rtl' : 'ltr'}>
       <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
       
       {winningTeams.length > 0 ? (
         <>
-          <h1 className={cn("text-5xl font-bold mt-4 font-display", isArabicUser && "font-arabic")}>
+          <h1 className="text-5xl font-bold mt-4 font-display">
             {isTie ? (isArabicUser ? "إنه تعادل!" : "It's a Tie!") : `${winningTeams.length > 1 ? (isArabicUser ? 'الفائزون!' : 'Winners!') : (isArabicUser ? `فريق ${winningTeams[0].name} يفوز!` : `${winningTeams[0].name} Wins!`)}`}
           </h1>
-          <CardDescription className={cn("text-2xl pt-4", isArabicUser && "font-arabic")}>
+          <CardDescription className="text-2xl pt-4">
             {isArabicUser ? 'تهانينا للفائزين!' : 'Congratulations to the winners!'}
              {winReason && <span className="text-sm block">({winReason})</span>}
           </CardDescription>
@@ -127,7 +127,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
 
         </>
       ) : (
-         <h1 className={cn("text-5xl font-bold mt-4 font-display", isArabicUser && "font-arabic")}>{isArabicUser ? 'انتهت اللعبة!' : 'Game Over!'}</h1>
+         <h1 className="text-5xl font-bold mt-4 font-display">{isArabicUser ? 'انتهت اللعبة!' : 'Game Over!'}</h1>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-12">
@@ -138,7 +138,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
             </CardHeader>
             <CardContent>
               <p className="text-5xl font-bold" style={{color: team.color}}>{team.score}</p>
-              <p className={cn("text-muted-foreground", isArabicUser && "font-arabic")}>{isArabicUser ? 'مجموع النقاط' : 'total points'}</p>
+              <p className="text-muted-foreground">{isArabicUser ? 'مجموع النقاط' : 'total points'}</p>
             </CardContent>
           </Card>
         ))}
@@ -151,7 +151,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
       )}
 
       {parentSessionId && (
-         <p className={cn("text-muted-foreground mt-8 animate-pulse", isArabicUser && "font-arabic")}>{isArabicUser ? 'العودة إلى الردهة...' : 'Returning to lobby...'}</p>
+         <p className="text-muted-foreground mt-8 animate-pulse">{isArabicUser ? 'العودة إلى الردهة...' : 'Returning to lobby...'}</p>
       )}
     </div>
   );
