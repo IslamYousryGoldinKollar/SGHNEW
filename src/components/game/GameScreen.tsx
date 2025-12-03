@@ -47,9 +47,10 @@ export default function GameScreen({
 
   const answeredCount = currentQuestionIndex;
   const progressPercent = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
+  const isArabic = language === 'ar';
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto h-full">
+    <div className="flex-1 flex flex-col items-center justify-center w-full max-w-2xl mx-auto h-full" dir={isArabic ? 'rtl' : 'ltr'}>
       <div className="w-full">
         <Timer 
           initialTime={duration} 
@@ -65,18 +66,18 @@ export default function GameScreen({
             <CardHeader className="pb-2">
               <CardTitle className="text-lg font-semibold flex items-center gap-2">
                 <Target className="h-5 w-5 text-primary" />
-                Your Progress
+                {isArabic ? 'تقدمك' : 'Your Progress'}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg">
-                <span className="text-sm font-medium text-muted-foreground">Score</span>
+                <span className="text-sm font-medium text-muted-foreground">{isArabic ? 'النتيجة' : 'Score'}</span>
                 <span className="text-3xl font-bold text-primary">{currentPlayer.score}</span>
               </div>
               
               <div className="space-y-2">
                  <div className="flex justify-between text-sm">
-                   <span>Questions</span>
+                   <span>{isArabic ? 'الأسئلة' : 'Questions'}</span>
                    <span>{answeredCount} / {totalQuestions}</span>
                  </div>
                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -105,3 +106,5 @@ export default function GameScreen({
     </div>
   );
 }
+
+    

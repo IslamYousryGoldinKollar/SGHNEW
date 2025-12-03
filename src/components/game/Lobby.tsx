@@ -12,6 +12,8 @@ import Image from "next/image";
 import { v4 as uuidv4 } from 'uuid';
 import { ScrollArea } from "../ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "@/lib/firebase";
 
 
 type LobbyProps = {
@@ -23,13 +25,16 @@ type LobbyProps = {
 };
 
 export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, isAdmin }: LobbyProps) {
+  const [user] = useAuthState(auth);
+  const isArabicUser = user?.email === 'iyossry@gmail.com';
+  
   const [playerName, setPlayerName] = useState("");
-  const [language, setLanguage] = useState<'en' | 'ar'>(game.language || 'en');
+  const [language, setLanguage] = useState<'en' | 'ar'>(isArabicUser ? 'ar' : (game.language || 'en'));
   const { teams, status } = game;
 
   const handleJoin = (teamName: string) => {
     if (!playerName.trim()) {
-        alert("Please fill in your name.");
+        alert(isArabicUser ? "الرجاء تعبئة اسمك." : "Please fill in your name.");
         return;
     }
     // For team games, we can generate a simple unique ID for the player.
@@ -92,7 +97,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                             ))}
                             {team.players.length === 0 && (
                                 <li className="text-muted-foreground italic">
-                                    No players yet...
+                                    {isArabicUser ? 'لا يوجد لاعبون بعد...' : 'No players yet...'}
                                 </li>
                             )}
                         </ul>
@@ -115,26 +120,26 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
 
   if (status === 'starting' && !game.parentSessionId) {
      return (
-        <div className="flex flex-col items-center justify-center flex-1 text-center">
+        <div className="flex flex-col items-center justify-center flex-1 text-center" dir={isArabicUser ? 'rtl' : 'ltr'}>
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            <h1 className="text-4xl font-bold mt-4 font-display">Generating Questions...</h1>
-            <p className="text-muted-foreground mt-2">Get ready for battle!</p>
+            <h1 className="text-4xl font-bold mt-4 font-display">{isArabicUser ? 'جاري إنشاء الأسئلة...' : 'Generating Questions...'}</h1>
+            <p className="text-muted-foreground mt-2">{isArabicUser ? 'استعد للمعركة!' : 'Get ready for battle!'}</p>
         </div>
     );
   }
 
   if (currentPlayer) {
     return (
-      <div className="flex flex-col items-center justify-center text-center flex-1 w-full h-full">
-        <h1 className="text-4xl font-bold font-display">Welcome, {currentPlayer.name}!</h1>
-        <p className="text-muted-foreground mt-2">You are on <span className="font-bold" style={{color: teams.find(t=>t.name === currentPlayer.teamName)?.color}}>{currentPlayer.teamName}</span>.</p>
+      <div className="flex flex-col items-center justify-center text-center flex-1 w-full h-full" dir={isArabicUser ? 'rtl' : 'ltr'}>
+        <h1 className="text-4xl font-bold font-display">{isArabicUser ? `!أهلاً بك، ${currentPlayer.name}` : `Welcome, ${currentPlayer.name}!`}</h1>
+        <p className="text-muted-foreground mt-2">{isArabicUser ? 'أنت في فريق' : 'You are on'} <span className="font-bold" style={{color: teams.find(t=>t.name === currentPlayer.teamName)?.color}}>{currentPlayer.teamName}</span>.</p>
         
         <p className="mt-8 text-lg">
             {status === 'starting' 
-              ? 'The game is starting...'
+              ? (isArabicUser ? 'اللعبة على وشك أن تبدأ...' : 'The game is starting...')
               : isAdmin 
-              ? "You are the admin. Start the game when you're ready!" 
-              : "Waiting for the admin to start the game..."
+              ? (isArabicUser ? "أنت المسؤول. ابدأ اللعبة عندما تكون مستعدًا!" : "You are the admin. Start the game when you're ready!")
+              : (isArabicUser ? "في انتظار المسؤول لبدء اللعبة..." : "Waiting for the admin to start the game...")
             }
         </p>
         
@@ -145,7 +150,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
         {isAdmin && (
           <Button onClick={onStartGame} size="lg" className="font-display tracking-wider" disabled={status === 'starting'}>
             {status === 'starting' ? <Loader2 className="mr-2 animate-spin" /> : <Swords className="mr-2 h-5 w-5" />}
-            {status === 'starting' ? 'Starting...' : 'Start Game'}
+            {status === 'starting' ? (isArabicUser ? 'جار البدء...' : 'Starting...') : (isArabicUser ? 'ابدأ اللعبة' : 'Start Game')}
           </Button>
         )}
       </div>
@@ -153,7 +158,7 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
   }
 
   return (
-    <div className="flex flex-col items-center justify-start flex-1 h-full">
+    <div className="flex flex-col items-center justify-start flex-1 h-full" dir={isArabicUser ? 'rtl' : 'ltr'}>
         <div className="flex justify-center items-center -space-x-8 mb-8">
             {teams[0]?.icon && (
                 <Image src={teams[0].icon} alt={teams[0].name} width={128} height={128} className="drop-shadow-lg"/>
@@ -163,17 +168,17 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
             )}
         </div>
         <div className="text-center">
-            <h1 className="text-5xl font-bold font-display">Join the Battle</h1>
-            <p className="text-muted-foreground mt-2 max-w-xl">Enter your name, choose a team, and get ready to prove your knowledge.</p>
+            <h1 className="text-5xl font-bold font-display">{isArabicUser ? 'انضم إلى المعركة' : 'Join the Battle'}</h1>
+            <p className="text-muted-foreground mt-2 max-w-xl">{isArabicUser ? 'أدخل اسمك، اختر فريقًا، واستعد لإثبات معرفتك.' : 'Enter your name, choose a team, and get ready to prove your knowledge.'}</p>
         </div>
       
       <div className="my-8 w-full max-w-md space-y-4">
           <div className="space-y-2">
-              <Label htmlFor="playerName" className="sr-only">Full Name</Label>
+              <Label htmlFor="playerName" className="sr-only">{isArabicUser ? 'الاسم الكامل' : 'Full Name'}</Label>
               <Input
                 id="playerName"
                 type="text"
-                placeholder="Enter your full name"
+                placeholder={isArabicUser ? "أدخل اسمك الكامل" : "Enter your full name"}
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 className="text-lg p-6 w-full text-center"
@@ -182,14 +187,14 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
           </div>
 
            <div className="space-y-2">
-                <Label htmlFor="language" className="sr-only">Preferred Language</Label>
-                <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'ar')}>
+                <Label htmlFor="language" className="sr-only">{isArabicUser ? 'اللغة المفضلة' : 'Preferred Language'}</Label>
+                <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'ar')} disabled={isArabicUser}>
                      <SelectTrigger className="text-lg p-6 w-full">
-                         <SelectValue placeholder="Select Language" />
+                         <SelectValue placeholder={isArabicUser ? "اختر لغة" : "Select Language"} />
                      </SelectTrigger>
                      <SelectContent>
                          <SelectItem value="en">English</SelectItem>
-                         <SelectItem value="ar">Arabic</SelectItem>
+                         <SelectItem value="ar">العربية</SelectItem>
                      </SelectContent>
                  </Select>
           </div>
@@ -203,11 +208,11 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
                 size="lg"
                 style={{backgroundColor: team.color}}
             >
-                Join {team.name}
+                {isArabicUser ? 'انضم إلى' : 'Join'} {team.name}
             </Button>
             ))}
         </div>
-         {!teams || teams.length === 0 && <p className="text-destructive mt-4">No teams have been configured for this game.</p>}
+         {!teams || teams.length === 0 && <p className="text-destructive mt-4">{isArabicUser ? 'لم يتم تكوين أي فرق لهذه اللعبة.' : 'No teams have been configured for this game.'}</p>}
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8 w-full max-w-4xl flex-1 min-h-0">
@@ -216,3 +221,5 @@ export default function Lobby({ game, onJoinTeam, onStartGame, currentPlayer, is
     </div>
   );
 }
+
+    

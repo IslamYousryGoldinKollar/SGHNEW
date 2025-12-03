@@ -7,9 +7,10 @@ import type { Timestamp } from 'firebase/firestore';
 
 interface PreGameCountdownProps {
   gameStartedAt: Timestamp | null | undefined;
+  isArabicUser?: boolean;
 }
 
-export default function PreGameCountdown({ gameStartedAt }: PreGameCountdownProps) {
+export default function PreGameCountdown({ gameStartedAt, isArabicUser }: PreGameCountdownProps) {
   const [count, setCount] = useState(5);
 
   const calculateRemaining = useCallback(() => {
@@ -33,12 +34,14 @@ export default function PreGameCountdown({ gameStartedAt }: PreGameCountdownProp
   }, [calculateRemaining]);
 
   return (
-    <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center text-center z-50 animate-in fade-in">
+    <div className="fixed inset-0 bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center text-center z-50 animate-in fade-in" dir={isArabicUser ? 'rtl' : 'ltr'}>
       <Swords className="h-24 w-24 text-primary animate-pulse" />
-      <p className="text-2xl text-muted-foreground mt-8">Match Found! Game starting in...</p>
+      <p className="text-2xl text-muted-foreground mt-8">{isArabicUser ? 'تم العثور على المباراة! ستبدأ اللعبة في...' : 'Match Found! Game starting in...'}</p>
       <h1 className="text-9xl font-bold font-mono text-primary animate-ping-short" style={{ animationIterationCount: 1, animationDelay: `${(count - Math.floor(count)) * 1000}ms` }} key={count}>
         {count}
       </h1>
     </div>
   );
 }
+
+    

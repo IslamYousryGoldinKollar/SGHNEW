@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -7,20 +8,24 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { KeyRound, Shield, LogIn } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, auth } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export default function LandingPage() {
   const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const [user] = useAuthState(auth);
+  
+  const isArabicUser = user?.email === 'iyossry@gmail.com';
 
   const handleJoinSession = async () => {
     if (!pin.trim()) {
       toast({
-        title: "PIN Required",
-        description: "Please enter a session PIN.",
+        title: isArabicUser ? "الرمز مطلوب" : "PIN Required",
+        description: isArabicUser ? "الرجاء إدخال رمز PIN للجلسة." : "Please enter a session PIN.",
         variant: "destructive",
       });
       return;
@@ -34,8 +39,8 @@ export default function LandingPage() {
         router.push(`/game/${pin.trim().toUpperCase()}`);
       } else {
         toast({
-          title: "Session Not Found",
-          description: "The PIN you entered does not match an active session.",
+          title: isArabicUser ? "لم يتم العثور على الجلسة" : "Session Not Found",
+          description: isArabicUser ? "الرمز الذي أدخلته غير صحيح." : "The PIN you entered does not match an active session.",
           variant: "destructive",
         });
       }
@@ -52,10 +57,10 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center game-screen">
+    <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center game-screen" dir={isArabicUser ? 'rtl' : 'ltr'}>
       <div className="text-center mb-12 text-foreground drop-shadow-lg">
-        <h1 className="text-5xl font-bold font-display text-slate-700">Care Clans</h1>
-        <p className="text-xl mt-2 text-slate-700">The ultimate team trivia challenge</p>
+        <h1 className="text-5xl font-bold font-display text-slate-700">{isArabicUser ? 'حروب الرعاية' : 'Care Clans'}</h1>
+        <p className="text-xl mt-2 text-slate-700">{isArabicUser ? 'تحدي الأسئلة النهائي للفرق' : 'The ultimate team trivia challenge'}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
@@ -63,13 +68,13 @@ export default function LandingPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="text-accent" />
-              Join a Session
+              {isArabicUser ? 'الانضمام إلى جلسة' : 'Join a Session'}
             </CardTitle>
-            <CardDescription>Enter the PIN from the big screen to join the game.</CardDescription>
+            <CardDescription>{isArabicUser ? 'أدخل الرمز من الشاشة الكبيرة للانضمام إلى اللعبة.' : 'Enter the PIN from the big screen to join the game.'}</CardDescription>
           </CardHeader>
           <CardContent>
             <Input
-              placeholder="Session PIN"
+              placeholder={isArabicUser ? 'رمز الجلسة' : 'Session PIN'}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               className="text-2xl h-14 text-center tracking-widest font-mono"
@@ -78,8 +83,8 @@ export default function LandingPage() {
           </CardContent>
           <CardFooter>
             <Button className="w-full" onClick={handleJoinSession} disabled={isLoading}>
-              <LogIn className="mr-2" />
-              {isLoading ? "Joining..." : "Join Game"}
+              <LogIn className={isArabicUser ? 'ml-2' : 'mr-2'} />
+              {isLoading ? (isArabicUser ? 'جاري الانضمام...' : 'Joining...') : (isArabicUser ? 'انضم للعبة' : 'Join Game')}
             </Button>
           </CardFooter>
         </Card>
@@ -88,18 +93,18 @@ export default function LandingPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="text-accent" />
-              Admin Access
+              {isArabicUser ? 'وصول المسؤول' : 'Admin Access'}
             </CardTitle>
-            <CardDescription>Create and manage game sessions.</CardDescription>
+            <CardDescription>{isArabicUser ? 'إنشاء وإدارة جلسات اللعبة.' : 'Create and manage game sessions.'}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Admins can create new sessions, manage questions, and control the game from the admin dashboard.
+              {isArabicUser ? 'يمكن للمسؤولين إنشاء جلسات جديدة وإدارة الأسئلة والتحكم في اللعبة من لوحة تحكم المسؤول.' : 'Admins can create new sessions, manage questions, and control the game from the admin dashboard.'}
             </p>
           </CardContent>
           <CardFooter>
             <Button className="w-full" variant="secondary" onClick={() => router.push('/admin/login')}>
-              Admin Login
+              {isArabicUser ? 'تسجيل دخول المسؤول' : 'Admin Login'}
             </Button>
           </CardFooter>
         </Card>
@@ -107,3 +112,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    

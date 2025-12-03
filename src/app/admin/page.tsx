@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -25,6 +26,8 @@ export default function AdminDashboard() {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [sharingSession, setSharingSession] = useState<Game | null>(null);
   const { toast } = useToast();
+
+  const isArabicUser = user?.email === 'iyossry@gmail.com';
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,11 +65,14 @@ export default function AdminDashboard() {
     }));
 
     const newGame: Omit<Game, 'id'> = {
-        title: "Care Clans",
-        description: "A live trivia game for the whole team. Join in on the fun!",
+        title: isArabicUser ? "حروب الرعاية" : "Care Clans",
+        description: isArabicUser ? "لعبة أسئلة مباشرة للفريق بأكمله. انضم إلى المرح!" : "A live trivia game for the whole team. Join in on the fun!",
         status: "lobby",
         adminId: user.uid,
-        teams: [
+        teams: isArabicUser ? [
+          { name: "الفريق ألفا", score: 0, players: [], capacity: 10, color: "#22c55e", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fgreen%20tower%20copy.png?alt=media&token=fab0d082-5590-4fd7-9d69-a63c101471de" },
+          { name: "الفريق برافو", score: 0, players: [], capacity: 10, color: "#0ea5e9", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue%20tower%20copy2.png?alt=media&token=81f82f6a-2644-4159-9c08-2d0f3a037f9e" },
+        ] : [
           { name: "Team Alpha", score: 0, players: [], capacity: 10, color: "#22c55e", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fgreen%20tower%20copy.png?alt=media&token=fab0d082-5590-4fd7-9d69-a63c101471de" },
           { name: "Team Bravo", score: 0, players: [], capacity: 10, color: "#0ea5e9", icon: "https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2Fblue%20tower%20copy2.png?alt=media&token=81f82f6a-2644-4159-9c08-2d0f3a037f9e" },
         ],
@@ -79,7 +85,7 @@ export default function AdminDashboard() {
         sessionType: 'team',
         requiredPlayerFields: [],
         parentSessionId: null,
-        language: 'en'
+        language: isArabicUser ? 'ar' : 'en'
     };
 
     try {
@@ -165,27 +171,27 @@ export default function AdminDashboard() {
     <>
     <ShareSessionModal session={sharingSession} onClose={() => setSharingSession(null)} />
 
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8" dir={isArabicUser ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold font-display text-white drop-shadow-lg">Admin Dashboard</h1>
-        <Button onClick={() => auth.signOut().then(() => router.push('/'))}>Sign Out</Button>
+        <h1 className="text-4xl font-bold font-display text-white drop-shadow-lg">{isArabicUser ? 'لوحة تحكم المسؤول' : 'Admin Dashboard'}</h1>
+        <Button onClick={() => auth.signOut().then(() => router.push('/'))}>{isArabicUser ? 'تسجيل الخروج' : 'Sign Out'}</Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Create New Session</CardTitle>
-          <CardDescription>Start a new game with a unique PIN.</CardDescription>
+          <CardTitle>{isArabicUser ? 'إنشاء جلسة جديدة' : 'Create New Session'}</CardTitle>
+          <CardDescription>{isArabicUser ? 'ابدأ لعبة جديدة برمز PIN فريد.' : 'Start a new game with a unique PIN.'}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={createNewSession}>
-            <Plus className="mr-2"/>
-            Create Session
+            <Plus className={isArabicUser ? 'ml-2' : 'mr-2'}/>
+            {isArabicUser ? 'إنشاء جلسة' : 'Create Session'}
           </Button>
         </CardContent>
       </Card>
       
       <div className="mt-12">
-        <h2 className="text-3xl font-bold font-display mb-4 text-white drop-shadow-lg">Your Sessions</h2>
+        <h2 className="text-3xl font-bold font-display mb-4 text-white drop-shadow-lg">{isArabicUser ? 'جلساتك' : 'Your Sessions'}</h2>
         {isLoadingSessions ? (
             <Loader2 className="animate-spin text-white"/>
         ) : sessions.length > 0 ? (
@@ -201,45 +207,45 @@ export default function AdminDashboard() {
                                  <Badge variant="secondary" className="capitalize">{session.sessionType || 'team'}</Badge>
                             </CardTitle>
                             <CardDescription>
-                                PIN: {session.id}
+                                {isArabicUser ? 'الرمز' : 'PIN'}: {session.id}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1">
                              <p className="text-sm text-muted-foreground flex items-center">
-                                <Users className="mr-2 h-4 w-4"/>
+                                <Users className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
                                 {isIndividual 
-                                    ? `Leaderboard Only`
-                                    : `${session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} players`
+                                    ? (isArabicUser ? 'لوحة الصدارة فقط' : 'Leaderboard Only')
+                                    : `${session.teams?.reduce((acc, t) => acc + (t.players?.length || 0), 0) || 0} ${isArabicUser ? 'لاعب' : 'players'}`
                                 }
                             </p>
                             {isIndividual ? (
                                  <Button className="w-full mt-4" variant="outline" onClick={() => router.push(`/leaderboard/${session.id}`)}>
-                                    <BarChart className="mr-2 h-4 w-4"/>
-                                    View Leaderboard
+                                    <BarChart className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                    {isArabicUser ? 'عرض لوحة الصدارة' : 'View Leaderboard'}
                                 </Button>
                             ) : (
                                 <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
-                                    <Eye className="mr-2"/>
-                                    Open Big Screen
+                                    <Eye className={isArabicUser ? 'ml-2' : 'mr-2'}/>
+                                    {isArabicUser ? 'فتح الشاشة الكبيرة' : 'Open Big Screen'}
                                 </Button>
                             )}
                         </CardContent>
                          <CardFooter className="grid grid-cols-2 gap-2">
                              <Button className="w-full" variant="secondary" onClick={() => router.push(`/admin/session/${session.id}`)} disabled={!isOwner}>
-                                 <Edit className="mr-2 h-4 w-4"/>
-                                 Edit
+                                 <Edit className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                 {isArabicUser ? 'تعديل' : 'Edit'}
                              </Button>
                              <Button className="w-full" variant="default" onClick={() => setSharingSession(session)}>
-                                 <Share2 className="mr-2 h-4 w-4"/>
-                                 Share
+                                 <Share2 className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                 {isArabicUser ? 'مشاركة' : 'Share'}
                              </Button>
                              <Button className="w-full" variant="outline" onClick={() => duplicateSession(session.id)}>
-                                 <Copy className="mr-2 h-4 w-4"/>
-                                 Duplicate
+                                 <Copy className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                 {isArabicUser ? 'تكرار' : 'Duplicate'}
                              </Button>
                              <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={!isOwner}>
-                                 <Trash2 className="mr-2 h-4 w-4"/>
-                                 Delete
+                                 <Trash2 className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                 {isArabicUser ? 'حذف' : 'Delete'}
                              </Button>
                         </CardFooter>
                     </Card>
@@ -247,10 +253,12 @@ export default function AdminDashboard() {
                 })}
             </div>
         ) : (
-            <p className="text-white drop-shadow-md">No active sessions. Create one to get started!</p>
+            <p className="text-white drop-shadow-md">{isArabicUser ? 'لا توجد جلسات نشطة. قم بإنشاء واحدة للبدء!' : 'No active sessions. Create one to get started!'}</p>
         )}
       </div>
     </div>
     </>
   );
 }
+
+    

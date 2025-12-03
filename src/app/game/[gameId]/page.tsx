@@ -48,14 +48,16 @@ const IndividualLobby = ({
   game,
   onJoin,
   isJoining,
+  isArabicUser,
 }: {
   game: Game;
   onJoin: (formData: Record<string, string>, name: string, language: 'en' | 'ar') => void;
   isJoining: boolean;
+  isArabicUser: boolean;
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [playerName, setPlayerName] = useState("");
-  const [language, setLanguage] = useState<'en' | 'ar'>(game.language || 'en');
+  const [language, setLanguage] = useState<'en' | 'ar'>(isArabicUser ? 'ar' : (game.language || 'en'));
   const [error, setError] = useState("");
   const nameField = game.requiredPlayerFields?.find((f) =>
     f.label.toLowerCase().includes("name")
@@ -67,7 +69,7 @@ const IndividualLobby = ({
     const nameToSubmit = nameField ? playerName : formData[Object.keys(formData)[0]];
 
     if (!nameToSubmit || !nameToSubmit.trim()) {
-      setError("Please fill out your name.");
+      setError(isArabicUser ? "الرجاء تعبئة اسمك." : "Please fill out your name.");
       return;
     }
     const allFieldsFilled = (game.requiredPlayerFields || []).every(field => {
@@ -76,7 +78,7 @@ const IndividualLobby = ({
     });
 
     if (!allFieldsFilled) {
-      setError("Please fill out all required fields.");
+      setError(isArabicUser ? "الرجاء تعبئة جميع الحقول المطلوبة." : "Please fill out all required fields.");
       return;
     }
 
@@ -93,11 +95,11 @@ const IndividualLobby = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto">
+    <div className="flex flex-col items-center justify-center flex-1 w-full max-w-md mx-auto" dir={isArabicUser ? "rtl" : "ltr"}>
        <div className="text-center mb-8">
         <h1 className="text-5xl font-bold font-display text-white drop-shadow-lg">{game.title}</h1>
         <CardDescription className="mt-2 max-w-xl text-lg text-slate-200">
-          You have {Math.floor(game.timer / 60)} minutes to prove your knowledge.
+          {isArabicUser ? `لديك ${Math.floor(game.timer / 60)} دقائق لإثبات معرفتك.` : `You have ${Math.floor(game.timer / 60)} minutes to prove your knowledge.`}
         </CardDescription>
       </div>
       <Card className="w-full">
@@ -105,14 +107,14 @@ const IndividualLobby = ({
             <div className="bg-primary/20 p-4 rounded-full mb-2">
                 <UserIcon className="h-8 w-8 text-primary" />
             </div>
-          <CardTitle>Enter the Challenge</CardTitle>
-          <CardDescription>Fill in your details below to begin.</CardDescription>
+          <CardTitle>{isArabicUser ? 'ادخل التحدي' : 'Enter the Challenge'}</CardTitle>
+          <CardDescription>{isArabicUser ? 'املأ التفاصيل أدناه للبدء.' : 'Fill in your details below to begin.'}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {(game.requiredPlayerFields || []).map((field) => (
                 <div key={field.id} className="space-y-2">
-                  <Label htmlFor={field.id}>{field.label}</Label>
+                  <Label htmlFor={field.id}>{isArabicUser && field.label === 'Full Name' ? 'الاسم الكامل' : (isArabicUser && field.label === 'ID Number' ? 'رقم الهوية' : field.label)}</Label>
                   <Input
                     id={field.id}
                     type={field.type}
@@ -125,14 +127,14 @@ const IndividualLobby = ({
               ))}
               
              <div className="space-y-2">
-                 <Label>Preferred Language</Label>
-                 <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'ar')}>
+                 <Label>{isArabicUser ? 'اللغة المفضلة' : 'Preferred Language'}</Label>
+                 <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'ar')} disabled={isArabicUser}>
                      <SelectTrigger>
-                         <SelectValue placeholder="Select Language" />
+                         <SelectValue placeholder={isArabicUser ? "اختر لغة" : "Select Language"} />
                      </SelectTrigger>
                      <SelectContent>
                          <SelectItem value="en">English</SelectItem>
-                         <SelectItem value="ar">Arabic</SelectItem>
+                         <SelectItem value="ar">العربية</SelectItem>
                      </SelectContent>
                  </Select>
              </div>
@@ -144,7 +146,7 @@ const IndividualLobby = ({
               className="w-full"
               disabled={isJoining}
             >
-              {isJoining ? ( <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ) : ( "Start Challenge" )}
+              {isJoining ? ( <Loader2 className="mr-2 h-4 w-4 animate-spin" /> ) : (isArabicUser ? "ابدأ التحدي" : "Start Challenge" )}
             </Button>
           </form>
         </CardContent>
@@ -157,10 +159,12 @@ const TerritoryClaimScreen = ({
   game,
   onClaim,
   onSkip,
+  isArabicUser,
 }: {
   game: Game;
   onClaim: (hexId: number) => void;
   onSkip: () => void;
+  isArabicUser: boolean;
 }) => {
   const [timeLeft, setTimeLeft] = useState(10);
   const mapRef = useRef<SVGSVGElement>(null);
@@ -190,12 +194,12 @@ const TerritoryClaimScreen = ({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 w-full text-center">
-      <h1 className="text-4xl font-bold font-display text-white">Claim Your Territory!</h1>
-      <p className="text-muted-foreground mt-2 text-lg">You answered correctly! Click an empty hex to claim it for your team.</p>
+    <div className="flex flex-col items-center justify-center flex-1 w-full text-center" dir={isArabicUser ? "rtl" : "ltr"}>
+      <h1 className="text-4xl font-bold font-display text-white">{isArabicUser ? 'طالب بأرضك!' : 'Claim Your Territory!'}</h1>
+      <p className="text-muted-foreground mt-2 text-lg">{isArabicUser ? 'لقد أجبت بشكل صحيح! انقر على مسدس فارغ للمطالبة به لفريقك.' : 'You answered correctly! Click an empty hex to claim it for your team.'}</p>
       
       <div className="my-4 text-2xl font-bold text-white">
-        Time to choose: <span className={timeLeft <= 3 ? "text-destructive" : ""}>{timeLeft}</span>
+        {isArabicUser ? 'الوقت للاختيار:' : 'Time to choose:'} <span className={timeLeft <= 3 ? "text-destructive" : ""}>{timeLeft}</span>
       </div>
 
       <div className="w-full max-w-2xl aspect-square relative flex items-center justify-center">
@@ -207,7 +211,7 @@ const TerritoryClaimScreen = ({
       </div>
 
        <Button onClick={onSkip} variant="link" className="mt-4 text-white/80">
-        Skip and Go to Next Question
+        {isArabicUser ? 'تخطي والانتقال إلى السؤال التالي' : 'Skip and Go to Next Question'}
       </Button>
     </div>
   );
@@ -230,6 +234,7 @@ export default function GamePage() {
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null);
   const phaseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
+  const isArabicUser = authUser?.email === 'iyossry@gmail.com';
   const isAdmin = game?.adminId === authUser?.uid;
   const isIndividualMode = game?.sessionType === 'individual' || !!game?.parentSessionId;
 
@@ -349,7 +354,7 @@ export default function GamePage() {
           answeredQuestions: [],
           coloringCredits: 0,
           score: 0,
-          language: language || currentGame.language || 'en',
+          language: isArabicUser ? 'ar' : (language || currentGame.language || 'en'),
         };
         const updatedTeams = currentGame.teams.map((t) => {
           if (t.name === teamName) return { ...t, players: [...t.players, newPlayer] };
@@ -405,7 +410,7 @@ export default function GamePage() {
         coloringCredits: 0,
         score: 0,
         customData: newCustomData,
-        language: language, // Store preferred language
+        language: isArabicUser ? 'ar' : language,
       };
 
       const newGame: Game = {
@@ -426,7 +431,7 @@ export default function GamePage() {
         ],
         grid: templateGameData.grid.map(g => ({ ...g, coloredBy: null })),
         gameStartedAt: serverTimestamp() as Timestamp,
-        language: language,
+        language: isArabicUser ? 'ar' : language,
       };
 
       await setDoc(newGameRef, newGame);
@@ -472,17 +477,6 @@ export default function GamePage() {
   const handleAnswer = async (question: Question, answer: string) => {
     if (!game || !currentPlayer || questionPhase !== 'answering') return;
     
-    // Check against English Answer OR Localized Answer
-    // Ideally, we compare against the *key* or logic checks `question.answer`
-    // If the answer coming in is Arabic, we need to know.
-    
-    // In `QuestionCard`, we passed `question.options[index]` as the second arg to handleAnswerClick
-    // BUT here `onAnswer` only receives (question, answerString).
-    // So if the string is Arabic, `question.answer` (English) won't match.
-    
-    // Let's refine the logic:
-    // We need to check if the answer provided matches EITHER the English answer OR the Arabic answer.
-    
     const isCorrectEnglish = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
     const isCorrectArabic = question.answerAr ? question.answerAr.trim() === answer.trim() : false;
     const isCorrect = isCorrectEnglish || isCorrectArabic;
@@ -503,7 +497,6 @@ export default function GamePage() {
         
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = { ...updatedTeams[teamIndex].players[playerIndex] };
-        // We always store the English question text for consistency in tracking
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
 
         let scoreChange = 0;
@@ -571,34 +564,34 @@ export default function GamePage() {
       return (
         <div className="flex flex-col items-center justify-center flex-1 text-center">
           <Loader2 className="h-16 w-16 animate-spin text-primary" />
-          <h1 className="mt-4 text-4xl font-bold font-display text-white drop-shadow-lg">Loading...</h1>
+          <h1 className="mt-4 text-4xl font-bold font-display text-white drop-shadow-lg">{isArabicUser ? 'جاري التحميل...' : 'Loading...'}</h1>
         </div>
       );
     }
-    if (!game) return <div>Session Not Found</div>;
+    if (!game) return <div>{isArabicUser ? 'لم يتم العثور على الجلسة' : 'Session Not Found'}</div>;
 
     if (game.sessionType === "individual" && !currentPlayer && !game.parentSessionId) {
-      return <IndividualLobby game={game} onJoin={handleJoinIndividual} isJoining={isJoining} />;
+      return <IndividualLobby game={game} onJoin={handleJoinIndividual} isJoining={isJoining} isArabicUser={isArabicUser} />;
     }
     if(game.parentSessionId && game.status === 'lobby' && currentPlayer) {
-      return <div>Waiting for opponent...</div>;
+      return <div>{isArabicUser ? 'في انتظار الخصم...' : 'Waiting for opponent...'}</div>;
     }
 
     switch (game.status) {
       case "lobby":
         return <Lobby game={game} onJoinTeam={handleJoinTeam} onStartGame={handleStartGame} currentPlayer={currentPlayer} isAdmin={isAdmin} />;
       case "starting":
-        return <PreGameCountdown gameStartedAt={game.gameStartedAt} />;
+        return <PreGameCountdown gameStartedAt={game.gameStartedAt} isArabicUser={isArabicUser} />;
       case "playing":
-        if (!currentPlayer) return <p>Joining...</p>;
+        if (!currentPlayer) return <p>{isArabicUser ? 'جاري الانضمام...' : 'Joining...'}</p>;
         const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
         const freshPlayer = playerTeam?.players.find(p => p.id === currentPlayer.id);
         const finalPlayerState = freshPlayer || currentPlayer;
 
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
-            return <TerritoryClaimScreen game={game} onClaim={handleColorSquare} onSkip={() => handleColorSquare(-1)} />;
+            return <TerritoryClaimScreen game={game} onClaim={handleColorSquare} onSkip={() => handleColorSquare(-1)} isArabicUser={isArabicUser} />;
         }
-        if (!currentQuestion) return <div>You've answered all questions!</div>;
+        if (!currentQuestion) return <div>{isArabicUser ? 'لقد أجبت على جميع الأسئلة!' : "You've answered all questions!"}</div>;
         
         return (
           <GameScreen
@@ -620,9 +613,11 @@ export default function GamePage() {
         );
       case "finished":
         return <ResultsScreen game={game} onPlayAgain={() => {}} isAdmin={isAdmin} individualPlayerId={game.parentSessionId ? currentPlayer?.id : undefined} />;
-      default: return <div>Unknown state</div>;
+      default: return <div>{isArabicUser ? 'حالة غير معروفة' : 'Unknown state'}</div>;
     }
   };
 
   return <div className="container mx-auto flex flex-1 flex-col px-4 py-8 h-screen">{renderContent()}</div>;
 }
+
+    

@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Team, Player, Game, GridSquare } from "@/lib/types";
@@ -8,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "@/lib/firebase";
 
 
 type ResultsScreenProps = {
@@ -18,6 +21,8 @@ type ResultsScreenProps = {
 };
 
 export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPlayerId }: ResultsScreenProps) {
+  const [user] = useAuthState(auth);
+  const isArabicUser = user?.email === 'iyossry@gmail.com';
   const { teams, sessionType, parentSessionId, id: gameId } = game;
   const router = useRouter();
   
@@ -41,35 +46,35 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
     const topScore = sortedTeams[0].score;
 
     const winners = sortedTeams.filter(t => t.score === topScore && topScore > 0);
-    return { winningTeams: winners, isTie: winners.length > 1, winReason: "by score" };
+    return { winningTeams: winners, isTie: winners.length > 1, winReason: isArabicUser ? "حسب النتيجة" : "by score" };
 
-  }, [teams, sessionType]);
+  }, [teams, sessionType, isArabicUser]);
 
 
   if (individualPlayerId) {
     const player = teams.flatMap(t => t.players).find(p => p.id === individualPlayerId);
-    if (!player) return <div className="text-center">Could not load your results.</div>;
+    if (!player) return <div className="text-center">{isArabicUser ? 'لا يمكن تحميل نتائجك.' : 'Could not load your results.'}</div>;
     
     // For individual mode, the player's score is what matters.
     const finalScore = player.score || 0;
 
     return (
-       <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
+       <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500" dir={isArabicUser ? 'rtl' : 'ltr'}>
             <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
-            <h1 className="text-5xl font-bold mt-4 font-display">Challenge Complete!</h1>
+            <h1 className="text-5xl font-bold mt-4 font-display">{isArabicUser ? 'اكتمل التحدي!' : 'Challenge Complete!'}</h1>
             <CardDescription className="text-2xl pt-4">
-                Well done, {player.name}! Here's your score.
+                {isArabicUser ? `أحسنت يا ${player.name}! هذه هي نتيجتك.` : `Well done, ${player.name}! Here's your score.`}
             </CardDescription>
             <Card className="my-12 shadow-lg w-full max-w-sm">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-display text-primary">Your Final Score</CardTitle>
+                    <CardTitle className="text-2xl font-display text-primary">{isArabicUser ? 'نتيجتك النهائية' : 'Your Final Score'}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-6xl font-bold text-primary">{finalScore}</p>
-                    <p className="text-muted-foreground">points</p>
+                    <p className="text-muted-foreground">{isArabicUser ? 'نقاط' : 'points'}</p>
                 </CardContent>
             </Card>
-            <p className="text-muted-foreground animate-pulse">Redirecting to the leaderboard...</p>
+            <p className="text-muted-foreground animate-pulse">{isArabicUser ? 'جاري إعادة التوجيه إلى لوحة الصدارة...' : 'Redirecting to the leaderboard...'}</p>
        </div>
     )
   }
@@ -98,16 +103,16 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
 
 
   return (
-    <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500">
+    <div className="flex flex-col items-center justify-center text-center flex-1 animate-in fade-in-50 duration-500" dir={isArabicUser ? 'rtl' : 'ltr'}>
       <Trophy className="h-24 w-24 text-yellow-400 drop-shadow-lg" />
       
       {winningTeams.length > 0 ? (
         <>
           <h1 className="text-5xl font-bold mt-4 font-display">
-            {isTie ? "It's a Tie!" : `${winningTeams.length > 1 ? 'Winners!' : winningTeams[0].name + ' Wins!'}`}
+            {isTie ? (isArabicUser ? "إنه تعادل!" : "It's a Tie!") : `${winningTeams.length > 1 ? (isArabicUser ? 'الفائزون!' : 'Winners!') : (isArabicUser ? `فريق ${winningTeams[0].name} يفوز!` : `${winningTeams[0].name} Wins!`)}`}
           </h1>
           <CardDescription className="text-2xl pt-4">
-            Congratulations to the winners!
+            {isArabicUser ? 'تهانينا للفائزين!' : 'Congratulations to the winners!'}
              {winReason && <span className="text-sm block">({winReason})</span>}
           </CardDescription>
 
@@ -115,14 +120,14 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
             {winningTeams.flatMap(team => team.players).map(player => (
               <div key={player.id} className="p-4 bg-card rounded-lg shadow-lg border border-primary">
                 <p className="text-2xl font-bold text-primary">{player.name}</p>
-                <p className="text-sm text-muted-foreground">ID: {player.playerId}</p>
+                <p className="text-sm text-muted-foreground">{isArabicUser ? 'معرف' : 'ID'}: {player.playerId}</p>
               </div>
             ))}
           </div>
 
         </>
       ) : (
-         <h1 className="text-5xl font-bold mt-4 font-display">Game Over!</h1>
+         <h1 className="text-5xl font-bold mt-4 font-display">{isArabicUser ? 'انتهت اللعبة!' : 'Game Over!'}</h1>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl my-12">
@@ -133,7 +138,7 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
             </CardHeader>
             <CardContent>
               <p className="text-5xl font-bold" style={{color: team.color}}>{team.score}</p>
-              <p className="text-muted-foreground">total points</p>
+              <p className="text-muted-foreground">{isArabicUser ? 'مجموع النقاط' : 'total points'}</p>
             </CardContent>
           </Card>
         ))}
@@ -141,13 +146,15 @@ export default function ResultsScreen({ game, onPlayAgain, isAdmin, individualPl
       
       {isAdmin && !parentSessionId && (
         <Button onClick={onPlayAgain} size="lg" className="mt-12">
-          Play Again
+          {isArabicUser ? 'العب مرة أخرى' : 'Play Again'}
         </Button>
       )}
 
       {parentSessionId && (
-         <p className="text-muted-foreground mt-8 animate-pulse">Returning to lobby...</p>
+         <p className="text-muted-foreground mt-8 animate-pulse">{isArabicUser ? 'العودة إلى الردهة...' : 'Returning to lobby...'}</p>
       )}
     </div>
   );
 }
+
+    
