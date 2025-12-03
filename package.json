@@ -1,7 +1,7 @@
 
 {
   "name": "nextn",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "cache-bust": "echo 'Cache-busting script v7-final'"
+    "cache-bust": "echo 'Deploying fresh build v8-final'"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
