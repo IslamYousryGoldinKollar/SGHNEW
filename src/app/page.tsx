@@ -26,7 +26,7 @@ export default function LandingPage() {
     if (!pin.trim()) {
       toast({
         title: isArabicUser ? "الرمز مطلوب" : "PIN Required",
-        description: isArabicUser ? "الرجاء إدخال رمز PIN للجلسة." : "Please enter a session PIN.",
+        description: isArabicUser ? "الرجاء إدخال رمز الدخول للتحدي." : "Please enter a session PIN.",
         variant: "destructive",
       });
       return;
@@ -40,7 +40,7 @@ export default function LandingPage() {
         router.push(`/game/${pin.trim().toUpperCase()}`);
       } else {
         toast({
-          title: isArabicUser ? "لم يتم العثور على الجلسة" : "Session Not Found",
+          title: isArabicUser ? "التحدي غير موجود" : "Session Not Found",
           description: isArabicUser ? "الرمز الذي أدخلته غير صحيح." : "The PIN you entered does not match an active session.",
           variant: "destructive",
         });
@@ -59,23 +59,23 @@ export default function LandingPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 flex flex-1 flex-col items-center justify-center game-screen" dir={isArabicUser ? 'rtl' : 'ltr'}>
-      <div className={cn("text-center mb-12 text-foreground drop-shadow-lg", isArabicUser && "font-arabic")}>
-        <h1 className="text-5xl font-bold font-display text-slate-700">{isArabicUser ? 'حروب الرعاية' : 'Care Clans'}</h1>
-        <p className="text-xl mt-2 text-slate-700">{isArabicUser ? 'تحدي الأسئلة النهائي للفرق' : 'The ultimate team trivia challenge'}</p>
+      <div className="text-center mb-12 text-foreground drop-shadow-lg">
+        <h1 className="text-5xl font-bold font-display text-slate-700 font-arabic">{isArabicUser ? 'تحدي قلاع الرعاية' : 'Care Clans'}</h1>
+        <p className="text-xl mt-2 text-slate-700 font-arabic">{isArabicUser ? 'التحدي النهائي للفرق الأقوياء' : 'The ultimate team trivia challenge'}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
-        <Card className={cn(isArabicUser && "font-arabic")}>
+        <Card className="font-arabic">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <KeyRound className="text-accent" />
-              {isArabicUser ? 'الانضمام إلى جلسة' : 'Join a Session'}
+              {isArabicUser ? 'أدخل للتحدي' : 'Join a Session'}
             </CardTitle>
-            <CardDescription>{isArabicUser ? 'أدخل الرمز من الشاشة الكبيرة للانضمام إلى اللعبة.' : 'Enter the PIN from the big screen to join the game.'}</CardDescription>
+            <CardDescription>{isArabicUser ? 'أدخل الرمز من شاشة العرض الرئيسية لبدء اللعب.' : 'Enter the PIN from the big screen to join the game.'}</CardDescription>
           </CardHeader>
           <CardContent>
             <Input
-              placeholder={isArabicUser ? 'رمز الجلسة' : 'Session PIN'}
+              placeholder={isArabicUser ? 'رمز التحدي' : 'Session PIN'}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
               className="text-2xl h-14 text-center tracking-widest font-mono"
@@ -85,27 +85,27 @@ export default function LandingPage() {
           <CardFooter>
             <Button className="w-full" onClick={handleJoinSession} disabled={isLoading}>
               <LogIn className={isArabicUser ? 'ml-2' : 'mr-2'} />
-              {isLoading ? (isArabicUser ? 'جاري الانضمام...' : 'Joining...') : (isArabicUser ? 'انضم للعبة' : 'Join Game')}
+              {isLoading ? (isArabicUser ? 'جاري الدخول...' : 'Joining...') : (isArabicUser ? 'أدخل للتحدي' : 'Join Game')}
             </Button>
           </CardFooter>
         </Card>
 
-        <Card className={cn(isArabicUser && "font-arabic")}>
+        <Card className="font-arabic">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="text-accent" />
-              {isArabicUser ? 'وصول المسؤول' : 'Admin Access'}
+              {isArabicUser ? 'لوحة تحكم المشرف' : 'Admin Access'}
             </CardTitle>
-            <CardDescription>{isArabicUser ? 'إنشاء وإدارة جلسات اللعبة.' : 'Create and manage game sessions.'}</CardDescription>
+            <CardDescription>{isArabicUser ? 'لإنشاء وإدارة التحديات والألعاب.' : 'Create and manage game sessions.'}</CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              {isArabicUser ? 'يمكن للمسؤولين إنشاء جلسات جديدة وإدارة الأسئلة والتحكم في اللعبة من لوحة تحكم المسؤول.' : 'Admins can create new sessions, manage questions, and control the game from the admin dashboard.'}
+              {isArabicUser ? 'يمكن للمشرفين إنشاء تحديات جديدة، إدارة الأسئلة، والتحكم في سير اللعبة من لوحة التحكم.' : 'Admins can create new sessions, manage questions, and control the game from the admin dashboard.'}
             </p>
           </CardContent>
           <CardFooter>
             <Button className="w-full" variant="secondary" onClick={() => router.push('/admin/login')}>
-              {isArabicUser ? 'تسجيل دخول المسؤول' : 'Admin Login'}
+              {isArabicUser ? 'دخول المشرف' : 'Admin Login'}
             </Button>
           </CardFooter>
         </Card>
@@ -113,3 +113,5 @@ export default function LandingPage() {
     </div>
   );
 }
+
+    

@@ -10,6 +10,7 @@ import { SUPER_ADMIN_UIDS } from "@/lib/constants";
 export default function Header() {
   const [user] = useAuthState(auth);
   const isSuperAdmin = user && SUPER_ADMIN_UIDS.includes(user.uid);
+  const isArabicUser = user?.email === 'iyossry@gmail.com';
 
   return (
     <header className="border-b bg-background">
@@ -17,7 +18,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 text-xl font-bold text-primary">
             <BrainCircuit className="h-7 w-7" />
-            <h1 className="font-display">Care Clans</h1>
+            <h1 className="font-display font-arabic">{isArabicUser ? 'تحدي قلاع الرعاية' : 'Care Clans'}</h1>
           </Link>
           <nav>
             {isSuperAdmin && (
@@ -32,3 +33,5 @@ export default function Header() {
     </header>
   );
 }
+
+    

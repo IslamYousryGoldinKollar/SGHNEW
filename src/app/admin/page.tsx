@@ -65,7 +65,7 @@ export default function AdminDashboard() {
     }));
 
     const newGame: Omit<Game, 'id'> = {
-        title: isArabicUser ? "حروب الرعاية" : "Care Clans",
+        title: isArabicUser ? "تحدي قلاع الرعاية" : "Care Clans",
         description: isArabicUser ? "لعبة أسئلة مباشرة للفريق بأكمله. انضم إلى المرح!" : "A live trivia game for the whole team. Join in on the fun!",
         status: "lobby",
         adminId: user.uid,
@@ -173,25 +173,25 @@ export default function AdminDashboard() {
 
     <div className="container mx-auto px-4 py-8" dir={isArabicUser ? 'rtl' : 'ltr'}>
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-4xl font-bold font-display text-white drop-shadow-lg">{isArabicUser ? 'لوحة تحكم المسؤول' : 'Admin Dashboard'}</h1>
+        <h1 className="text-4xl font-bold font-display text-white drop-shadow-lg">{isArabicUser ? 'لوحة تحكم المشرف' : 'Admin Dashboard'}</h1>
         <Button onClick={() => auth.signOut().then(() => router.push('/'))}>{isArabicUser ? 'تسجيل الخروج' : 'Sign Out'}</Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{isArabicUser ? 'إنشاء جلسة جديدة' : 'Create New Session'}</CardTitle>
-          <CardDescription>{isArabicUser ? 'ابدأ لعبة جديدة برمز PIN فريد.' : 'Start a new game with a unique PIN.'}</CardDescription>
+          <CardTitle>{isArabicUser ? 'أنشئ تحدياً جديداً' : 'Create New Session'}</CardTitle>
+          <CardDescription>{isArabicUser ? 'ابدأ لعبة جديدة برمز فريد.' : 'Start a new game with a unique PIN.'}</CardDescription>
         </CardHeader>
         <CardContent>
           <Button onClick={createNewSession}>
             <Plus className={isArabicUser ? 'ml-2' : 'mr-2'}/>
-            {isArabicUser ? 'إنشاء جلسة' : 'Create Session'}
+            {isArabicUser ? 'تحدي جديد' : 'Create Session'}
           </Button>
         </CardContent>
       </Card>
       
       <div className="mt-12">
-        <h2 className="text-3xl font-bold font-display mb-4 text-white drop-shadow-lg">{isArabicUser ? 'جلساتك' : 'Your Sessions'}</h2>
+        <h2 className="text-3xl font-bold font-display mb-4 text-white drop-shadow-lg">{isArabicUser ? 'تحدياتك' : 'Your Sessions'}</h2>
         {isLoadingSessions ? (
             <Loader2 className="animate-spin text-white"/>
         ) : sessions.length > 0 ? (
@@ -203,7 +203,7 @@ export default function AdminDashboard() {
                     <Card key={session.id} className="flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex justify-between items-start">
-                                <span>{session.title || 'Care Clans'}</span>
+                                <span>{session.title || 'تحدي قلاع الرعاية'}</span>
                                  <Badge variant="secondary" className="capitalize">{session.sessionType || 'team'}</Badge>
                             </CardTitle>
                             <CardDescription>
@@ -220,13 +220,13 @@ export default function AdminDashboard() {
                             </p>
                             {isIndividual ? (
                                  <Button className="w-full mt-4" variant="outline" onClick={() => router.push(`/leaderboard/${session.id}`)}>
-                                    <BarChart className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                    <BarChart className={isArabicUser ? "ml-2 h-4 w-4" : "mr-2 h-4 w-4"}/>
                                     {isArabicUser ? 'عرض لوحة الصدارة' : 'View Leaderboard'}
                                 </Button>
                             ) : (
                                 <Button className="w-full mt-4" variant="outline" onClick={() => window.open(`/admin/display/${session.id}`, '_blank')}>
                                     <Eye className={isArabicUser ? 'ml-2' : 'mr-2'}/>
-                                    {isArabicUser ? 'فتح الشاشة الكبيرة' : 'Open Big Screen'}
+                                    {isArabicUser ? 'فتح شاشة العرض' : 'Open Big Screen'}
                                 </Button>
                             )}
                         </CardContent>
@@ -244,7 +244,7 @@ export default function AdminDashboard() {
                                  {isArabicUser ? 'تكرار' : 'Duplicate'}
                              </Button>
                              <Button className="w-full" variant="destructive" onClick={() => deleteSession(session.id)} disabled={!isOwner}>
-                                 <Trash2 className={isArabicUser ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'}/>
+                                 <Trash2 className={isArabicUser ? 'ml-2' : 'mr-2 h-4 w-4'}/>
                                  {isArabicUser ? 'حذف' : 'Delete'}
                              </Button>
                         </CardFooter>
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
                 })}
             </div>
         ) : (
-            <p className="text-white drop-shadow-md">{isArabicUser ? 'لا توجد جلسات نشطة. قم بإنشاء واحدة للبدء!' : 'No active sessions. Create one to get started!'}</p>
+            <p className="text-white drop-shadow-md">{isArabicUser ? 'لا توجد تحديات حالية. أنشئ واحداً للبدء!' : 'No active sessions. Create one to get started!'}</p>
         )}
       </div>
     </div>
