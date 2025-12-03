@@ -88,7 +88,7 @@ export default function QuestionCard({
               className={cn(
                 "h-auto min-h-14 py-3 text-base md:text-lg justify-start text-left whitespace-normal", 
                 getButtonClass(option),
-                isRTL && "text-right flex-row-reverse"
+                isRTL && "text-right flex-row-reverse font-arabic"
               )}
               onClick={() => handleAnswerClick(option)}
               disabled={questionPhase !== 'answering'}
