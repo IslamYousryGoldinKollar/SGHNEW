@@ -20,3 +20,5 @@ env:
     value: "427859065555"
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "1:427859065555:web:3d0519e8804380fa4e3226"
+  - variable: CACHE_BUST
+    value: "v1"
