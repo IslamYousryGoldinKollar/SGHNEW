@@ -7,9 +7,6 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["*"],
 
   /* Your existing config options */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   
   images: {
     minimumCacheTTL: 31536000,
