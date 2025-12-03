@@ -98,79 +98,12 @@
 
 @layer utilities {
     .game-screen {
-        /* Ensures the background covers full screen properly */
         background-image: url('https://firebasestorage.googleapis.com/v0/b/studio-7831135066-b7ebf.firebasestorage.app/o/assets%2FBackground%20copy.jpg?alt=media&token=0bfc7e4b-e59d-4d80-b74b-026d268ef9ed');
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
         background-attachment: fixed;
-        min-height: calc(100vh - 8rem);
+        min-height: 100vh;
         padding: 1rem;
-    }
-    
-    /* Water Background Fallback */
-    .water-bg-static {
-      background: 
-        linear-gradient(180deg, 
-          #e0f7fa 0%, 
-          #b2ebf2 25%, 
-          #80deea 50%, 
-          #4dd0e1 75%, 
-          #26c6da 100%
-        );
-      background-attachment: fixed;
-    }
-
-    /* Full viewport water background */
-    .water-bg-full {
-      position: fixed;
-      inset: 0;
-      background: 
-        linear-gradient(180deg, 
-          #0891b2 0%, 
-          #0e7490 30%, 
-          #155e75 60%, 
-          #164e63 100%
-        );
-      z-index: -1;
-    }
-
-    /* Video background with fallback */
-    .video-bg-container {
-      position: fixed;
-      inset: 0;
-      z-index: -1;
-      overflow: hidden;
-    }
-
-    .video-bg-container video {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .video-bg-container .fallback-bg {
-      position: absolute;
-      inset: 0;
-      background: 
-        linear-gradient(180deg, 
-          #0891b2 0%, 
-          #0e7490 30%, 
-          #155e75 60%, 
-          #164e63 100%
-        );
-    }
-
-    /* Mobile-optimized water animation */
-    @media (max-width: 768px) {
-      .water-effect {
-        animation: none !important;
-        background: 
-          radial-gradient(ellipse at 50% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 60%);
-      }
-      
-      .bubbles .bubble {
-        animation-duration: 6s !important;
-      }
     }
 }

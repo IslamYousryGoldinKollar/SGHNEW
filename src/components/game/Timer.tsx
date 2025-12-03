@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,13 +6,13 @@ import { cn } from "@/lib/utils";
 import type { Timestamp } from "firebase/firestore";
 
 interface TimerProps {
-  initialTime?: number; // Made optional to fix build errors
+  initialTime?: number;
   gameStartedAt?: Timestamp | null | undefined;
   onTimeUp?: () => void;
   isRunning?: boolean;
   className?: string;
-  duration?: number; // Alias for initialTime for compatibility
-  onTimeout?: () => void; // Alias for onTimeUp for compatibility
+  duration?: number;
+  onTimeout?: () => void;
 }
 
 export function Timer({ 
