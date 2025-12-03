@@ -23,6 +23,7 @@ type GameScreenProps = {
   isIndividualMode: boolean;
   totalQuestions: number;
   currentQuestionIndex: number;
+  language?: 'en' | 'ar';
 };
 
 export default function GameScreen({
@@ -39,6 +40,7 @@ export default function GameScreen({
   isIndividualMode,
   totalQuestions,
   currentQuestionIndex,
+  language
 }: GameScreenProps) {
   const playerTeam = teams.find(t => t.name === currentPlayer.teamName);
   if (!playerTeam) return null;
@@ -97,6 +99,7 @@ export default function GameScreen({
           onAnswer={onAnswer}
           className="flex-1"
           isIndividualMode={isIndividualMode}
+          language={language}
         />
       </div>
     </div>

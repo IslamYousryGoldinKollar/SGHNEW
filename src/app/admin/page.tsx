@@ -79,6 +79,7 @@ export default function AdminDashboard() {
         sessionType: 'team',
         requiredPlayerFields: [],
         parentSessionId: null,
+        language: 'en'
     };
 
     try {

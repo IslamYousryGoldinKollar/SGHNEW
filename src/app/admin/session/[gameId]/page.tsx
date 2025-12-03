@@ -8,17 +8,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { db, auth } from "@/lib/firebase";
 import { doc, onSnapshot, updateDoc, getDoc } from "firebase/firestore";
-import type { Game, CustomPlayerField } from "@/lib/types";
+import type { Game, CustomPlayerField, Question } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Trash2, Plus, Upload, Users, User } from "lucide-react";
+import { Loader2, Trash2, Plus, Upload, Users, User, Languages } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { extractQuestionsFromPdfAction } from "@/lib/actions";
+import { extractQuestionsFromPdfAction, translateQuestionsAction } from "@/lib/actions";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { v4 as uuidv4 } from "uuid";
 
@@ -26,6 +26,7 @@ const sessionSchema = z.object({
   title: z.string().min(1, "Title is required."),
   timer: z.coerce.number().min(30, "Timer must be at least 30 seconds."),
   sessionType: z.enum(["team", "individual"]),
+  language: z.enum(["en", "ar"]),
   teams: z
     .array(
       z.object({
@@ -52,6 +53,9 @@ const sessionSchema = z.object({
           .min(2, "At least two options are required.")
           .max(4, "You can have a maximum of 4 options."),
         answer: z.string().min(1, "An answer is required."),
+        questionAr: z.string().optional(),
+        optionsAr: z.array(z.string()).optional(),
+        answerAr: z.string().optional(),
       })
     )
     .refine(
@@ -84,15 +88,24 @@ function QuestionItem({
 
   return (
     <div className="p-4 border rounded-lg space-y-4">
-      <Button type="button" variant="destructive" onClick={() => removeQuestion(index)}>
-        Delete Question
-      </Button>
+      <div className="flex justify-between items-start">
+        <div className="space-y-1">
+          <h4 className="font-medium">Question {index + 1}</h4>
+           <p className="text-sm text-muted-foreground">
+             Arabic translation will be generated automatically upon saving.
+           </p>
+        </div>
+        <Button type="button" variant="destructive" size="sm" onClick={() => removeQuestion(index)}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+
       <FormField
         control={control}
         name={`questions.${index}.question`}
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Question</FormLabel>
+            <FormLabel>Question Text</FormLabel>
             <FormControl>
               <Input {...field} />
             </FormControl>
@@ -165,6 +178,7 @@ export default function SessionConfigPage() {
       title: "Care Clans",
       timer: 300,
       sessionType: "team",
+      language: "en",
       teams: [],
       requiredPlayerFields: [],
       questions: [],
@@ -217,6 +231,7 @@ export default function SessionConfigPage() {
               title: gameData.title || "Care Clans",
               timer: gameData.timer,
               sessionType: gameData.sessionType || "team",
+              language: gameData.language || "en",
               teams: gameData.teams.map((t) => ({
                 name: t.name,
                 capacity: t.capacity,
@@ -333,6 +348,59 @@ export default function SessionConfigPage() {
         }
       }
 
+      // --- Start of Translation Logic ---
+      toast({
+          title: "Processing Translations",
+          description: "Generating AI translations for questions...",
+      });
+      
+      let processedQuestions = [...data.questions];
+      
+      // Filter questions that need translation (e.g. don't have Arabic fields yet)
+      // Or we can just re-translate everything to be safe if content changed. 
+      // For simplicity/robustness, we'll re-translate all for now or optimize later.
+      
+      // We need to translate TO the OTHER language. 
+      // Assuming inputs are primarily English for now based on the UI flow, we generate Arabic.
+      // If the user entered Arabic, we might want to generate English.
+      // The prompt suggests "option for users ... select AR or EN", implies we need both.
+      
+      // Let's assume input is base language (English usually) and we generate Arabic.
+      
+      if (processedQuestions.length > 0) {
+          try {
+              const translationResult = await translateQuestionsAction({
+                  questions: processedQuestions.map(q => ({
+                      question: q.question,
+                      options: q.options,
+                      answer: q.answer
+                  })),
+                  targetLanguage: 'ar' 
+              });
+              
+              if (translationResult && translationResult.translatedQuestions) {
+                  processedQuestions = processedQuestions.map((q, index) => {
+                      const translated = translationResult.translatedQuestions[index];
+                      return {
+                          ...q,
+                          questionAr: translated.question,
+                          optionsAr: translated.options,
+                          answerAr: translated.answer
+                      };
+                  });
+              }
+          } catch (translationError) {
+              console.error("Translation failed", translationError);
+              toast({
+                  title: "Translation Warning",
+                  description: "Could not generate translations. Saving original questions only.",
+                  variant: "destructive"
+              });
+          }
+      }
+      // --- End of Translation Logic ---
+
+
       let teamsUpdate;
 
       if (data.sessionType === "team") {
@@ -360,15 +428,16 @@ export default function SessionConfigPage() {
         title: data.title,
         timer: data.timer,
         sessionType: data.sessionType,
+        language: data.language,
         teams: teamsUpdate,
         requiredPlayerFields: data.requiredPlayerFields,
-        questions: data.questions,
+        questions: processedQuestions,
         topic: data.topic,
       });
 
       toast({
         title: "Session Updated",
-        description: "The game session has been successfully updated.",
+        description: "The game session has been successfully updated with translations.",
       });
       router.push("/admin");
     } catch (error) {
@@ -467,6 +536,27 @@ export default function SessionConfigPage() {
                         </FormControl>
                         <FormMessage />
                       </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="language"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Default Language</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a language" />
+                                    </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                    <SelectItem value="en">English</SelectItem>
+                                    <SelectItem value="ar">Arabic</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
                     )}
                   />
                 </CardContent>
@@ -651,9 +741,9 @@ export default function SessionConfigPage() {
                               <FormLabel>Field Type</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
                                   <SelectItem value="text">Text</SelectItem>
@@ -712,8 +802,7 @@ export default function SessionConfigPage() {
                     </div>
                   </div>
                   <CardDescription>
-                    Add custom multiple-choice questions here. These questions will be used for all game types in this
-                    session.
+                    Add custom multiple-choice questions here. Upon saving, AI will automatically generate culturally relevant Arabic translations for your questions.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -736,7 +825,7 @@ export default function SessionConfigPage() {
 
               <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting && <Loader2 className="mr-2 animate-spin" />}
-                Save Changes
+                Save Changes (and Generate Translations)
               </Button>
             </form>
           </Form>

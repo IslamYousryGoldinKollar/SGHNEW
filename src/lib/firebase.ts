@@ -26,12 +26,12 @@ if (typeof window !== 'undefined') {
 }
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAzmZ4p8Rpx8kusWuP3v8PnQyc0Ao_cU7Q",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "studio-7831135066-b7ebf.firebaseapp.com",
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "studio-7831135066-b7ebf",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "studio-7831135066-b7ebf.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "427859065555",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:427859065555:web:3d0519e8804380fa4e3226",
+  apiKey: "AIzaSyAzmZ4p8Rpx8kusWuP3v8PnQyc0Ao_cU7Q",
+  authDomain: "studio-7831135066-b7ebf.firebaseapp.com",
+  projectId: "studio-7831135066-b7ebf",
+  storageBucket: "studio-7831135066-b7ebf.appspot.com",
+  messagingSenderId: "427859065555",
+  appId: "1:427859065555:web:3d0519e8804380fa4e3226",
 };
 
 // Initialize Firebase

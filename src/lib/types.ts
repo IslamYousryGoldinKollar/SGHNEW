@@ -10,6 +10,10 @@ export interface Question {
   question: string;
   options: string[];
   answer: string;
+  // Arabic translation fields
+  questionAr?: string;
+  optionsAr?: string[];
+  answerAr?: string;
 }
 
 export type CustomPlayerField = {
@@ -27,6 +31,7 @@ export interface Player {
   coloringCredits: number;
   score: number; // For teams, points. For individuals, number of hexes.
   customData?: Record<string, string>; // For individual mode custom fields
+  language?: 'en' | 'ar'; // Player's preferred language
 }
 
 export interface GridSquare {
@@ -69,6 +74,7 @@ export interface Game {
     sessionType: SessionType;
     requiredPlayerFields: CustomPlayerField[];
     parentSessionId: string | null;
+    language: 'en' | 'ar'; // Default session language
 }
 
 // Represents a tenant/admin user in the system

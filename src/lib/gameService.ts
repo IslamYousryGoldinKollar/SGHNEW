@@ -35,7 +35,8 @@ export class GameService {
     playerName: string,
     playerId: string,
     teamName: string,
-    userId: string
+    userId: string,
+    language?: 'en' | 'ar'
   ): Promise<void> {
     const gameRef = doc(db, 'games', gameId.toUpperCase());
     
@@ -73,6 +74,7 @@ export class GameService {
         answeredQuestions: [],
         coloringCredits: 0,
         score: 0,
+        language: language || 'en',
       };
       const updatedTeams = game.teams.map(t => {
         if (t.name === teamName) {
@@ -103,6 +105,9 @@ export class GameService {
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = { ...updatedTeams[teamIndex].players[playerIndex] };
 
+        // For tracking answered questions, we always use the English question ID/Text if possible, 
+        // or just the question text. Since we added translated fields, the primary identifier 
+        // should still be the base 'question' field.
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
 
         if (isCorrect) {

@@ -13,6 +13,13 @@ import {
   type ExtractQuestionsFromPdfOutput,
 } from "@/ai/flows/ai-pdf-question-extractor";
 
+import {
+    aiQuestionTranslator,
+    type TranslateQuestionsInput,
+    type TranslateQuestionsOutput
+} from '@/ai/flows/ai-question-translator';
+import { z } from "zod";
+
 export async function generateQuestionsAction(
   input: CurateTriviaQuestionsInput
 ): Promise<CurateTriviaQuestionsOutput> {
@@ -37,4 +44,16 @@ export async function extractQuestionsFromPdfAction(
     console.error("Error extracting questions from PDF:", error);
     throw new Error("Failed to extract questions from PDF via AI flow.");
   }
+}
+
+export async function translateQuestionsAction(
+    input: z.infer<typeof TranslateQuestionsInput>
+): Promise<z.infer<typeof TranslateQuestionsOutput>> {
+    try {
+        const output = await aiQuestionTranslator(input);
+        return output;
+    } catch (error) {
+        console.error("Error translating questions:", error);
+        throw new Error("Failed to translate questions via AI flow.");
+    }
 }

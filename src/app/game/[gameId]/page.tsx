@@ -29,11 +29,12 @@ import ResultsScreen from "@/components/game/ResultsScreen";
 import PreGameCountdown from "@/components/game/PreGameCountdown";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
-import { User as UserIcon, HelpCircle } from "lucide-react";
+import { User as UserIcon, HelpCircle, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { v4 as uuidv4 } from "uuid";
 import HexMap from "@/components/game/HexMap";
 import Timer from "@/components/game/Timer";
@@ -49,11 +50,12 @@ const IndividualLobby = ({
   isJoining,
 }: {
   game: Game;
-  onJoin: (formData: Record<string, string>, name: string) => void;
+  onJoin: (formData: Record<string, string>, name: string, language: 'en' | 'ar') => void;
   isJoining: boolean;
 }) => {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [playerName, setPlayerName] = useState("");
+  const [language, setLanguage] = useState<'en' | 'ar'>(game.language || 'en');
   const [error, setError] = useState("");
   const nameField = game.requiredPlayerFields?.find((f) =>
     f.label.toLowerCase().includes("name")
@@ -79,7 +81,7 @@ const IndividualLobby = ({
     }
 
     setError("");
-    onJoin(formData, nameToSubmit);
+    onJoin(formData, nameToSubmit, language);
   };
 
   const handleChange = (fieldId: string, value: string) => {
@@ -121,6 +123,20 @@ const IndividualLobby = ({
                   />
                 </div>
               ))}
+              
+             <div className="space-y-2">
+                 <Label>Preferred Language</Label>
+                 <Select value={language} onValueChange={(v) => setLanguage(v as 'en' | 'ar')}>
+                     <SelectTrigger>
+                         <SelectValue placeholder="Select Language" />
+                     </SelectTrigger>
+                     <SelectContent>
+                         <SelectItem value="en">English</SelectItem>
+                         <SelectItem value="ar">Arabic</SelectItem>
+                     </SelectContent>
+                 </Select>
+             </div>
+
             {error && <p className="text-destructive text-sm">{error}</p>}
              <Button
               type="submit"
@@ -308,7 +324,7 @@ export default function GamePage() {
     }
   }, [game?.status, game?.gameStartedAt, game?.timer, handleTimeout]);
 
-  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string) => {
+  const handleJoinTeam = async (playerName: string, playerId: string, teamName: string, language?: 'en' | 'ar') => {
     if (!game || !authUser) return;
     const gameRef = doc(db, "games", gameId);
     try {
@@ -333,6 +349,7 @@ export default function GamePage() {
           answeredQuestions: [],
           coloringCredits: 0,
           score: 0,
+          language: language || currentGame.language || 'en',
         };
         const updatedTeams = currentGame.teams.map((t) => {
           if (t.name === teamName) return { ...t, players: [...t.players, newPlayer] };
@@ -345,7 +362,7 @@ export default function GamePage() {
     }
   };
 
-  const handleJoinIndividual = async (customData: Record<string, string>, name: string) => {
+  const handleJoinIndividual = async (customData: Record<string, string>, name: string, language: 'en' | 'ar') => {
     if (!game || !authUser) return;
     setIsJoining(true);
     const newGameId = `${gameId}-${authUser.uid.slice(0, 5)}-${generatePin()}`;
@@ -353,6 +370,8 @@ export default function GamePage() {
     
     try {
       let templateGameData = { ...game };
+      // Note: In individual mode, questions are typically already in the game doc from admin setup.
+      // If not, we generate them.
       if (!templateGameData.questions || templateGameData.questions.length === 0) {
         const result = await generateQuestionsAction({
           topic: templateGameData.topic || "General Knowledge",
@@ -386,6 +405,7 @@ export default function GamePage() {
         coloringCredits: 0,
         score: 0,
         customData: newCustomData,
+        language: language, // Store preferred language
       };
 
       const newGame: Game = {
@@ -406,6 +426,7 @@ export default function GamePage() {
         ],
         grid: templateGameData.grid.map(g => ({ ...g, coloredBy: null })),
         gameStartedAt: serverTimestamp() as Timestamp,
+        language: language,
       };
 
       await setDoc(newGameRef, newGame);
@@ -451,7 +472,21 @@ export default function GamePage() {
   const handleAnswer = async (question: Question, answer: string) => {
     if (!game || !currentPlayer || questionPhase !== 'answering') return;
     
-    const isCorrect = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
+    // Check against English Answer OR Localized Answer
+    // Ideally, we compare against the *key* or logic checks `question.answer`
+    // If the answer coming in is Arabic, we need to know.
+    
+    // In `QuestionCard`, we passed `question.options[index]` as the second arg to handleAnswerClick
+    // BUT here `onAnswer` only receives (question, answerString).
+    // So if the string is Arabic, `question.answer` (English) won't match.
+    
+    // Let's refine the logic:
+    // We need to check if the answer provided matches EITHER the English answer OR the Arabic answer.
+    
+    const isCorrectEnglish = question.answer.trim().toLowerCase() === answer.trim().toLowerCase();
+    const isCorrectArabic = question.answerAr ? question.answerAr.trim() === answer.trim() : false;
+    const isCorrect = isCorrectEnglish || isCorrectArabic;
+
     setQuestionPhase('feedback');
     setLastAnswerCorrect(isCorrect);
     
@@ -468,6 +503,7 @@ export default function GamePage() {
         
         const updatedTeams = [...currentGame.teams];
         const playerToUpdate = { ...updatedTeams[teamIndex].players[playerIndex] };
+        // We always store the English question text for consistency in tracking
         playerToUpdate.answeredQuestions = [...(playerToUpdate.answeredQuestions || []), question.question];
 
         let scoreChange = 0;
@@ -557,6 +593,7 @@ export default function GamePage() {
         if (!currentPlayer) return <p>Joining...</p>;
         const playerTeam = game.teams.find((t) => t.name === currentPlayer?.teamName);
         const freshPlayer = playerTeam?.players.find(p => p.id === currentPlayer.id);
+        const finalPlayerState = freshPlayer || currentPlayer;
 
         if (questionPhase === 'coloring' && freshPlayer && freshPlayer.coloringCredits > 0 && !isIndividualMode) {
             return <TerritoryClaimScreen game={game} onClaim={handleColorSquare} onSkip={() => handleColorSquare(-1)} />;
@@ -566,7 +603,7 @@ export default function GamePage() {
         return (
           <GameScreen
             teams={game.teams}
-            currentPlayer={freshPlayer || currentPlayer}
+            currentPlayer={finalPlayerState}
             question={currentQuestion}
             questionPhase={questionPhase}
             lastAnswerCorrect={lastAnswerCorrect}
@@ -578,6 +615,7 @@ export default function GamePage() {
             isIndividualMode={isIndividualMode}
             totalQuestions={game.questions.length}
             currentQuestionIndex={currentQuestionIndex}
+            language={finalPlayerState.language}
           />
         );
       case "finished":
