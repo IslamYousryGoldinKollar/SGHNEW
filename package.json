@@ -11,7 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "cache-bust": "echo 'Cache-busting script v6'"
+    "cache-bust": "echo 'Cache-busting script v7-final'"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.14.1",
