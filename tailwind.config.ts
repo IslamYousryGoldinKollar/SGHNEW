@@ -14,6 +14,7 @@ export default {
         sans: ['var(--font-geist-sans)'],
         mono: ['var(--font-geist-mono)'],
         display: ['var(--font-geist-sans)'],
+        arabic: ['var(--font-tajawal)', 'var(--font-geist-sans)'],
       },
       colors: {
         background: 'hsl(var(--background))',

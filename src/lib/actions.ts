@@ -14,11 +14,10 @@ import {
 } from "@/ai/flows/ai-pdf-question-extractor";
 
 import {
-    aiQuestionTranslator,
+    translateQuestions,
     type TranslateQuestionsInput,
     type TranslateQuestionsOutput
 } from '@/ai/flows/ai-question-translator';
-import { z } from "zod";
 
 export async function generateQuestionsAction(
   input: CurateTriviaQuestionsInput
@@ -47,10 +46,10 @@ export async function extractQuestionsFromPdfAction(
 }
 
 export async function translateQuestionsAction(
-    input: z.infer<typeof TranslateQuestionsInput>
-): Promise<z.infer<typeof TranslateQuestionsOutput>> {
+    input: TranslateQuestionsInput
+): Promise<TranslateQuestionsOutput> {
     try {
-        const output = await aiQuestionTranslator(input);
+        const output = await translateQuestions(input);
         return output;
     } catch (error) {
         console.error("Error translating questions:", error);
