@@ -157,7 +157,7 @@ export function TeamLobbyContent() {
               className="w-full py-6 text-lg font-semibold"
               style={{ backgroundColor: sessionData.team1.color }}
             >
-              {joining ? <Loader2 className="w-5 h-5 animate-spin" /> : `Join ${sessionData.team1.name}`}
+              {joining ? <Loader2 className="w-5 h-5 animate-spin" /> : `Join ${sessionData.team1.name} - LATEST`}
             </Button>
 
             <Button
@@ -166,7 +166,7 @@ export function TeamLobbyContent() {
               className="w-full py-6 text-lg font-semibold"
               style={{ backgroundColor: sessionData.team2.color }}
             >
-              {joining ? <Loader2 className="w-5 h-5 animate-spin" /> : `Join ${sessionData.team2.name}`}
+              {joining ? <Loader2 className="w-5 h-5 animate-spin" /> : `Join ${sessionData.team2.name} - LATEST`}
             </Button>
           </div>
         )}
