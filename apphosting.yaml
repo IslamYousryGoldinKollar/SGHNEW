@@ -1,11 +1,19 @@
 runConfig:
   cpu: 2
-  memoryMiB: 2048  # <-- INCREASED from 512 to 2048
+  memoryMiB: 2048
   minInstances: 0
   maxInstances: 100
   concurrency: 80
 
 env:
+  # --- NEW: CRITICAL FIX FOR BUILD ERROR ---
+  - variable: NPM_CONFIG_LEGACY_PEER_DEPS
+    value: "true"
+    availability:
+      - BUILD
+      - RUNTIME
+
+  # --- YOUR EXISTING VARIABLES ---
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyAzmZ4p8Rpx8kusWuP3v8PnQyc0Ao_cU7Q"
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
