@@ -6,27 +6,58 @@ runConfig:
   concurrency: 80
 
 env:
-  # --- NEW: CRITICAL FIX FOR BUILD ERROR ---
+  # --- إعدادات التثبيت (مهمة جداً) ---
   - variable: NPM_CONFIG_LEGACY_PEER_DEPS
     value: "true"
     availability:
       - BUILD
       - RUNTIME
 
-  # --- YOUR EXISTING VARIABLES ---
+  # --- مفاتيح فيربيز (تم إضافة availability لها) ---
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: "AIzaSyAzmZ4p8Rpx8kusWuP3v8PnQyc0Ao_cU7Q"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
     value: "studio-7831135066-b7ebf.firebaseapp.com"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_DATABASE_URL
     value: "https://studio-7831135066-b7ebf-default-rtdb.europe-west1.firebasedatabase.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
     value: "studio-7831135066-b7ebf"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
     value: "studio-7831135066-b7ebf.firebasestorage.app"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
     value: "427859065555"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
     value: "1:427859065555:web:3d0519e8804380fa4e3226"
+    availability:
+      - BUILD
+      - RUNTIME
+
   - variable: CACHE_BUST
-    value: "v1"
+    value: "v2" # قمت بتغييرها لإجبار إعادة البناء
+    availability:
+      - BUILD
+      - RUNTIME
