@@ -21,9 +21,9 @@ import {
 
 import {
   generateQuestions,
-  type GenerateQuestionsInput,
-  type GenerateQuestionsOutput,
 } from '@/ai/flows/ai-question-generator';
+
+import type { GenerateQuestionsInput, GenerateQuestionsOutput } from '@/lib/types';
 
 export async function generateQuestionsAction(
   input: GenerateQuestionsInput

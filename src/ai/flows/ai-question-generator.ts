@@ -5,14 +5,14 @@
  * @fileOverview An AI tool for generating trivia questions.
  *
  * - generateQuestions - A function that generates trivia questions.
- * - GenerateQuestionsInput - The input type for the generateQuestions function.
- * - GenerateQuestionsOutput - The return type for the generateQuestions function.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import type { GenerateQuestionsInput, GenerateQuestionsOutput } from '@/lib/types';
 
-export const GenerateQuestionsInputSchema = z.object({
+
+const GenerateQuestionsInputSchema = z.object({
   topic: z.string().describe('The main topic of the trivia questions.'),
   numberOfQuestions: z
     .number()
@@ -20,9 +20,6 @@ export const GenerateQuestionsInputSchema = z.object({
     .max(20)
     .describe('The number of trivia questions to generate.'),
 });
-export type GenerateQuestionsInput = z.infer<
-  typeof GenerateQuestionsInputSchema
->;
 
 const QuestionSchema = z.object({
   question: z.string().describe('The trivia question.'),
@@ -38,12 +35,10 @@ const QuestionSchema = z.object({
     ),
 });
 
-export const GenerateQuestionsOutputSchema = z.object({
+const GenerateQuestionsOutputSchema = z.object({
   questions: z.array(QuestionSchema),
 });
-export type GenerateQuestionsOutput = z.infer<
-  typeof GenerateQuestionsOutputSchema
->;
+
 
 export async function generateQuestions(
   input: GenerateQuestionsInput

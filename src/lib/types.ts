@@ -88,3 +88,17 @@ export interface AdminUser {
     status: 'pending' | 'active' | 'expired' | 'disabled';
     expiresAt: Timestamp | null;
 }
+
+// Types for the question generator flow
+export interface GenerateQuestionsInput {
+  topic: string;
+  numberOfQuestions: number;
+}
+
+export interface GenerateQuestionsOutput {
+  questions: {
+    question: string;
+    options: string[];
+    answer: string;
+  }[];
+}
