@@ -6,6 +6,7 @@ import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 // Environment variable validation
+/*
 const requiredEnvVars = [
   'NEXT_PUBLIC_FIREBASE_API_KEY',
   'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN',
@@ -24,6 +25,7 @@ if (typeof window !== 'undefined') {
     console.warn(`Missing optional environment variables: ${missingVars.join(', ')}. Using fallback values.`);
   }
 }
+*/
 
 const firebaseConfig = {
   apiKey: "AIzaSyAzmZ4p8Rpx8kusWuP3v8PnQyc0Ao_cU7Q",
