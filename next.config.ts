@@ -1,16 +1,15 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  // 1. تفعيل وضع Standalone (مهم جداً لـ Firebase/Docker)
+  // تفعيل Standalone
   output: 'standalone',
 
-  // 2. إبقاء تعطيل الـ Minification (كما فعلنا سابقاً)
+  // تعطيل الـ Minification
   webpack: (config) => {
     config.optimization.minimize = false;
     return config;
   },
-  
-  // 3. تجاهل أخطاء TypeScript و ESLint أثناء البناء
+
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
 
@@ -24,10 +23,13 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'firebasestorage.googleapis.com', port: '', pathname: '/**' }
     ],
   },
-  // ... بقية الـ env variables كما هي
+
+  // 👇 هذا هو الجزء الذي سيحل المشكلة نهائياً 👇
+  // نحن نربط المتغيرات يدوياً لضمان وصولها للمتصفح
   env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    NEXT_PUBLIC_FIREBASE_DATABASE_URL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
     NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
     NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
     NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
