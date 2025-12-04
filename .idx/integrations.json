@@ -1,5 +1,11 @@
 {
-  "firebase_hosting": {},
-  "cloud_run_deploy": {},
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://studio-7831135066-b7ebf.web.app"
+  },
+  "cloud_run_deploy": {
+    "region": "me-central1",
+    "sourceFlag": "--source .",
+    "allowUnauthenticatedInvocationsFlag": "--allow-unauthenticated"
+  },
   "gemini_api": {}
 }

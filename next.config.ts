@@ -1,12 +1,13 @@
-
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* Fix for "Server Disconnected" / Cross Origin Error */
-  /* Moved to top-level in Next.js 15+ */
-  allowedDevOrigins: ["*"],
-
-  /* Your existing config options */
+  // ----------------------------------------------------
+  // THE FIX: Disable Minification via Webpack (Next 15 Compatible)
+  // ----------------------------------------------------
+  webpack: (config) => {
+    config.optimization.minimize = false; 
+    return config;
+  },
   
   images: {
     minimumCacheTTL: 31536000,
@@ -43,7 +44,6 @@ const nextConfig: NextConfig = {
       }
     ],
   },
-  // This ensures that environment variables are correctly handled in the App Hosting environment.
   env: {
     NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
